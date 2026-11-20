@@ -98,7 +98,14 @@ fun ChatHomeScreen(
                     modifier = Modifier.size(56.dp),
                 )
                 Spacer(Modifier.height(16.dp))
-                Text("你好，我能帮什么忙吗？", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                val greeting = remember {
+                    listOf(
+                        "你好，我能帮什么忙吗？",
+                        "嗨！今天想聊些什么？",
+                        "今天有什么可以帮到你？",
+                    ).random()
+                }
+                Text(greeting, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1.2f))
             }
             InputCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
