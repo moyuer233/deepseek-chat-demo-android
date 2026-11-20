@@ -9,3 +9,17 @@ build/
 .env.*
 !.env.example
 tmp/
+
+# Android / Capacitor 本地产物
+android/local.properties
+android/.gradle/
+android/app/build/
+android/build/
+*.keystore
+*.jks
+
+# 本地工具与临时文件
+.dsh-meow/
+.scratch/
+.samples/
+

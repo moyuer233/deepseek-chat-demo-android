@@ -38,16 +38,21 @@ const time: Read<string> = (value) => {
   if (typeof value !== 'string') {
     return invalid()
   }
-  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?Z$/.exec(value)
+  // 官方导出是 RFC3339；除 Z 外也接受合法时区偏移（旧包出现过 +00:00）。
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$/.exec(value)
   if (!match) {
     return invalid()
   }
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) {
+    return invalid()
+  }
+  if (match[3] !== 'Z') {
+    return value
+  }
   // Date 只保留毫秒；校验时补齐/截断精度，返回时保留原文，避免丢失微秒或纳秒。
   const milliseconds = `${match[1]}.${(match[2] ?? '').padEnd(3, '0').slice(0, 3)}Z`
-  const parsed = new Date(milliseconds)
-  return Number.isFinite(parsed.getTime()) && parsed.toISOString() === milliseconds
-    ? value
-    : invalid()
+  return parsed.toISOString() === milliseconds ? value : invalid()
 }
 
 const nullable =
@@ -89,13 +94,14 @@ const fileEntry: Read<FileEntry> = (value) => {
   return {
     id: string(item.id),
     file_name: string(item.file_name),
-    file_size: count(item.file_size),
-    token_usage: nullable(count)(item.token_usage),
+    // 旧包可能没有 file_size（DSH 同样按 0 处理）。
+    file_size: 'file_size' in item ? count(item.file_size) : 0,
+    token_usage: 'token_usage' in item ? nullable(count)(item.token_usage) : null,
     inserted_at: time(item.inserted_at),
-    export_path: nullable(string)(item.export_path),
+    export_path: 'export_path' in item ? nullable(string)(item.export_path) : null,
     is_image: boolean(item.is_image),
-    width: nullable(count)(item.width),
-    height: nullable(count)(item.height),
+    width: 'width' in item ? nullable(count)(item.width) : null,
+    height: 'height' in item ? nullable(count)(item.height) : null,
   }
 }
 
@@ -197,24 +203,30 @@ const fragment: Read<Fragment | null> = (value) => {
   }
 }
 
+/** 官方未来可能新增状态值；未知状态按「未完成」处理，不让整条消息失败。 */
+const messageStatus: Read<ChatMessage['status']> = (value) =>
+  value === 'WIP' ||
+  value === 'FINISHED' ||
+  value === 'CONTENT_FILTER' ||
+  value === 'FAILED' ||
+  value === 'INCOMPLETE' ||
+  value === 'CONTEXT_LENGTH_EXCEEDED' ||
+  value === 'TIMEOUT'
+    ? value
+    : 'INCOMPLETE'
+
 const message: Read<ChatMessage> = (value) => {
   const item = record(value)
   return {
     id: count(item.id),
     parent_id: nullable(count)(item.parent_id),
     role: oneOf('USER', 'ASSISTANT')(item.role),
-    status: oneOf(
-      'WIP',
-      'FINISHED',
-      'CONTENT_FILTER',
-      'FAILED',
-      'INCOMPLETE',
-      'CONTEXT_LENGTH_EXCEEDED',
-      'TIMEOUT'
-    )(item.status),
-    thinking_enabled: boolean(item.thinking_enabled),
-    search_enabled: boolean(item.search_enabled),
-    accumulated_token_usage: count(item.accumulated_token_usage),
+    status: messageStatus(item.status),
+    // 旧包可能不带这三项（DSH 已按默认值处理）。
+    thinking_enabled: 'thinking_enabled' in item ? boolean(item.thinking_enabled) : false,
+    search_enabled: 'search_enabled' in item ? boolean(item.search_enabled) : false,
+    accumulated_token_usage:
+      'accumulated_token_usage' in item ? count(item.accumulated_token_usage) : 0,
     inserted_at: time(item.inserted_at),
     fragments: list(fragment)(item.fragments).filter((item): item is Fragment => item !== null),
   }
@@ -255,7 +267,11 @@ export const readSessionFile: Read<SessionFile> = (value) => {
     id: sessionId(item.id),
     title: nullable(string)(item.title),
     pinned: false,
-    current_message_id: count(item.current_message_id),
+    // 官方允许缺失或 null；交给 toLocal 回退到最大 id 的叶子。
+    current_message_id:
+      item.current_message_id === undefined || item.current_message_id === null
+        ? null
+        : count(item.current_message_id),
     inserted_at: time(item.inserted_at),
     updated_at: time(item.updated_at),
     messages: list(message)(item.messages),

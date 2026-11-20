@@ -59,9 +59,10 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
     fail('backupUnrecognized')
   }
   try {
+    // manifest 不再要求必须是第一个条目：按条目名扫描即可。
     for await (const entry of readArchive(file)) {
       if (entry.path !== MANIFEST_PATH) {
-        fail('backupUnrecognized')
+        continue
       }
       checkManifest(await readJson(entry))
       return
@@ -106,11 +107,13 @@ export const importArchive = async (file: File): Promise<void> => {
       const { path } = entry
       const sessionId = parseSessionPath(path)
       if (!manifest) {
-        if (path !== MANIFEST_PATH) {
-          fail('backupUnrecognized')
+        if (path === MANIFEST_PATH) {
+          checkManifest(await readJson(entry))
+          manifest = true
+        } else {
+          // manifest 之前的杂项条目跳过；真正的会话/index 仍按后续规则校验。
+          await skipEntry(entry)
         }
-        checkManifest(await readJson(entry))
-        manifest = true
       } else if (path === USER_PATH && !index && imported.size === 0) {
         // 账号信息（已脱敏）不导入；文件可能缺失。
         await skipEntry(entry)

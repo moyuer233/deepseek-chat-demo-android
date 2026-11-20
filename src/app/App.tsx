@@ -1,3 +1,5 @@
+import { App as NativeApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
@@ -6,15 +8,21 @@ import {
   bindChatPersistence,
   initChat,
   retrySaveSessions,
+  newChat,
   selectSession,
   useChatStore,
 } from '../services/chat/store.js'
+import { cancelPreview, useAccount } from '../services/deepseek/account.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
-import { closeSearchPanel } from '../components/search/searchPanelState.js'
+import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
 import { MobileHeader } from '../components/session/MobileHeader.js'
 import { Welcome } from '../components/session/Welcome.js'
-import { ensureApiKey } from '../components/settings/settingsDialogState.js'
+import {
+  closeSettings,
+  ensureApiKey,
+  useSettingsDialog,
+} from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
@@ -22,7 +30,7 @@ import { onUploadNotice } from '../services/attachments.js'
 import { Button } from '../components/base/Button.js'
 import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
-import { closeMobileSider } from '../components/sider/mobileSiderState.js'
+import { closeMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
 import styles from './App.module.css'
 
@@ -66,6 +74,42 @@ export const App = () => {
   useEffect(stopReadAloud, [activeId])
   // 移动端选中会话、切换布局后收起抽屉
   useEffect(closeMobileSider, [activeId, isMobile])
+
+  // Android 返回键：按「弹窗 → 抽屉 → 搜索面板 → 会话 → 退出」逐级后退，而不是直接杀 App
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return
+    }
+    let listener: { remove: () => void } | null = null
+    void NativeApp.addListener('backButton', () => {
+      if (useAccount.getState().phase === 'preview') {
+        cancelPreview()
+        return
+      }
+      if (useSettingsDialog.getState().open) {
+        closeSettings()
+        return
+      }
+      if (useMobileSider.getState().open) {
+        closeMobileSider()
+        return
+      }
+      if (useSearchPanel.getState().entry !== null) {
+        closeSearchPanel()
+        return
+      }
+      if (useChatStore.getState().activeId !== null) {
+        newChat()
+        return
+      }
+      void NativeApp.exitApp()
+    }).then((handle) => {
+      listener = handle
+    })
+    return () => {
+      listener?.remove()
+    }
+  }, [])
 
   useEffect(() => {
     void initChat()

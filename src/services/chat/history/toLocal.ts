@@ -233,20 +233,24 @@ const toAssistant = (message: ChatMessage): AssistantMessage => {
 
 /**
  * 按 id 排序还原消息树：父消息的 id 必须更小、角色交替、根为提问。
- * current_message_id 到根的路径为当前分支；其余节点默认选中 id 最大的子消息。
+ * 官方导出可能带旁支坏数据：坏消息只跳过，不整包失败。
+ * current_message_id 到根的路径为当前分支；缺失/无效时回退到 id 最大的叶子（同 DSH）。
  */
 const buildTree = (file: SessionFile): Pick<Session, 'messages' | 'rootMessageId'> => {
   const sorted = file.messages.toSorted((a, b) => a.id - b.id)
   const byId = new Map<number, Message>()
-  const messages = sorted.map((message) => {
+  const messages: Message[] = []
+  for (const message of sorted) {
     const { id, parent_id } = message
+    if (byId.has(id)) {
+      continue
+    }
     const parent = parent_id === null ? undefined : byId.get(parent_id)
     if (
-      byId.has(id) ||
       (parent_id === null ? message.role !== 'USER' : !parent) ||
       (parent && parent.role === (message.role === 'USER' ? 'user' : 'assistant'))
     ) {
-      fail('backupInvalidBranches')
+      continue
     }
     const local = message.role === 'USER' ? toUser(message) : toAssistant(message)
     local.parentId = parent ? parent.id : null
@@ -254,16 +258,25 @@ const buildTree = (file: SessionFile): Pick<Session, 'messages' | 'rootMessageId
       parent.selectedChildId = local.id
     }
     byId.set(id, local)
-    return local
-  })
+    messages.push(local)
+  }
   if (messages.length === 0) {
     return { messages, rootMessageId: null }
   }
-  let current = byId.get(file.current_message_id) ?? fail('backupInvalidBranches')
+  const parents = new Set(messages.map((item) => item.parentId))
+  const leaves = messages.filter((item) => !parents.has(item.id))
+  const fallback = (leaves.length > 0 ? leaves : messages).reduce((a, b) =>
+    Number(b.id) > Number(a.id) ? b : a
+  )
+  let current =
+    (file.current_message_id === null ? undefined : byId.get(file.current_message_id)) ?? fallback
   // 当前消息就是用户停留的位置，后面即使还有消息也不继续展开。
   current.selectedChildId = undefined
   while (current.parentId) {
-    const parent = byId.get(Number(current.parentId)) ?? fail('backupInvalidBranches')
+    const parent = byId.get(Number(current.parentId))
+    if (!parent) {
+      break
+    }
     parent.selectedChildId = current.id
     current = parent
   }

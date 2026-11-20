@@ -29,8 +29,8 @@ export type SessionFile = {
   id: string
   title: string | null
   pinned: boolean
-  /** 用户当前停留的消息，线性化消息树的唯一依据 */
-  current_message_id: number
+  /** 用户当前停留的消息，线性化消息树的唯一依据；官方可能缺失或为 null */
+  current_message_id: number | null
   inserted_at: Iso8601Utc
   updated_at: Iso8601Utc
   /** 消息树，分支靠 parent_id */
