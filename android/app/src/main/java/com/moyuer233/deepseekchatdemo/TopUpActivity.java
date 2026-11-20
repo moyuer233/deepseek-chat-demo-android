@@ -4,11 +4,13 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.TypedValue;
@@ -32,6 +34,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * 充值页：用桌面 UA 打开 platform 的 top_up，页面会按 PC 流程渲染微信二维码；
@@ -46,6 +49,8 @@ public class TopUpActivity extends AppCompatActivity {
 
     private WebView webView;
     private String jsQrSource = "";
+    private String hookSource = "";
+    private String lastSavedQr = "";
     private String scanSource = "";
     private final Handler main = new Handler(Looper.getMainLooper());
 
@@ -54,6 +59,7 @@ public class TopUpActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         jsQrSource = readAsset("jsqr.js");
+        hookSource = readAsset("topup-hook.js");
         scanSource = readAsset("topup-scan.js");
 
         LinearLayout root = new LinearLayout(this);
@@ -85,7 +91,17 @@ public class TopUpActivity extends AppCompatActivity {
         webView.addJavascriptInterface(new Bridge(), "DSTopUp");
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                if (!hookSource.isEmpty()) {
+                    view.evaluateJavascript(hookSource, null);
+                }
+            }
+
+            @Override
             public void onPageFinished(WebView view, String url) {
+                if (!hookSource.isEmpty()) {
+                    view.evaluateJavascript(hookSource, null);
+                }
                 injectScanner(view);
             }
 
@@ -138,13 +154,18 @@ public class TopUpActivity extends AppCompatActivity {
         }
         boolean isWeixin = text.startsWith("weixin://");
         String shown = text.length() > 240 ? text.substring(0, 240) + "…" : text;
-        new AlertDialog.Builder(this)
-                .setTitle(isWeixin ? "检测到微信支付二维码" : "检测到二维码")
-                .setMessage(shown)
-                .setPositiveButton(isWeixin ? "打开微信" : "打开链接", (dialog, which) -> openUrl(text))
-                .setNegativeButton("复制链接", (dialog, which) -> copyText(text))
-                .setNeutralButton("取消", null)
-                .show();
+        if (isWeixin) {
+            new AlertDialog.Builder(this)
+                    .setTitle("检测到微信支付")
+                    .setMessage(shown)
+                    .setPositiveButton("打开微信", (dialog, which) -> openUrl(text))
+                    .setNegativeButton("复制链接", (dialog, which) -> copyText(text))
+                    .setNeutralButton("取消", null)
+                    .show();
+            return;
+        }
+        // 非 weixin 链接（银联二维码）：等 onQrImage 保存图片后再提示，避免弹两个框
+        android.util.Log.i("DSQR", "skip text-only dialog");
     }
 
     private void openUrl(String text) {
@@ -190,9 +211,98 @@ public class TopUpActivity extends AppCompatActivity {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+
+    private String saveQrImage(String dataUrl) {
+        try {
+            String base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+            byte[] bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                String name = "deepseek_qr_" + System.currentTimeMillis() + ".png";
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/DeepSeekChatDemo");
+                values.put(MediaStore.Images.Media.IS_PENDING, 1);
+                android.net.Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) {
+                    return null;
+                }
+                try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                    if (out == null) {
+                        return null;
+                    }
+                    out.write(bytes);
+                }
+                values.clear();
+                values.put(MediaStore.Images.Media.IS_PENDING, 0);
+                getContentResolver().update(uri, values, null, null);
+                return "Pictures/DeepSeekChatDemo/" + name;
+            }
+            java.io.File dir = new java.io.File(getExternalFilesDir(null), "qr");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return null;
+            }
+            java.io.File file = new java.io.File(dir, "deepseek_qr_" + System.currentTimeMillis() + ".png");
+            try (OutputStream out = new java.io.FileOutputStream(file)) {
+                out.write(bytes);
+            }
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            android.util.Log.w("DSQR", "saveQrImage failed", e);
+            return null;
+        }
+    }
+
+    private void openWeChatScanner() {
+        // weixin://scanqrcode 会被 QQ 抢走，直接按包名拉起微信主界面更可靠
+        Intent launch = getPackageManager().getLaunchIntentForPackage("com.tencent.mm");
+        if (launch != null) {
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(launch);
+            Toast.makeText(this, "已打开微信：点右上角 + → 扫一扫 → 相册", Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("weixin://"));
+            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(fallback);
+        } catch (Exception ignored) {
+            Toast.makeText(this, "没有找到微信", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private class Bridge {
         @JavascriptInterface
+        public void onQrImage(String dataUrl, String text) {
+            main.post(() -> {
+                if (isFinishing() || isDestroyed() || dataUrl == null || text == null) {
+                    return;
+                }
+                if (text.equals(lastSavedQr)) {
+                    return;
+                }
+                lastSavedQr = text;
+                String saved = saveQrImage(dataUrl);
+                if (saved == null) {
+                    return;
+                }
+                new AlertDialog.Builder(TopUpActivity.this)
+                        .setTitle("二维码已识别")
+                        .setMessage("已保存到相册（" + saved + "）。\n\n点「打开微信」后会进入扫一扫，点右下角「相册」选这张图即可付款。")
+                        .setPositiveButton("打开微信", (dialog, which) -> openWeChatScanner())
+                        .setNegativeButton("取消", null)
+                        .show();
+            });
+        }
+
+        @JavascriptInterface
+        public void diag(String text) {
+            android.util.Log.i("DSQR", String.valueOf(text));
+        }
+
+        @JavascriptInterface
         public void onQr(String text) {
+            android.util.Log.i("DSQR", "onQr " + String.valueOf(text).substring(0, Math.min(40, String.valueOf(text).length())));
             main.post(() -> {
                 if (isFinishing() || isDestroyed() || webView == null) {
                     return;

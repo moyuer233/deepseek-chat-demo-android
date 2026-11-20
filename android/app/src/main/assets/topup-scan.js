@@ -4,15 +4,11 @@
   var last = '';
   var MAX_PIXELS = 1500000;
   var MAX_NODES = 40;
-  function isPay(text) {
-    var s = String(text).toLowerCase();
-    if (s.indexOf('weixin://dl/') === 0) return false;
-    return s.indexOf('wxpay') >= 0 || s.indexOf('alipay') >= 0 || s.indexOf('bizpayurl') >= 0;
-  }
+  var ticks = 0;
   function report(text) {
+    try { if (window.DSTopUp && window.DSTopUp.diag) window.DSTopUp.diag('report ' + String(text).slice(0, 40)); } catch (e) {}
     if (!text || text === last) return;
     last = text;
-    if (!isPay(text)) return;
     try { if (window.DSTopUp) window.DSTopUp.onQr(String(text)); } catch (e) {}
   }
   function visible(el) {
@@ -32,7 +28,18 @@
       if (!ctx) return;
       var data = ctx.getImageData(0, 0, c.width, c.height);
       var code = jsQR(data.data, data.width, data.height);
-      if (code && code.data) report(code.data);
+      try { if (window.DSTopUp && window.DSTopUp.diag) window.DSTopUp.diag('canvas ' + c.width + 'x' + c.height + ' -> ' + (code && code.data ? code.data.slice(0, 24) : 'null')); } catch (e) {}
+      if (code && code.data) {
+        report(code.data);
+        try {
+          var dataUrl = c.toDataURL('image/png');
+          if (dataUrl && dataUrl.indexOf('data:image') === 0 && window.DSTopUp && window.DSTopUp.onQrImage) {
+            window.DSTopUp.onQrImage(dataUrl, code.data);
+          }
+        } catch (e) {
+          try { if (window.DSTopUp && window.DSTopUp.diag) window.DSTopUp.diag('toDataURL failed: ' + (e && e.message)); } catch (e2) {}
+        }
+      }
     } catch (e) {}
   }
   function scanImg(el) {
@@ -78,7 +85,9 @@
   }
   setInterval(function () {
     try {
+      ticks++;
       var nodes = document.querySelectorAll('canvas, img, svg');
+      if (ticks % 4 === 1) { try { if (window.DSTopUp && window.DSTopUp.diag) window.DSTopUp.diag('tick frames=' + window.frames.length + ' iframes=' + document.querySelectorAll('iframe').length + ' nodes=' + nodes.length); } catch (e) {} }
       var scanned = 0;
       for (var i = 0; i < nodes.length && scanned < MAX_NODES; i++) {
         var el = nodes[i];

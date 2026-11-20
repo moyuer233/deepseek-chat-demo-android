@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.provider.MediaStore;
 
 import androidx.activity.result.ActivityResult;
 
@@ -15,6 +16,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -25,6 +27,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -287,6 +291,93 @@ public class DeepSeekAccountPlugin extends Plugin {
     }
 
     // ---------- 充值页（桌面 UA + 二维码解码） ----------
+
+    // ---------- 原生选图（相册快捷选择，贴近官方 App） ----------
+
+    @PluginMethod
+    public void pickImages(PluginCall call) {
+        try {
+            Intent intent;
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
+                intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, 9);
+                intent.setType("image/*");
+            } else {
+                intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            }
+            startActivityForResult(call, intent, "pickImagesResult");
+        } catch (Exception e) {
+            call.reject("打开相册失败：" + e.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void pickImagesResult(PluginCall call, ActivityResult result) {
+        if (call == null) {
+            return;
+        }
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+            call.reject("已取消选择", "PICK_CANCELLED");
+            return;
+        }
+        Intent data = result.getData();
+        List<Uri> uris = new ArrayList<>();
+        if (data.getClipData() != null) {
+            for (int i = 0; i < data.getClipData().getItemCount(); i++) {
+                uris.add(data.getClipData().getItemAt(i).getUri());
+            }
+        } else if (data.getData() != null) {
+            uris.add(data.getData());
+        }
+        executor.execute(() -> {
+            try {
+                JSONArray files = new JSONArray();
+                for (Uri uri : uris) {
+                    JSONObject item = readImageAsJson(uri);
+                    if (item != null) {
+                        files.put(item);
+                    }
+                }
+                JSObject ret = new JSObject();
+                ret.put("files", files);
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject("读取图片失败：" + e.getMessage());
+            }
+        });
+    }
+
+    private JSONObject readImageAsJson(Uri uri) {
+        try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
+            if (in == null) {
+                return null;
+            }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            while ((read = in.read(chunk)) != -1) {
+                buffer.write(chunk, 0, read);
+            }
+            byte[] bytes = buffer.toByteArray();
+            if (bytes.length > 20 * 1024 * 1024) {
+                return null;
+            }
+            String mime = getContext().getContentResolver().getType(uri);
+            if (mime == null) {
+                mime = "image/jpeg";
+            }
+            String name = "image_" + System.currentTimeMillis() + "." + (mime.contains("png") ? "png" : "jpg");
+            JSONObject item = new JSONObject();
+            item.put("name", name);
+            item.put("mime", mime);
+            item.put("base64", android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+            return item;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     @PluginMethod
     public void openTopUp(PluginCall call) {

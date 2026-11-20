@@ -187,6 +187,12 @@ export const zh = {
   onboardingStep3: '不消耗网页版次数；余额不足时可在 App 内充值',
   onboardingStart: '开始使用',
   onboardingNote: '非官方应用，与 DeepSeek 无隶属关系。',
+  aboutTitle: '关于',
+  aboutVersion: '版本',
+  aboutSource: '开源地址',
+  aboutLicense: '许可',
+  aboutDisclaimer:
+    '非官方应用，基于 DeepSeek 官方 chat-demo（MIT）二次开发，与 DeepSeek 无隶属关系。',
   onboardingImportTitle: '第 1 步：导入聊天记录',
   onboardingImportPitch:
     '登录 chat.deepseek.com 后，App 会拉取该账号的导出包并导入；也可以先跳过，之后在设置 → 账户里导入。',

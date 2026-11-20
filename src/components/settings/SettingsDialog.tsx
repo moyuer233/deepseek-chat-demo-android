@@ -120,6 +120,27 @@ const SettingsContent = () => {
               <LocaleSetting />
               <TtsVoiceSetting />
               <LocationSetting />
+              <div className={styles.about}>
+                <div className={styles.aboutTitle}>{t('aboutTitle')}</div>
+                <div className={styles.aboutRow}>
+                  <span>{t('aboutVersion')}</span>
+                  <span>0.1.0</span>
+                </div>
+                <a
+                  className={styles.aboutRow}
+                  href="https://github.com/moyuer233/deepseek-chat-demo-android"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>{t('aboutSource')}</span>
+                  <span>↗</span>
+                </a>
+                <div className={styles.aboutRow}>
+                  <span>{t('aboutLicense')}</span>
+                  <span>MIT</span>
+                </div>
+                <p className={styles.aboutNote}>{t('aboutDisclaimer')}</p>
+              </div>
             </>
           ) : section === 'account' ? (
             <AccountPane />

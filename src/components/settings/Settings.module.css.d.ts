@@ -23,6 +23,10 @@ declare const styles: {
   readonly "error": string;
   readonly "apiKey": string;
   readonly "apiKeySaved": string;
+  readonly "about": string;
+  readonly "aboutTitle": string;
+  readonly "aboutRow": string;
+  readonly "aboutNote": string;
   readonly "apiKeyInput": string;
   readonly "apiKeyMask": string;
   readonly "divider": string;

@@ -197,6 +197,12 @@ export const en = {
   onboardingStep3: 'Not subject to web limits; top up from inside the app when needed',
   onboardingStart: 'Get started',
   onboardingNote: 'Unofficial app. Not affiliated with DeepSeek.',
+  aboutTitle: 'About',
+  aboutVersion: 'Version',
+  aboutSource: 'Source code',
+  aboutLicense: 'License',
+  aboutDisclaimer:
+    'Unofficial app built on DeepSeek chat-demo (MIT). Not affiliated with DeepSeek.',
   onboardingImportTitle: 'Step 1: import your chats',
   onboardingImportPitch:
     'After you sign in to chat.deepseek.com the app pulls that account export and imports it. You can skip and import later from Settings → Account.',

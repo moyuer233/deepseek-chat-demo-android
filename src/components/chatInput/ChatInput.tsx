@@ -8,6 +8,7 @@ import {
   IconThinkOutline14,
 } from '../base/icons.js'
 import { setSearch, setThinking, useSettings } from '../../services/settings.js'
+import { DeepSeekAccount } from '../../services/deepseek/plugin.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
@@ -31,6 +32,7 @@ import { DraftAttachments } from './DraftAttachments.js'
 import { useVoiceInput } from './useVoiceInput.js'
 import { VoiceButton } from './VoiceButton.js'
 import { Spectrum } from './Spectrum.js'
+import { Capacitor } from '@capacitor/core'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './ChatInput.module.css'
 
@@ -247,7 +249,33 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             icon={<IconPaperclipOutline16 />}
             tooltip={t('uploadFile')}
             disabled={importingHistory}
-            onClick={() => ensureApiKey() && fileInputRef.current?.click()}
+            onClick={() => {
+              if (!ensureApiKey()) {
+                return
+              }
+              if (Capacitor.isNativePlatform()) {
+                void DeepSeekAccount.pickImages()
+                  .then(({ files }: { files: { name: string; mime: string; base64: string }[] }) => {
+                    if (files.length > 0) {
+                      acceptFiles(
+                        files.map((item: { name: string; mime: string; base64: string }) => {
+                          const binary = atob(item.base64)
+                          const bytes = new Uint8Array(binary.length)
+                          for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i)
+                          }
+                          return new File([bytes], item.name, { type: item.mime })
+                        })
+                      )
+                    }
+                  })
+                  .catch(() => {
+                    // 取消选择或原生不可用：保持静默
+                  })
+                return
+              }
+              fileInputRef.current?.click()
+            }}
           />
           <input
             ref={fileInputRef}

@@ -440,3 +440,30 @@
     max-width: 100%;
   }
 }
+
+.about {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.2));
+}
+
+.aboutTitle {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.aboutRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.aboutNote {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
