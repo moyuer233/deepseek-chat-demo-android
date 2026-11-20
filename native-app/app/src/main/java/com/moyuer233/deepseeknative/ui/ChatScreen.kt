@@ -237,6 +237,18 @@ fun ChatScreen(
         }
     }
 
+    fun regenerate() {
+        if (streaming) return
+        val lastUserIndex = messages.indexOfLast { it.role == "user" }
+        if (lastUserIndex < 0) return
+        val prompt = messages[lastUserIndex].content
+        while (messages.isNotEmpty() && messages.last().role == "assistant") {
+            messages.removeAt(messages.size - 1)
+        }
+        input = prompt
+        send()
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp),
@@ -282,7 +294,7 @@ fun ChatScreen(
                         if (message.content.isEmpty() && !message.done) {
                             Text("正在思考…", color = TextSecondary, fontSize = 15.sp)
                         } else {
-                            Text(cleanSafety(message.content), color = TextPrimary, fontSize = 16.sp, lineHeight = 24.sp)
+                            MarkdownText(cleanSafety(message.content))
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -303,7 +315,7 @@ fun ChatScreen(
                                 context.startActivity(Intent.createChooser(intent, "分享"))
                             }
                             Spacer(Modifier.weight(1f))
-                            Icon(Icons.Filled.Refresh, contentDescription = "重新生成", tint = Color(0xFF9AA0A9), modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.Refresh, contentDescription = "重新生成", tint = Color(0xFF9AA0A9), modifier = Modifier.size(20.dp).clickable { regenerate() })
                         }
                     }
                 }
