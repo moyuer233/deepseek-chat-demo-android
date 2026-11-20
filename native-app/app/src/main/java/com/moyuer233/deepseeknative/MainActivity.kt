@@ -29,8 +29,16 @@ class MainActivity : ComponentActivity() {
         val hasToken = SessionStore.token(this) != null
         setContent {
             DeepSeekTheme {
-                var screen by remember { mutableStateOf(if (debugScreen == "chat" || hasToken) Screen.Chat else Screen.Welcome) }
-                var sessionTitle by remember { mutableStateOf("") }
+                var screen by remember {
+                    mutableStateOf(
+                        when {
+                            debugScreen == "session" -> Screen.Session
+                            debugScreen == "chat" || hasToken -> Screen.Chat
+                            else -> Screen.Welcome
+                        }
+                    )
+                }
+                var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
