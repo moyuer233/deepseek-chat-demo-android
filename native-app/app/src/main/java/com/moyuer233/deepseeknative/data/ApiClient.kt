@@ -248,6 +248,106 @@ object ApiClient {
     private fun mergeStream(prev: String, next: String): String =
         if (next.startsWith(prev)) next else prev + next
 
+    private fun sseStream(
+        url: String,
+        headers: Map<String, String>,
+        body: JSONObject,
+        onContent: (String) -> Unit,
+        onDone: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        try {
+            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 15000
+                readTimeout = 120000
+                doOutput = true
+                setRequestProperty("content-type", "application/json")
+                setRequestProperty("accept", "text/event-stream")
+                headers.forEach { (k, v) -> setRequestProperty(k, v) }
+            }
+            conn.outputStream.use { it.write(body.toString().toByteArray()) }
+            streamConn = conn
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                val err = conn.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                onError("HTTP " + code + "：" + err.take(300))
+                return
+            }
+            var content = ""
+            conn.inputStream.bufferedReader().useLines { lines ->
+                for (line in lines) {
+                    if (!line.startsWith("data:")) continue
+                    val payload = line.removePrefix("data:").trim()
+                    if (payload.isEmpty() || payload == "[DONE]") continue
+                    val obj = runCatching { JSONObject(payload) }.getOrNull() ?: continue
+                    // OpenAI 风格
+                    val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta")?.optString("content", "")
+                    // Anthropic 风格
+                    val anth = if (obj.optString("type") == "content_block_delta")
+                        obj.optJSONObject("delta")?.optString("text", "") else ""
+                    val piece = delta?.takeIf { it.isNotEmpty() } ?: anth
+                    if (!piece.isNullOrEmpty()) {
+                        content += piece
+                        onContent(content)
+                    }
+                }
+            }
+            onDone()
+        } catch (e: Exception) {
+            onError(e.message ?: "网络错误")
+        } finally {
+            streamConn = null
+        }
+    }
+
+    /** 用 DeepSeek API Key 聊天（api.deepseek.com，OpenAI 兼容）。 */
+    fun streamApiChat(
+        apiKey: String,
+        prompt: String,
+        thinking: Boolean,
+        onContent: (String) -> Unit,
+        onDone: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        val body = JSONObject()
+            .put("model", if (thinking) "deepseek-reasoner" else "deepseek-chat")
+            .put("stream", true)
+            .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+        sseStream(
+            url = "https://api.deepseek.com/chat/completions",
+            headers = mapOf("authorization" to "Bearer " + apiKey),
+            body = body,
+            onContent = onContent,
+            onDone = onDone,
+            onError = onError,
+        )
+    }
+
+    /** 用 DSH grant 聊天（api.deepseek.com anthropic 兼容）。 */
+    fun streamGrantChat(
+        grant: String,
+        prompt: String,
+        thinking: Boolean,
+        onContent: (String) -> Unit,
+        onDone: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        val body = JSONObject()
+            .put("model", if (thinking) "deepseek-reasoner" else "deepseek-chat")
+            .put("max_tokens", 4096)
+            .put("stream", true)
+            .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+        sseStream(
+            url = "https://api.deepseek.com/anthropic/v1/messages",
+            headers = mapOf("x-dsh-auth-token" to grant, "anthropic-version" to "2023-06-01"),
+            body = body,
+            onContent = onContent,
+            onDone = onDone,
+            onError = onError,
+        )
+    }
+
     fun fetchSessions(token: String): Result<List<JSONObject>> = try {
         val json = post("/api/v0/chat_session/fetch_page", JSONObject().put("after_id", 0).put("count", 50), token)
         val list: JSONArray? = json.optJSONObject("data")?.optJSONObject("biz_data")?.optJSONArray("chat_sessions")

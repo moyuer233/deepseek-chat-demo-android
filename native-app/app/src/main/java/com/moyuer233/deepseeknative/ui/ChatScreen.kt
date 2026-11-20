@@ -38,7 +38,10 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.data.ApiClient
+import com.moyuer233.deepseeknative.data.DshAuth
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
@@ -86,48 +90,72 @@ fun ChatScreen(title: String, sessionId: String? = null, onBack: () -> Unit) {
     var input by remember { mutableStateOf("") }
     var streaming by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showKeyDialog by remember { mutableStateOf(false) }
+    var keyInput by remember { mutableStateOf("") }
     var currentSessionId by remember { mutableStateOf(sessionId) }
     val listState = rememberLazyListState()
 
     fun send() {
         val text = input.trim()
         if (text.isEmpty() || streaming) return
-        val token = SessionStore.token(context)
-        if (token == null) {
-            error = "请先登录后再发送消息"
+        val grant = DshAuth.token(context)
+        val chatToken = SessionStore.token(context)
+        val apiKey = SessionStore.apiKey(context)
+        if (grant == null && chatToken == null && apiKey == null) {
+            showKeyDialog = true
             return
         }
         input = ""
         error = null
         messages.add(ChatMessage(role = "user", content = text, done = true))
-        val assistant = ChatMessage(role = "assistant", content = "", thinking = "", done = false)
-        messages.add(assistant)
+        messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
         streaming = true
         scope.launch {
-            val sid = currentSessionId ?: withContext(Dispatchers.IO) {
-                ApiClient.createSession(token).getOrNull()
-            }.also { if (it != null) currentSessionId = it }
-            if (sid == null) {
-                streaming = false
-                assistant.done = true
-                error = "创建会话失败，请稍后重试"
-                return@launch
-            }
-            withContext(Dispatchers.IO) {
-                ApiClient.streamCompletion(
-                    token = token,
-                    sessionId = sid,
-                    prompt = text,
-                    thinkingEnabled = true,
-                    searchEnabled = false,
-                    onDelta = { content, thinking ->
-                        scope.launch {
-                            messages[messages.size - 1] = messages.last().copy(content = content, thinking = thinking)
+            when {
+                grant != null -> withContext(Dispatchers.IO) {
+                    ApiClient.streamGrantChat(
+                        grant = grant,
+                        prompt = text,
+                        thinking = true,
+                        onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
+                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
+                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
+                    )
+                }
+                apiKey != null -> withContext(Dispatchers.IO) {
+                    ApiClient.streamApiChat(
+                        apiKey = apiKey,
+                        prompt = text,
+                        thinking = true,
+                        onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
+                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
+                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
+                    )
+                }
+                else -> {
+                    val sid = currentSessionId ?: withContext(Dispatchers.IO) {
+                        ApiClient.createSession(chatToken!!).getOrNull()
+                    }.also { if (it != null) currentSessionId = it }
+                    if (sid == null) {
+                        messages[messages.size - 1] = messages.last().copy(done = true)
+                        error = "创建会话失败，请稍后重试"
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            ApiClient.streamCompletion(
+                                token = chatToken!!,
+                                sessionId = sid,
+                                prompt = text,
+                                thinkingEnabled = true,
+                                searchEnabled = false,
+                                onDelta = { content, thinking ->
+                                    scope.launch { messages[messages.size - 1] = messages.last().copy(content = content, thinking = thinking) }
+                                },
+                                onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
+                                onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
+                            )
                         }
-                    },
-                    onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
-                    onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
-                )
+                    }
+                }
             }
             streaming = false
         }
@@ -275,6 +303,36 @@ fun ChatScreen(title: String, sessionId: String? = null, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
         )
         Spacer(Modifier.navigationBarsPadding())
+    }
+
+    if (showKeyDialog) {
+        AlertDialog(
+            onDismissRequest = { showKeyDialog = false },
+            title = { Text("使用 API Key") },
+            text = {
+                Column {
+                    Text("未登录。可以填入 DeepSeek API Key 直接聊天（sk- 开头）。", color = TextSecondary, fontSize = 13.sp)
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = keyInput,
+                        onValueChange = { keyInput = it },
+                        placeholder = { Text("sk-...") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val key = keyInput.trim()
+                    if (key.isNotEmpty()) {
+                        SessionStore.saveApiKey(context, key)
+                        showKeyDialog = false
+                        send()
+                    }
+                }) { Text("保存并发送") }
+            },
+            dismissButton = { TextButton(onClick = { showKeyDialog = false }) { Text("取消") } },
+        )
     }
 }
 
