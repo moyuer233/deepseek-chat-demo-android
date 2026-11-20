@@ -18,10 +18,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.WebLoginActivity"
-            android:exported="false"
-            android:theme="@style/Theme.DeepSeekNative" />
-        <activity
             android:name=".ui.OAuthActivity"
             android:exported="false"
             android:theme="@style/Theme.DeepSeekNative" />

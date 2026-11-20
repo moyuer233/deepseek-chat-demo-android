@@ -52,7 +52,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 fun WelcomeScreen(
     onPhone: () -> Unit = {},
     onPassword: () -> Unit = {},
-    onWebLogin: () -> Unit = {},
+    onGrantLogin: () -> Unit = {},
 ) {
     var agreed by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
@@ -119,13 +119,13 @@ fun WelcomeScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "使用网页登录（导入历史会话）",
+                        "使用 DeepSeek 账号授权登录",
                         color = TextSecondary,
                         fontSize = 13.sp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                if (agreed) onWebLogin() else { pending = onWebLogin; showTerms = true }
+                                if (agreed) onGrantLogin() else { pending = onGrantLogin; showTerms = true }
                             }
                             .padding(vertical = 6.dp),
                         textAlign = TextAlign.Center,

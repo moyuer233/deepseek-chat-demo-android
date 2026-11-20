@@ -9,7 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
-import com.moyuer233.deepseeknative.ui.WebLoginActivity
+import com.moyuer233.deepseeknative.ui.OAuthActivity
+import com.moyuer233.deepseeknative.data.DshAuth
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,18 +50,30 @@ class MainActivity : ComponentActivity() {
                 }
                 var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
                 val context = LocalContext.current
-                val webLoginLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    val token = result.data?.getStringExtra(WebLoginActivity.EXTRA_TOKEN)
-                    if (result.resultCode == Activity.RESULT_OK && token != null) {
-                        SessionStore.saveToken(context, token)
+                val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
                         screen = Screen.Chat
                     }
+                }
+                fun startGrantLogin() {
+                    Thread {
+                        try {
+                            val url = DshAuth.init(context).getString("authorizeUrl")
+                            runOnUiThread {
+                                oauthLauncher.launch(
+                                    Intent(context, OAuthActivity::class.java).putExtra(OAuthActivity.EXTRA_URL, url)
+                                )
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread { android.widget.Toast.makeText(context, "授权初始化失败：" + (e.message ?: ""), android.widget.Toast.LENGTH_LONG).show() }
+                        }
+                    }.start()
                 }
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
                         onPassword = { screen = Screen.PasswordLogin },
-                        onWebLogin = { webLoginLauncher.launch(Intent(context, WebLoginActivity::class.java)) },
+                        onGrantLogin = { startGrantLogin() },
                     )
                     Screen.PhoneLogin -> PhoneLoginScreen(
                         onBack = { screen = Screen.Welcome },
