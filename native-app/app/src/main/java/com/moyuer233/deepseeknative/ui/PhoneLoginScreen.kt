@@ -1,6 +1,7 @@
 package com.moyuer233.deepseeknative.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
@@ -42,15 +43,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.moyuer233.deepseeknative.data.ApiClient
+import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方「手机验证码登录」页 1:1 复刻。 */
 @Composable
-fun PhoneLoginScreen(onBack: () -> Unit) {
+fun PhoneLoginScreen(onBack: () -> Unit, onLoggedIn: () -> Unit = {}) {
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val phoneFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
@@ -96,20 +107,67 @@ fun PhoneLoginScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(horizontal = 24.dp),
             keyboardType = KeyboardType.Number,
             trailing = {
-                Text("Send code", color = BrandBlue, fontSize = 15.sp, modifier = Modifier.padding(end = 16.dp))
+                Text(
+                    if (sending) "..." else "Send code",
+                    color = BrandBlue,
+                    fontSize = 15.sp,
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .clickable {
+                            if (!sending && phone.isNotBlank()) {
+                                sending = true
+                                error = null
+                                scope.launch {
+                                    val result = withContext(Dispatchers.IO) { ApiClient.sendSmsCode(phone) }
+                                    sending = false
+                                    error = result.exceptionOrNull()?.message
+                                }
+                            } else if (phone.isBlank()) {
+                                error = "Please enter your phone number."
+                            }
+                        },
+                )
             },
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
+        if (error != null) {
+            Text(
+                error!!,
+                color = Color(0xFFD93025),
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+            )
+        }
         Button(
-            onClick = { },
+            onClick = {
+                if (loading) return@Button
+                if (phone.isBlank() || code.isBlank()) {
+                    error = "Please enter your phone number and verification code."
+                    return@Button
+                }
+                loading = true
+                error = null
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) { ApiClient.loginBySms(phone, code) }
+                    loading = false
+                    if (result.ok && result.token != null) {
+                        SessionStore.saveToken(context, result.token)
+                        onLoggedIn()
+                    } else {
+                        error = result.message
+                    }
+                }
+            },
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+            enabled = !loading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .height(56.dp),
         ) {
-            Text("Log in", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(if (loading) "..." else "Log in", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

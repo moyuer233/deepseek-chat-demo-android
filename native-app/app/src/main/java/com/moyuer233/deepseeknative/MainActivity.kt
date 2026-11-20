@@ -31,7 +31,10 @@ class MainActivity : ComponentActivity() {
                         onPhone = { screen = Screen.PhoneLogin },
                         onPassword = { screen = Screen.PasswordLogin },
                     )
-                    Screen.PhoneLogin -> PhoneLoginScreen(onBack = { screen = Screen.Welcome })
+                    Screen.PhoneLogin -> PhoneLoginScreen(
+                        onBack = { screen = Screen.Welcome },
+                        onLoggedIn = { screen = Screen.Chat },
+                    )
                     Screen.PasswordLogin -> PasswordLoginScreen(
                         onBack = { screen = Screen.Welcome },
                         onPhoneLogin = { screen = Screen.PhoneLogin },
