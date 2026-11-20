@@ -31,10 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.app.Activity
-import android.content.Intent
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,21 +62,6 @@ fun PhoneLoginScreen(onBack: () -> Unit, onLoggedIn: () -> Unit = {}) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
-    val captchaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val rid = result.data?.getStringExtra(CaptchaActivity.EXTRA_RID)
-        if (result.resultCode == Activity.RESULT_OK && rid != null) {
-            sending = true
-            error = null
-            scope.launch {
-                val sent = withContext(Dispatchers.IO) { ApiClient.sendSmsCode(phone, shumeiRid = rid) }
-                sending = false
-                error = sent.exceptionOrNull()?.message
-            }
-        } else if (result.resultCode == Activity.RESULT_CANCELED) {
-            val reason = result.data?.getStringExtra(CaptchaActivity.EXTRA_ERROR)
-            if (reason != null) error = "人机验证失败：" + reason
-        }
-    }
     val phoneFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
@@ -133,12 +114,16 @@ fun PhoneLoginScreen(onBack: () -> Unit, onLoggedIn: () -> Unit = {}) {
                     modifier = Modifier
                         .padding(end = 16.dp)
                         .clickable {
-                            if (sending) return@clickable
-                            if (phone.isBlank()) {
-                                error = "Please enter your phone number."
-                            } else {
+                            if (!sending && phone.isNotBlank()) {
+                                sending = true
                                 error = null
-                                captchaLauncher.launch(Intent(context, CaptchaActivity::class.java))
+                                scope.launch {
+                                    val result = withContext(Dispatchers.IO) { ApiClient.sendSmsCode(phone) }
+                                    sending = false
+                                    error = result.exceptionOrNull()?.message
+                                }
+                            } else if (phone.isBlank()) {
+                                error = "Please enter your phone number."
                             }
                         },
                 )

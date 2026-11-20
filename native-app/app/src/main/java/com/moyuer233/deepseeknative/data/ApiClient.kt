@@ -74,12 +74,7 @@ object ApiClient {
         }
     }
 
-    fun sendSmsCode(
-        mobile: String,
-        areaCode: String = "+86",
-        shumeiRid: String? = null,
-        shumeiRegion: String = "CN",
-    ): Result<String> = try {
+    fun sendSmsCode(mobile: String, areaCode: String = "+86"): Result<String> = try {
         val target = "/api/v0/users/create_sms_verification_code"
         val pow = guestPowHeader(target) ?: return Result.failure(IllegalStateException("PoW 求解失败"))
         val body = JSONObject()
@@ -88,9 +83,6 @@ object ApiClient {
             .put("scenario", "login")
             .put("device_id", deviceId())
             .put("locale", "zh_CN")
-        if (shumeiRid != null) {
-            body.put("shumei_verification", JSONObject().put("region", shumeiRegion).put("rid", shumeiRid))
-        }
         val json = post(target, body, headers = mapOf("x-ds-guest-pow-response" to pow))
         val biz = json.optJSONObject("data")
         val bizMsg = biz?.optString("biz_msg") ?: ""
@@ -136,6 +128,125 @@ object ApiClient {
         "MOBILE_NUMBER_REQUIRED" -> "Mobile number is required."
         else -> code
     }
+
+    fun createSession(token: String): Result<String> = try {
+        val json = post("/api/v0/chat_session/create", JSONObject(), token)
+        val id = json.optJSONObject("data")?.optJSONObject("biz_data")?.optJSONObject("chat_session")?.optString("id", "")
+        if (id.isNullOrEmpty()) Result.failure(IllegalStateException(describeBizError(json.optJSONObject("data")?.optString("biz_msg"))))
+        else Result.success(id)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    private fun powHeaderForChat(token: String, targetPath: String): String? {
+        val json = post("/api/v0/chat/create_pow_challenge", JSONObject().put("target_path", targetPath), token)
+        val data = json.optJSONObject("data") ?: return null
+        if (data.optInt("biz_code", -1) != 0) return null
+        val c = data.optJSONObject("biz_data")?.optJSONObject("challenge") ?: return null
+        val salt = c.optString("salt")
+        val challenge = c.optString("challenge")
+        val difficulty = c.optInt("difficulty", 0)
+        val expireAt = c.optLong("expire_at", 0)
+        val algorithm = c.optString("algorithm", "DeepSeekHashV1")
+        val signature = c.optString("signature", "")
+        val targetPathResp = c.optString("target_path", targetPath)
+        val answer = PowSolver.solve(salt + "_" + expireAt + "_", challenge, difficulty)
+        if (answer < 0) return null
+        val payload = JSONObject()
+            .put("algorithm", algorithm)
+            .put("challenge", challenge)
+            .put("salt", salt)
+            .put("answer", answer)
+            .put("signature", signature)
+            .put("target_path", targetPathResp)
+        return android.util.Base64.encodeToString(payload.toString().toByteArray(), android.util.Base64.NO_WRAP)
+    }
+
+    @Volatile
+    private var streamConn: HttpURLConnection? = null
+
+    fun stopStream() {
+        try { streamConn?.disconnect() } catch (_: Exception) {}
+    }
+
+    /** 流式补全：把累计正文（和思考）通过回调抛出，阻塞直到流结束。 */
+    fun streamCompletion(
+        token: String,
+        sessionId: String,
+        prompt: String,
+        thinkingEnabled: Boolean,
+        searchEnabled: Boolean,
+        onDelta: (content: String, thinking: String) -> Unit,
+        onDone: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        try {
+            val pow = powHeaderForChat(token, "/api/v0/chat/completion")
+            if (pow == null) { onError("PoW 求解失败"); return }
+            val conn = (URL(BASE + "/api/v0/chat/completion").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 15000
+                readTimeout = 120000
+                doOutput = true
+                setRequestProperty("content-type", "application/json")
+                setRequestProperty("accept", "text/event-stream")
+                setRequestProperty("origin", BASE)
+                setRequestProperty("referer", "$BASE/")
+                setRequestProperty("user-agent", UA)
+                setRequestProperty("authorization", "Bearer $token")
+                setRequestProperty("x-ds-pow-response", pow)
+            }
+            val body = JSONObject()
+                .put("chat_session_id", sessionId)
+                .put("parent_message_id", JSONObject.NULL)
+                .put("model_type", "")
+                .put("prompt", prompt)
+                .put("ref_file_ids", org.json.JSONArray())
+                .put("thinking_enabled", thinkingEnabled)
+                .put("search_enabled", searchEnabled)
+                .put("source", "chat")
+                .put("action", JSONObject.NULL)
+                .put("preempt", false)
+            conn.outputStream.use { it.write(body.toString().toByteArray()) }
+            streamConn = conn
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                val err = conn.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                onError("请求失败（HTTP " + code + "）：" + err.take(200))
+                return
+            }
+            var content = ""
+            var thinking = ""
+            conn.inputStream.bufferedReader().useLines { lines ->
+                for (line in lines) {
+                    if (!line.startsWith("data:")) continue
+                    val payload = line.removePrefix("data:").trim()
+                    if (payload.isEmpty() || payload == "[DONE]") continue
+                    val obj = runCatching { JSONObject(payload) }.getOrNull() ?: continue
+                    val resp = obj.optJSONObject("v")?.optJSONObject("response") ?: continue
+                    val newContent = resp.optString("content", "")
+                    val newThinking = resp.optString("thinking_content", "")
+                    if (newContent.isNotEmpty()) {
+                        content = mergeStream(content, newContent)
+                        onDelta(content, thinking)
+                    }
+                    if (newThinking.isNotEmpty()) {
+                        thinking = mergeStream(thinking, newThinking)
+                        onDelta(content, thinking)
+                    }
+                }
+            }
+            onDone()
+        } catch (e: Exception) {
+            onError(e.message ?: "网络错误")
+        } finally {
+            streamConn = null
+        }
+    }
+
+    /** 服务端可能给全量或增量文本：以「新值是否以上一次开头」判断并合并。 */
+    private fun mergeStream(prev: String, next: String): String =
+        if (next.startsWith(prev)) next else prev + next
 
     fun fetchSessions(token: String): Result<List<JSONObject>> = try {
         val json = post("/api/v0/chat_session/fetch_page", JSONObject().put("after_id", 0).put("count", 50), token)
