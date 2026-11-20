@@ -4,6 +4,12 @@ import android.os.Bundle
 import com.moyuer233.deepseeknative.data.SessionStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import com.moyuer233.deepseeknative.ui.WebLoginActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +48,19 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
+                val context = LocalContext.current
+                val webLoginLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    val token = result.data?.getStringExtra(WebLoginActivity.EXTRA_TOKEN)
+                    if (result.resultCode == Activity.RESULT_OK && token != null) {
+                        SessionStore.saveToken(context, token)
+                        screen = Screen.Chat
+                    }
+                }
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
                         onPassword = { screen = Screen.PasswordLogin },
+                        onWebLogin = { webLoginLauncher.launch(Intent(context, WebLoginActivity::class.java)) },
                     )
                     Screen.PhoneLogin -> PhoneLoginScreen(
                         onBack = { screen = Screen.Welcome },

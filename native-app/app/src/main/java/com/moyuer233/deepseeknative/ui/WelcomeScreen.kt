@@ -49,7 +49,11 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方 App 欢迎/登录入口页的 1:1 复刻骨架。 */
 @Composable
-fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
+fun WelcomeScreen(
+    onPhone: () -> Unit = {},
+    onPassword: () -> Unit = {},
+    onWebLogin: () -> Unit = {},
+) {
     var agreed by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -113,7 +117,20 @@ fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
                         Spacer(Modifier.width(10.dp))
                         Text("Continue with Password", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "使用网页登录（导入历史会话）",
+                        color = TextSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (agreed) onWebLogin() else { pending = onWebLogin; showTerms = true }
+                            }
+                            .padding(vertical = 6.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
