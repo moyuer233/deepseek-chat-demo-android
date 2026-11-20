@@ -51,6 +51,8 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 @Composable
 fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
     var agreed by remember { mutableStateOf(false) }
+    var showTerms by remember { mutableStateOf(false) }
+    var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Text(
@@ -82,7 +84,9 @@ fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
                 Spacer(Modifier.weight(1.4f))
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Button(
-                        onClick = onPhone,
+                        onClick = {
+                            if (agreed) onPhone() else { pending = onPhone; showTerms = true }
+                        },
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
                         modifier = Modifier
@@ -95,7 +99,9 @@ fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
                     }
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
-                        onClick = onPassword,
+                        onClick = {
+                            if (agreed) onPassword() else { pending = onPassword; showTerms = true }
+                        },
                         shape = RoundedCornerShape(28.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, BorderGray),
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
@@ -129,6 +135,17 @@ fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
                     }
                     Spacer(Modifier.height(24.dp))
                 }
+            }
+            if (showTerms) {
+                TermsDialog(
+                    onDisagree = { showTerms = false },
+                    onAgree = {
+                        agreed = true
+                        showTerms = false
+                        pending?.invoke()
+                        pending = null
+                    },
+                )
             }
         }
     }

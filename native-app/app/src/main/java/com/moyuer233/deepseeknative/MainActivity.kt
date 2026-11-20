@@ -9,11 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.moyuer233.deepseeknative.ui.ChatHomeScreen
+import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
 import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, Chat }
+private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,9 +27,13 @@ class MainActivity : ComponentActivity() {
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
-                        onPassword = { },
+                        onPassword = { screen = Screen.PasswordLogin },
                     )
                     Screen.PhoneLogin -> PhoneLoginScreen(onBack = { screen = Screen.Welcome })
+                    Screen.PasswordLogin -> PasswordLoginScreen(
+                        onBack = { screen = Screen.Welcome },
+                        onPhoneLogin = { screen = Screen.PhoneLogin },
+                    )
                     Screen.Chat -> ChatHomeScreen()
                 }
             }
