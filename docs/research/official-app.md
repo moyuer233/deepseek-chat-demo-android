@@ -103,3 +103,25 @@ apkanalyzer dex packages 'D:/Users/Downloads/base(1).apk' > dex-packages.txt
 grep -a -o -E '/api/v0/[a-zA-Z0-9_/\-]+' classes*.dex | sort -u
 grep -a -o -E 'https://[a-zA-Z0-9.-]*deepseek[a-zA-Z0-9./_-]*' classes*.dex | sort -u
 ```
+
+
+## 9. 2.9.0 官方包（2026-11-20 补充，1:1 复刻基准）
+
+- 下载：https://download.deepseek.com/apk/deepseek.apk（官方页面 https://www.deepseek.com/download/ 的 Android 链接）
+- 大小 22,376,084 B；sha256 `2252c767e3782cd31b2e52d56b8a403243cf378fa890024daa65822bd97de617`
+- 版本 2.9.0（versionCode 299），minSdk 24 / targetSdk 36 / compileSdk 37
+- 已装进模拟器 emulator-5554 截图：`.scratch/official-1.png`（欢迎/登录）、`official-phone-login.png`（手机验证码登录）
+- 再次确认 UI 是 **Jetpack Compose**（uiautomator 树里是 androidx.compose.ui.platform.ComposeView），APK 里没有 res/layout，字符串资源约 4 万条
+- 登录页结构：顶部 "Contact us"；中间 logo + 字标；底部主按钮 "Continue with Phone"（蓝色胶囊，电话图标）、描边按钮 "Continue with Password"（锁图标）、条款勾选框；进入手机登录后有返回圆钮、"+86 Phone number"、"Code + Send code"、蓝色 "Log in"
+
+### 1:1 复刻的影响
+
+官方是纯 Compose 原生（WCDB/MMKV/TRTC/jlatexmath），我们当前的 Capacitor WebView 壳在渲染层就不同，**无法通过改样式做到 1:1**。要做到 1:1，需要新建一个 Kotlin + Compose 的安卓工程，按官方页面/交互重写；后端接口复用本仓库已调研的 /api/v0/*（登录、会话、chat/completion、asr/tts、导出）。
+
+计划分四阶段：
+1. 工程与设计系统：Compose 项目、主题色/字体/圆角/间距 token、通用组件（按钮、输入框、对话框、底部弹层）。
+2. 登录与主框架：欢迎页、手机/密码登录、条款弹窗、会话列表、侧边栏/抽屉、返回层级。
+3. 聊天页：消息列表、Markdown/代码/公式渲染、输入栏（语音/拍照/文件）、深度思考/搜索开关、流式输出与停止。
+4. 设置与账户：账户信息、主题、朗读、关于、导出/导入、充值入口；与官方逐屏对比验收。
+
+要 1:1 还需用真实账号登录官方 App 截取主界面（当前只截到登录前）。
