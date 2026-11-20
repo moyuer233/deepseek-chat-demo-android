@@ -11,13 +11,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.moyuer233.deepseeknative.ui.ChatHomeScreen
 import com.moyuer233.deepseeknative.ui.ChatScreen
+import com.moyuer233.deepseeknative.ui.AccountManageScreen
+import com.moyuer233.deepseeknative.ui.DataManageScreen
 import com.moyuer233.deepseeknative.ui.SettingsScreen
 import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
 import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings }
+private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,7 +56,13 @@ class MainActivity : ComponentActivity() {
                         title = sessionTitle,
                         onBack = { screen = Screen.Chat },
                     )
-                    Screen.Settings -> SettingsScreen(onBack = { screen = Screen.Chat })
+                    Screen.Settings -> SettingsScreen(
+                        onBack = { screen = Screen.Chat },
+                        onOpenAccount = { screen = Screen.AccountManage },
+                        onOpenData = { screen = Screen.DataManage },
+                    )
+                    Screen.AccountManage -> AccountManageScreen(onBack = { screen = Screen.Settings })
+                    Screen.DataManage -> DataManageScreen(onBack = { screen = Screen.Settings })
                 }
             }
         }

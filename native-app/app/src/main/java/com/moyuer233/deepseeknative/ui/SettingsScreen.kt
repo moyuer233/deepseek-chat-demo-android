@@ -47,7 +47,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方设置页 1:1 复刻（静态版，逐项功能后续接）。 */
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenAccount: () -> Unit = {}, onOpenData: () -> Unit = {}) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -71,9 +71,9 @@ fun SettingsScreen(onBack: () -> Unit) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             SectionLabel("账户")
             SettingsCard {
-                SettingsRow("账号管理", Icons.Filled.PersonOutline)
+                SettingsRow("账号管理", Icons.Filled.PersonOutline, onClick = onOpenAccount)
                 Divider()
-                SettingsRow("数据管理", Icons.Filled.Storage)
+                SettingsRow("数据管理", Icons.Filled.Storage, onClick = onOpenData)
             }
             SectionLabel("应用")
             SettingsCard {
@@ -138,9 +138,9 @@ private fun SettingsCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingsRow(title: String, icon: ImageVector, value: String? = null) {
+private fun SettingsRow(title: String, icon: ImageVector, value: String? = null, onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 18.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(22.dp))
