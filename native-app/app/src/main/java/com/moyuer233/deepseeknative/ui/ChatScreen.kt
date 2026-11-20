@@ -205,6 +205,47 @@ fun ChatScreen(
         }
     }
 
+    fun continueLast() {
+        if (streaming) return
+        val targetIndex = messages.indexOfLast { it.role == "assistant" }
+        if (targetIndex < 0) return
+        val grant = DshAuth.token(context)
+        val apiKey = SessionStore.apiKey(context)
+        if (grant == null && apiKey == null) {
+            error = "继续生成需要账号授权或 API Key"
+            return
+        }
+        val id = messages[targetIndex].id
+        val base = cleanSafety(messages[targetIndex].content)
+        if (base.isEmpty()) return
+        val prompt = "请紧接着下面这段内容继续写，不要重复已有内容：\n\n" + base.takeLast(1500)
+        streaming = true
+        sendSeq += 1
+        val mySeq = sendSeq
+        scope.launch {
+            val onDelta: (String) -> Unit = { extra ->
+                scope.launch {
+                    if (mySeq == sendSeq) {
+                        val index = messages.indexOfFirst { it.id == id }
+                        if (index >= 0) messages[index] = messages[index].copy(content = base + cleanSafety(extra))
+                    }
+                }
+            }
+            withContext(Dispatchers.IO) {
+                if (grant != null) {
+                    ApiClient.streamGrantChat(grant, prompt, thinkingEnabled, null, onDelta,
+                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); saveLocals() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; saveLocals() } } })
+                } else if (apiKey != null) {
+                    ApiClient.streamApiChat(apiKey, prompt, thinkingEnabled, onDelta,
+                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); saveLocals() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; saveLocals() } } })
+                }
+            }
+            streaming = false
+        }
+    }
+
     fun send() {
         val text = input.trim()
         if ((text.isEmpty() && attachmentPath == null) || streaming) return
@@ -424,6 +465,9 @@ fun ChatScreen(
                             }
                             Spacer(Modifier.weight(1f))
                             Icon(Icons.Filled.Refresh, contentDescription = "重新生成", tint = Color(0xFF9AA0A9), modifier = Modifier.size(20.dp).clickable { regenerate() })
+                        }
+                        if (message.done && index == messages.lastIndex && message.content.isNotEmpty() && !streaming) {
+                            TextButton(onClick = { continueLast() }) { Text("继续生成", fontSize = 13.sp) }
                         }
                     }
                 }
