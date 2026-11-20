@@ -179,20 +179,40 @@ fun ChatScreen(
         }
     }
     androidx.compose.runtime.LaunchedEffect(Unit) { rebuildFromTree() }
-    fun saveLocals() {
-        val id = currentSessionId ?: return
+    fun ensureSession(): LocalSession {
+        session?.let { return it }
+        val created = LocalSession(
+            id = currentSessionId ?: java.util.UUID.randomUUID().toString(),
+            title = title.ifBlank { "新对话" },
+            updatedAt = System.currentTimeMillis(),
+        )
+        session = created
+        currentSessionId = created.id
+        return created
+    }
+
+    fun persistSession() {
+        val tree = session ?: return
+        tree.updatedAt = System.currentTimeMillis()
         val list = LocalStore.load(context)
-        val msgs = messages.map { LocalMessage(role = it.role, content = cleanSafety(it.content), thinking = cleanSafety(it.thinking), imagePath = it.imagePath, liked = it.liked) }.toMutableList()
-        val index = list.indexOfFirst { it.id == id }
-        if (index >= 0) {
-            list[index].messages.clear()
-            list[index].messages.addAll(msgs)
-            list[index].updatedAt = System.currentTimeMillis()
-            if (list[index].title.isBlank()) list[index].title = title.ifBlank { "新对话" }
-        } else {
-            list.add(LocalSession(id = id, title = title.ifBlank { "新对话" }, updatedAt = System.currentTimeMillis(), messages = msgs))
-        }
+        val index = list.indexOfFirst { it.id == tree.id }
+        if (index >= 0) list[index] = tree else list.add(tree)
         LocalStore.save(context, list)
+    }
+
+    fun syncAssistant(dbId: Int, content: String? = null, thinking: String? = null, done: Boolean? = null) {
+        session?.messages?.find { it.id == dbId }?.let { node ->
+            if (content != null) node.content = cleanSafety(content)
+            if (thinking != null) node.thinking = cleanSafety(thinking)
+        }
+        val displayIndex = messages.indexOfFirst { it.dbId == dbId }
+        if (displayIndex >= 0) {
+            messages[displayIndex] = messages[displayIndex].copy(
+                content = content ?: messages[displayIndex].content,
+                thinking = thinking ?: messages[displayIndex].thinking,
+                done = done ?: messages[displayIndex].done,
+            )
+        }
     }
     var streaming by remember { mutableStateOf(false) }
     var sendSeq by remember { mutableStateOf(0) }
@@ -234,8 +254,10 @@ fun ChatScreen(
         val index = messages.indexOfFirst { it.id == id }
         if (index >= 0) {
             val current = messages[index].liked
-            messages[index] = messages[index].copy(liked = if (current == value) 0 else value)
-            saveLocals()
+            val liked = if (current == value) 0 else value
+            messages[index] = messages[index].copy(liked = liked)
+            session?.messages?.find { it.id == messages[index].dbId }?.liked = liked
+            persistSession()
         }
     }
 
@@ -268,12 +290,12 @@ fun ChatScreen(
             withContext(Dispatchers.IO) {
                 if (grant != null) {
                     ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, imageFileId = null, searchEnabled = false, onContent = onDelta,
-                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); saveLocals() } } },
-                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; saveLocals() } } })
+                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); val db = messages.getOrNull(i)?.dbId ?: 0; syncAssistant(db, content = messages.getOrNull(i)?.content); persistSession() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; persistSession() } } })
                 } else if (apiKey != null) {
                     ApiClient.streamApiChat(apiKey, prompt, thinkingEnabled, onDelta,
-                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); saveLocals() } } },
-                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; saveLocals() } } })
+                        onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); val db = messages.getOrNull(i)?.dbId ?: 0; if (db != 0) syncAssistant(db, content = messages.getOrNull(i)?.content); persistSession() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; persistSession() } } })
                 }
             }
             streaming = false
@@ -297,13 +319,18 @@ fun ChatScreen(
         input = ""
         attachmentPath = null
         error = null
-        messages.add(ChatMessage(role = "user", content = outgoing, imagePath = pendingImage ?: "", done = true))
-        messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
-        saveLocals()
+        val tree = ensureSession()
+        val userId = tree.nextId()
+        tree.messages.add(LocalMessage(id = userId, parentId = tree.currentMessageId, role = "user", content = outgoing, imagePath = pendingImage ?: ""))
+        val assistantDbId = tree.nextId()
+        tree.messages.add(LocalMessage(id = assistantDbId, parentId = userId, role = "assistant", content = ""))
+        tree.currentMessageId = assistantDbId
+        persistSession()
+        rebuildFromTree()
         streaming = true
         sendSeq += 1
         val mySeq = sendSeq
-        val assistantId = messages[messages.size - 1].id
+        val assistantId = assistantDbId.toString()
         fun updateAssistant(block: (ChatMessage) -> ChatMessage) {
             val index = messages.indexOfFirst { it.id == assistantId }
             if (index >= 0) messages[index] = block(messages[index])
@@ -327,8 +354,8 @@ fun ChatScreen(
                         imageFileId = fileId,
                         searchEnabled = searchEnabled,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
-                        onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; saveLocals() } } },
-                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; saveLocals() } } },
+                        onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; messages.firstOrNull { it.id == assistantId }?.let { m -> syncAssistant(assistantDbId, m.content, m.thinking) }; persistSession() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; persistSession() } } },
                         onThinking = { t -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(thinking = t) } } },
                         onSearch = { count, text -> scope.launch { if (mySeq == sendSeq) searchResults[assistantId] = count to text } },
                     )
@@ -339,8 +366,8 @@ fun ChatScreen(
                         prompt = outgoing,
                         thinking = true,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
-                        onDone = { scope.launch { updateAssistant { it.copy(done = true) } } },
-                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
+                        onDone = { scope.launch { updateAssistant { it.copy(done = true) }; messages.firstOrNull { it.id == assistantId }?.let { m -> syncAssistant(assistantDbId, m.content, m.thinking) }; persistSession() } },
+                        onError = { msg -> scope.launch { updateAssistant { it.copy(done = true) }; error = msg; persistSession() } },
                     )
                 }
                 else -> {
@@ -374,14 +401,69 @@ fun ChatScreen(
 
     fun regenerate() {
         if (streaming) return
-        val lastUserIndex = messages.indexOfLast { it.role == "user" }
-        if (lastUserIndex < 0) return
-        val prompt = messages[lastUserIndex].content
-        while (messages.isNotEmpty() && messages.last().role == "assistant") {
-            messages.removeAt(messages.size - 1)
+        val tree = session ?: return
+        val current = tree.messages.firstOrNull { it.id == tree.currentMessageId } ?: return
+        if (current.role != "assistant") return
+        val parentId = current.parentId ?: return
+        var cursor = parentId
+        var prompt = ""
+        while (true) {
+            val node = tree.messages.firstOrNull { it.id == cursor } ?: break
+            if (node.role == "user") { prompt = cleanSafety(node.content); break }
+            cursor = node.parentId ?: break
         }
-        input = prompt
-        send()
+        if (prompt.isEmpty()) return
+        val grant = DshAuth.token(context)
+        val apiKey = SessionStore.apiKey(context)
+        if (grant == null && apiKey == null) { error = "重新生成需要账号授权或 API Key"; return }
+        val newId = tree.nextId()
+        tree.messages.add(LocalMessage(id = newId, parentId = parentId, role = "assistant", content = ""))
+        tree.currentMessageId = newId
+        persistSession()
+        rebuildFromTree()
+        streaming = true
+        sendSeq += 1
+        val mySeq = sendSeq
+        val assistantId = newId.toString()
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                val onContent: (String) -> Unit = { content ->
+                    scope.launch {
+                        if (mySeq == sendSeq) {
+                            val i = messages.indexOfFirst { it.id == assistantId }
+                            if (i >= 0) messages[i] = messages[i].copy(content = content)
+                        }
+                    }
+                }
+                val onThinking: (String) -> Unit = { t ->
+                    scope.launch {
+                        if (mySeq == sendSeq) {
+                            val i = messages.indexOfFirst { it.id == assistantId }
+                            if (i >= 0) messages[i] = messages[i].copy(thinking = t)
+                        }
+                    }
+                }
+                val onDone: () -> Unit = {
+                    scope.launch {
+                        if (mySeq == sendSeq) {
+                            val i = messages.indexOfFirst { it.id == assistantId }
+                            if (i >= 0) messages[i] = messages[i].copy(done = true)
+                            messages.firstOrNull { it.id == assistantId }?.let { m -> syncAssistant(newId, m.content, m.thinking) }
+                            persistSession()
+                        }
+                    }
+                }
+                val onError: (String) -> Unit = { msg ->
+                    scope.launch { if (mySeq == sendSeq) { error = msg; streaming = false } }
+                }
+                if (grant != null) {
+                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, imageFileId = null, searchEnabled = searchEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
+                } else if (apiKey != null) {
+                    ApiClient.streamApiChat(apiKey = apiKey, prompt = prompt, thinking = thinkingEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
+                }
+            }
+            streaming = false
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
@@ -579,8 +661,22 @@ fun ChatScreen(
                     context.startActivity(Intent.createChooser(intent, "分享"))
                 }) { Text("分享") }
                 TextButton(onClick = {
-                    messages.removeAll { selectedIds.contains(it.id) }
-                    saveLocals()
+                    val tree = session
+                    val removedDbIds = messages.filter { selectedIds.contains(it.id) }.map { it.dbId }.toSet()
+                    if (tree != null) {
+                        val toRemove = mutableSetOf<Int>()
+                        fun collect(id: Int) {
+                            if (!toRemove.add(id)) return
+                            tree.messages.filter { it.parentId == id }.forEach { collect(it.id) }
+                        }
+                        removedDbIds.forEach { collect(it) }
+                        tree.messages.removeAll { toRemove.contains(it.id) }
+                        if (tree.currentMessageId != null && toRemove.contains(tree.currentMessageId)) {
+                            tree.currentMessageId = tree.messages.maxByOrNull { it.id }?.id
+                        }
+                        persistSession()
+                    }
+                    rebuildFromTree()
                     selectedIds.clear()
                     selectMode = false
                 }) { Text("删除", color = Color(0xFFD93025)) }
@@ -793,8 +889,13 @@ fun ChatScreen(
                 TextButton(onClick = {
                     val prompt = editText.trim()
                     if (prompt.isNotEmpty()) {
-                        while (messages.size > editingIndex) {
-                            messages.removeAt(messages.size - 1)
+                        val targetDbId = messages.getOrNull(editingIndex)?.dbId ?: 0
+                        val tree = session
+                        val node = tree?.messages?.firstOrNull { it.id == targetDbId }
+                        if (tree != null && node != null) {
+                            tree.currentMessageId = node.parentId
+                            persistSession()
+                            rebuildFromTree()
                         }
                         editingIndex = -1
                         input = prompt
