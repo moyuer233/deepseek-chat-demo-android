@@ -168,6 +168,9 @@ fun ChatScreen(
     var editingIndex by remember { mutableStateOf(-1) }
     var attachmentPath by remember { mutableStateOf<String?>(null) }
     var quoted by remember { mutableStateOf<String?>(null) }
+    var menuTarget by remember { mutableStateOf<ChatMessage?>(null) }
+    var selectMode by remember { mutableStateOf(false) }
+    val selectedIds = remember { mutableStateListOf<String>() }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             val dir = File(context.filesDir, "images").apply { mkdirs() }
@@ -311,17 +314,28 @@ fun ChatScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
             }
-            Text(
-                title,
-                color = TextPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-            )
-            IconButton(onClick = { }) {
-                Icon(Icons.Filled.MoreHoriz, contentDescription = "更多", tint = TextPrimary)
+            if (selectMode) {
+                Text(
+                    "已选 " + selectedIds.size + " 项",
+                    color = TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                )
+                TextButton(onClick = { selectMode = false; selectedIds.clear() }) { Text("取消") }
+            } else {
+                Text(
+                    title,
+                    color = TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                )
+                IconButton(onClick = { }) {
+                    Icon(Icons.Filled.MoreHoriz, contentDescription = "更多", tint = TextPrimary)
+                }
             }
         }
         LazyColumn(
@@ -330,15 +344,32 @@ fun ChatScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         ) {
             itemsIndexed(messages) { index, message ->
+                if (selectMode) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        androidx.compose.material3.Checkbox(
+                            checked = selectedIds.contains(message.id),
+                            onCheckedChange = { if (!selectedIds.remove(message.id)) selectedIds.add(message.id) },
+                        )
+                    }
+                }
                 if (message.role == "user") {
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.End) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = Color(0xFFEAF0FE),
-                            modifier = Modifier.widthIn(max = 300.dp).clickable {
-                                editingIndex = index
-                                editText = message.content
-                            },
+                            modifier = Modifier
+                                .widthIn(max = 300.dp)
+                                .combinedClickable(
+                                    onClick = {
+                                        if (selectMode) {
+                                            if (!selectedIds.remove(message.id)) selectedIds.add(message.id)
+                                        } else {
+                                            editingIndex = index
+                                            editText = message.content
+                                        }
+                                    },
+                                    onLongClick = { if (!selectMode) menuTarget = message },
+                                ),
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                                 if (message.imagePath.isNotEmpty()) {
@@ -366,7 +397,10 @@ fun ChatScreen(
                         } else if (message.content.isEmpty() && message.done) {
                             Text("已停止生成", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                         } else {
-                            Column(modifier = Modifier.combinedClickable(onClick = {}, onLongClick = { quoted = cleanSafety(message.content).take(200) })) {
+                            Column(modifier = Modifier.combinedClickable(
+                                onClick = { if (selectMode) { if (!selectedIds.remove(message.id)) selectedIds.add(message.id) } },
+                                onLongClick = { if (!selectMode) menuTarget = message },
+                            )) {
                                 MarkdownText(cleanSafety(message.content))
                             }
                         }
@@ -393,6 +427,28 @@ fun ChatScreen(
                         }
                     }
                 }
+            }
+        }
+        if (selectMode) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                val selectedMessages = messages.filter { selectedIds.contains(it.id) }
+                TextButton(onClick = {
+                    clipboard.setText(AnnotatedString(selectedMessages.joinToString("\n\n") { cleanSafety(it.content) }))
+                }) { Text("复制") }
+                TextButton(onClick = {
+                    val text = selectedMessages.joinToString("\n\n") { cleanSafety(it.content) }
+                    val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+                    context.startActivity(Intent.createChooser(intent, "分享"))
+                }) { Text("分享") }
+                TextButton(onClick = {
+                    messages.removeAll { selectedIds.contains(it.id) }
+                    saveLocals()
+                    selectedIds.clear()
+                    selectMode = false
+                }) { Text("删除", color = Color(0xFFD93025)) }
             }
         }
         if (error != null) {
@@ -550,6 +606,21 @@ fun ChatScreen(
                 }) { Text("保存并发送") }
             },
             dismissButton = { TextButton(onClick = { showKeyDialog = false }) { Text("取消") } },
+        )
+    }
+
+    menuTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { menuTarget = null },
+            title = { Text("消息操作") },
+            text = {
+                Column {
+                    TextButton(onClick = { quoted = cleanSafety(target.content).take(200); menuTarget = null }) { Text("引用") }
+                    TextButton(onClick = { selectMode = true; selectedIds.clear(); selectedIds.add(target.id); menuTarget = null }) { Text("多选") }
+                    TextButton(onClick = { clipboard.setText(AnnotatedString(cleanSafety(target.content))); menuTarget = null }) { Text("复制") }
+                }
+            },
+            confirmButton = { TextButton(onClick = { menuTarget = null }) { Text("取消") } },
         )
     }
 
