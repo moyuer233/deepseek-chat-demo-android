@@ -75,6 +75,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
+import java.util.Locale
 
 private data class ChatMessage(
     val role: String, // user / assistant
@@ -94,6 +100,23 @@ fun ChatScreen(
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var input by remember { mutableStateOf("") }
+    var ttsReady by remember { mutableStateOf(false) }
+    val tts = remember {
+        TextToSpeech(context) { status -> ttsReady = status == TextToSpeech.SUCCESS }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            tts.stop()
+            tts.shutdown()
+        }
+    }
+    val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrEmpty()) input = spoken
+        }
+    }
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     val messages = remember {
         mutableStateListOf<ChatMessage>().apply {
@@ -115,7 +138,6 @@ fun ChatScreen(
         }
         LocalStore.save(context, list)
     }
-    var input by remember { mutableStateOf("") }
     var streaming by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
@@ -243,7 +265,12 @@ fun ChatScreen(
                             MessageAction(Icons.Filled.ContentCopy) { clipboard.setText(AnnotatedString(message.content)) }
                             MessageAction(Icons.Filled.ThumbUp)
                             MessageAction(Icons.Filled.ThumbDown)
-                            MessageAction(Icons.Filled.VolumeUp)
+                            MessageAction(Icons.Filled.VolumeUp) {
+                                if (ttsReady && message.content.isNotEmpty()) {
+                                    tts.language = Locale.SIMPLIFIED_CHINESE
+                                    tts.speak(message.content, TextToSpeech.QUEUE_FLUSH, null, "read_aloud")
+                                }
+                            }
                             MessageAction(Icons.Filled.Share) {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
@@ -335,7 +362,19 @@ fun ChatScreen(
                         } else {
                             Icon(Icons.Filled.Add, contentDescription = "附件", tint = TextPrimary, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(10.dp))
-                            Icon(Icons.Filled.GraphicEq, contentDescription = "语音", tint = TextPrimary, modifier = Modifier.size(22.dp))
+                            Icon(
+                                Icons.Filled.GraphicEq,
+                                contentDescription = "语音",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(22.dp).clickable {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "zh-CN")
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "请说话")
+                                    }
+                                    runCatching { voiceLauncher.launch(intent) }
+                                },
+                            )
                         }
                     }
                 }

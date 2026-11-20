@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.moyuer233.deepseeknative.data.ArchiveImporter
 import com.moyuer233.deepseeknative.data.LocalStore
+import com.moyuer233.deepseeknative.data.ArchiveExporter
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -217,6 +218,17 @@ fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
         Spacer(Modifier.height(16.dp))
         ManageCard {
             ManageRow("导入历史对话", onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) })
+        }
+        Spacer(Modifier.height(16.dp))
+        ManageCard {
+            ManageRow("导出所有历史对话", onClick = {
+                try {
+                    val file = ArchiveExporter.export(context)
+                    ArchiveExporter.share(context, file)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "导出失败：" + (e.message ?: ""), Toast.LENGTH_LONG).show()
+                }
+            })
         }
         Spacer(Modifier.height(16.dp))
         ManageCard {

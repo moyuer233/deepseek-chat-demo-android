@@ -21,5 +21,14 @@
             android:name=".ui.OAuthActivity"
             android:exported="false"
             android:theme="@style/Theme.DeepSeekNative" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.moyuer233.deepseeknative.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>
