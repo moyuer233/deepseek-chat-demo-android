@@ -5,7 +5,12 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import com.moyuer233.deepseeknative.data.LocalStore
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -211,24 +216,35 @@ private fun DrawerContent(
                     Text("搜索对话内容...", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                 }
             }
+            val groups = remember(sessions) { groupSessions(sessions) }
             if (sessions.isNotEmpty()) {
                 androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    items(sessions.size) { index ->
-                        val session = sessions[index]
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenSession(session) }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                    groups.forEach { (label, list) ->
+                        item {
                             Text(
-                                session.title,
-                                color = TextPrimary,
-                                fontSize = 15.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                label,
+                                color = Color(0xFF8A9099),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 6.dp),
                             )
+                        }
+                        items(list.size) { index ->
+                            val session = list[index]
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onOpenSession(session) }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    session.title,
+                                    color = TextPrimary,
+                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
@@ -245,7 +261,18 @@ private fun DrawerContent(
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = BrandBlue,
-                    modifier = Modifier.clickable { }.height(48.dp),
+                    modifier = Modifier.clickable {
+                        val session = com.moyuer233.deepseeknative.data.LocalSession(
+                            id = java.util.UUID.randomUUID().toString(),
+                            title = "新对话",
+                            updatedAt = System.currentTimeMillis(),
+                        )
+                        val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
+                        list.add(session)
+                        com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
+                        sessions = list.sortedByDescending { it.updatedAt }
+                        onOpenSession(session)
+                    }.height(48.dp),
                 ) {
                     Box(modifier = Modifier.padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
                         Text("开启新对话", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -278,4 +305,29 @@ private fun DrawerContent(
             }
         }
     }
+}
+
+
+/** 按最近更新时间分组（对齐官方 Today/Yesterday/7 Days/30 Days）。 */
+private fun groupSessions(sessions: List<com.moyuer233.deepseeknative.data.LocalSession>): List<Pair<String, List<com.moyuer233.deepseeknative.data.LocalSession>>> {
+    val now = System.currentTimeMillis()
+    val day = 24L * 60 * 60 * 1000
+    val buckets = linkedMapOf(
+        "Today" to mutableListOf<com.moyuer233.deepseeknative.data.LocalSession>(),
+        "Yesterday" to mutableListOf(),
+        "7 Days" to mutableListOf(),
+        "30 Days" to mutableListOf(),
+        "Earlier" to mutableListOf(),
+    )
+    for (s in sessions.sortedByDescending { it.updatedAt }) {
+        val age = now - s.updatedAt
+        when {
+            age < day -> buckets["Today"]!!.add(s)
+            age < 2 * day -> buckets["Yesterday"]!!.add(s)
+            age < 7 * day -> buckets["7 Days"]!!.add(s)
+            age < 30 * day -> buckets["30 Days"]!!.add(s)
+            else -> buckets["Earlier"]!!.add(s)
+        }
+    }
+    return buckets.filter { it.value.isNotEmpty() }.map { it.key to it.value }
 }

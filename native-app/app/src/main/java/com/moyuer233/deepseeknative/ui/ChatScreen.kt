@@ -120,6 +120,8 @@ fun ChatScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf("") }
+    var thinkingEnabled by remember { mutableStateOf(true) }
+    var searchEnabled by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     fun send() {
@@ -144,7 +146,7 @@ fun ChatScreen(
                     ApiClient.streamGrantChat(
                         grant = grant,
                         prompt = text,
-                        thinking = true,
+                        thinking = thinkingEnabled,
                         onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
                         onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); saveLocals() } },
                         onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg; saveLocals() } },
@@ -173,8 +175,8 @@ fun ChatScreen(
                                 token = chatToken!!,
                                 sessionId = sid,
                                 prompt = text,
-                                thinkingEnabled = true,
-                                searchEnabled = false,
+                                thinkingEnabled = thinkingEnabled,
+                                searchEnabled = searchEnabled,
                                 onDelta = { content, thinking ->
                                     scope.launch { messages[messages.size - 1] = messages.last().copy(content = content, thinking = thinking) }
                                 },
@@ -285,13 +287,29 @@ fun ChatScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("深度思考", color = TextPrimary, fontSize = 13.sp)
-                        Spacer(Modifier.width(10.dp))
-                        Icon(Icons.Filled.Public, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("智能搜索", color = TextPrimary, fontSize = 13.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(if (thinkingEnabled) Color(0xFFEAF0FE) else Color.Transparent, RoundedCornerShape(14.dp))
+                                .clickable { thinkingEnabled = !thinkingEnabled }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = if (thinkingEnabled) Color(0xFF426EFE) else TextPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("深度思考", color = if (thinkingEnabled) Color(0xFF426EFE) else TextPrimary, fontSize = 13.sp)
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(if (searchEnabled) Color(0xFFEAF0FE) else Color.Transparent, RoundedCornerShape(14.dp))
+                                .clickable { searchEnabled = !searchEnabled }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Icon(Icons.Filled.Public, contentDescription = null, tint = if (searchEnabled) Color(0xFF426EFE) else TextPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("智能搜索", color = if (searchEnabled) Color(0xFF426EFE) else TextPrimary, fontSize = 13.sp)
+                        }
                         Spacer(Modifier.weight(1f))
                         if (input.isNotEmpty()) {
                             Surface(
