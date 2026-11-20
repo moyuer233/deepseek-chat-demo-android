@@ -10,6 +10,7 @@ data class LocalMessage(
     var content: String,
     var thinking: String = "",
     var imagePath: String = "",
+    var liked: Int = 0,
 )
 
 data class LocalSession(
@@ -35,7 +36,7 @@ object LocalStore {
                 val marr = o.optJSONArray("messages") ?: JSONArray()
                 for (j in 0 until marr.length()) {
                     val m = marr.getJSONObject(j)
-                    msgs.add(LocalMessage(m.optString("role"), m.optString("content"), m.optString("thinking"), m.optString("imagePath")))
+                    msgs.add(LocalMessage(m.optString("role"), m.optString("content"), m.optString("thinking"), m.optString("imagePath"), m.optInt("liked", 0)))
                 }
                 out.add(LocalSession(o.optString("id"), o.optString("title"), o.optLong("updatedAt"), msgs))
             }
@@ -50,7 +51,7 @@ object LocalStore {
         for (s in sessions) {
             val marr = JSONArray()
             for (m in s.messages) {
-                marr.put(JSONObject().put("role", m.role).put("content", m.content).put("thinking", m.thinking).put("imagePath", m.imagePath))
+                marr.put(JSONObject().put("role", m.role).put("content", m.content).put("thinking", m.thinking).put("imagePath", m.imagePath).put("liked", m.liked))
             }
             arr.put(JSONObject().put("id", s.id).put("title", s.title).put("updatedAt", s.updatedAt).put("messages", marr))
         }

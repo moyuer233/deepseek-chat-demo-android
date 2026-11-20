@@ -1,6 +1,8 @@
 package com.moyuer233.deepseeknative.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +71,7 @@ import com.moyuer233.deepseeknative.data.LocalMessage
 import com.moyuer233.deepseeknative.data.LocalSession
 import com.moyuer233.deepseeknative.data.LocalStore
 import com.moyuer233.deepseeknative.data.SessionStore
+import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 import kotlinx.coroutines.Dispatchers
@@ -106,11 +109,13 @@ private data class ChatMessage(
     var content: String = "",
     var thinking: String = "",
     var imagePath: String = "",
+    var liked: Int = 0,
     var done: Boolean = false,
 )
 
 /** 会话页：真实发送 + 流式回复（chat.deepseek.com，含聊天 PoW）。 */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun ChatScreen(
     title: String,
     sessionId: String? = null,
@@ -140,13 +145,13 @@ fun ChatScreen(
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     val messages = remember {
         mutableStateListOf<ChatMessage>().apply {
-            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, done = true)) }
+            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, liked = it.liked, done = true)) }
         }
     }
     fun saveLocals() {
         val id = currentSessionId ?: return
         val list = LocalStore.load(context)
-        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking), it.imagePath) }.toMutableList()
+        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking), it.imagePath, it.liked) }.toMutableList()
         val index = list.indexOfFirst { it.id == id }
         if (index >= 0) {
             list[index].messages.clear()
@@ -162,6 +167,7 @@ fun ChatScreen(
     var sendSeq by remember { mutableStateOf(0) }
     var editingIndex by remember { mutableStateOf(-1) }
     var attachmentPath by remember { mutableStateOf<String?>(null) }
+    var quoted by remember { mutableStateOf<String?>(null) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             val dir = File(context.filesDir, "images").apply { mkdirs() }
@@ -187,6 +193,15 @@ fun ChatScreen(
         }
     }
 
+    fun toggleLike(id: String, value: Int) {
+        val index = messages.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val current = messages[index].liked
+            messages[index] = messages[index].copy(liked = if (current == value) 0 else value)
+            saveLocals()
+        }
+    }
+
     fun send() {
         val text = input.trim()
         if ((text.isEmpty() && attachmentPath == null) || streaming) return
@@ -198,10 +213,13 @@ fun ChatScreen(
             return
         }
         val pendingImage = attachmentPath
+        val pendingQuote = quoted
+        quoted = null
+        val outgoing = if (pendingQuote != null) "> " + pendingQuote + "\n\n" + text else text
         input = ""
         attachmentPath = null
         error = null
-        messages.add(ChatMessage(role = "user", content = text, imagePath = pendingImage ?: "", done = true))
+        messages.add(ChatMessage(role = "user", content = outgoing, imagePath = pendingImage ?: "", done = true))
         messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
         saveLocals()
         streaming = true
@@ -226,7 +244,7 @@ fun ChatScreen(
                     }
                     ApiClient.streamGrantChat(
                         grant = grant,
-                        prompt = text.ifEmpty { "请描述这张图片" },
+                        prompt = outgoing.ifEmpty { "请描述这张图片" },
                         thinking = thinkingEnabled,
                         imageFileId = fileId,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
@@ -237,7 +255,7 @@ fun ChatScreen(
                 apiKey != null -> withContext(Dispatchers.IO) {
                     ApiClient.streamApiChat(
                         apiKey = apiKey,
-                        prompt = text,
+                        prompt = outgoing,
                         thinking = true,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
                         onDone = { scope.launch { updateAssistant { it.copy(done = true) } } },
@@ -256,7 +274,7 @@ fun ChatScreen(
                             ApiClient.streamCompletion(
                                 token = chatToken!!,
                                 sessionId = sid,
-                                prompt = text,
+                                prompt = outgoing,
                                 thinkingEnabled = thinkingEnabled,
                                 searchEnabled = searchEnabled,
                                 onDelta = { content, thinking ->
@@ -348,13 +366,15 @@ fun ChatScreen(
                         } else if (message.content.isEmpty() && message.done) {
                             Text("已停止生成", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                         } else {
-                            MarkdownText(cleanSafety(message.content))
+                            Column(modifier = Modifier.combinedClickable(onClick = {}, onLongClick = { quoted = cleanSafety(message.content).take(200) })) {
+                                MarkdownText(cleanSafety(message.content))
+                            }
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             MessageAction(Icons.Filled.ContentCopy) { clipboard.setText(AnnotatedString(cleanSafety(message.content))) }
-                            MessageAction(Icons.Filled.ThumbUp)
-                            MessageAction(Icons.Filled.ThumbDown)
+                            MessageAction(Icons.Filled.ThumbUp, tint = if (message.liked == 1) BrandBlue else Color(0xFF9AA0A9)) { toggleLike(message.id, 1) }
+                            MessageAction(Icons.Filled.ThumbDown, tint = if (message.liked == -1) BrandBlue else Color(0xFF9AA0A9)) { toggleLike(message.id, -1) }
                             MessageAction(Icons.Filled.VolumeUp) {
                                 if (ttsReady && message.content.isNotEmpty()) {
                                     tts.language = Locale.SIMPLIFIED_CHINESE
@@ -389,6 +409,13 @@ fun ChatScreen(
         ) {
             Surface(shape = RoundedCornerShape(24.dp), color = Color(0xFFF7F8FA), modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    quoted?.let { q ->
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text("引用：" + q.replace("\n", " ").take(60), color = TextSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            Text("×", color = TextSecondary, fontSize = 16.sp, modifier = Modifier.clickable { quoted = null }.padding(horizontal = 6.dp))
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
                     attachmentPath?.let { path ->
                         val bitmap = remember(path) { android.graphics.BitmapFactory.decodeFile(path)?.asImageBitmap() }
                         if (bitmap != null) {
@@ -552,11 +579,15 @@ fun ChatScreen(
 }
 
 @Composable
-private fun MessageAction(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit = {}) {
+private fun MessageAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color = Color(0xFF9AA0A9),
+    onClick: () -> Unit = {},
+) {
     Icon(
         icon,
         contentDescription = null,
-        tint = Color(0xFF9AA0A9),
+        tint = tint,
         modifier = Modifier.size(20.dp).clickable(onClick = onClick),
     )
     Spacer(Modifier.width(20.dp))
