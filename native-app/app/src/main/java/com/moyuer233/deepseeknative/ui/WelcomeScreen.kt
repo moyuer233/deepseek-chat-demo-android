@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -48,10 +49,10 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方 App 欢迎/登录入口页的 1:1 复刻骨架。 */
 @Composable
-fun WelcomeScreen() {
+fun WelcomeScreen(onPhone: () -> Unit = {}, onPassword: () -> Unit = {}) {
     var agreed by remember { mutableStateOf(false) }
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Text(
                 text = "Contact us",
                 color = TextSecondary,
@@ -81,7 +82,7 @@ fun WelcomeScreen() {
                 Spacer(Modifier.weight(1.4f))
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Button(
-                        onClick = { },
+                        onClick = onPhone,
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
                         modifier = Modifier
@@ -94,7 +95,7 @@ fun WelcomeScreen() {
                     }
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
-                        onClick = { },
+                        onClick = onPassword,
                         shape = RoundedCornerShape(28.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, BorderGray),
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
