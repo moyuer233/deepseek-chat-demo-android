@@ -26,6 +26,8 @@ export interface DeepSeekAccountPlugin {
   appendExportChunk(options: { path: string; base64: string }): Promise<{ bytes: number }>
   /** 用系统分享面板分享文件 */
   shareFile(options: { path: string; mime: string; title: string }): Promise<void>
+  /** 打开系统无障碍设置，让用户开启扫码辅助 */
+  openAccessibilitySettings(): Promise<void>
   /** 原生快捷选图（Android Photo Picker），返回图片字节 */
   pickImages(): Promise<{ files: { name: string; mime: string; base64: string }[] }>
 }

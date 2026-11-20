@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import clsx from 'clsx'
 import { useState } from 'react'
 import {
@@ -10,6 +11,7 @@ import {
   type AccountPhase,
 } from '../../services/deepseek/account.js'
 import type { ArchivePreview } from '../../services/deepseek/archive.js'
+import { DeepSeekAccount } from '../../services/deepseek/plugin.js'
 import { useSettings } from '../../services/settings.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
@@ -92,6 +94,16 @@ export const AccountPane = () => {
             <Button size="m" variant="outlined" disabled={busy} onClick={() => void openRecharge()}>
               {t('accountRecharge')}
             </Button>
+            {Capacitor.isNativePlatform() ? (
+              <Button
+                size="m"
+                variant="outlined"
+                disabled={busy}
+                onClick={() => void DeepSeekAccount.openAccessibilitySettings()}
+              >
+                {t('accountScanAssist')}
+              </Button>
+            ) : null}
           </>
         )}
       </div>

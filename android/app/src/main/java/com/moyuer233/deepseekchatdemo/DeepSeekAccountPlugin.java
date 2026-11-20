@@ -380,6 +380,18 @@ public class DeepSeekAccountPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openAccessibilitySettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("打开无障碍设置失败：" + e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void openTopUp(PluginCall call) {
         try {
             Intent intent = new Intent(getContext(), TopUpActivity.class);

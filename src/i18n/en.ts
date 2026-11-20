@@ -183,6 +183,7 @@ export const en = {
   accountLoginButton: 'Sign in and import',
   accountLoginShort: 'Sign in to DeepSeek',
   accountRecharge: 'Top up',
+  accountScanAssist: 'Scan assist',
   accountRechargeHint:
     'Opens the desktop top-up page, detects the WeChat QR code and opens WeChat',
   accountTermsTitle: 'Terms of Use',

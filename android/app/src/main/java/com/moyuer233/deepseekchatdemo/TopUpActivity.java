@@ -254,6 +254,7 @@ public class TopUpActivity extends AppCompatActivity {
     }
 
     private void openWeChatScanner() {
+        ScanAssistService.requestScan();
         // weixin://scanqrcode 会被 QQ 抢走，直接按包名拉起微信主界面更可靠
         Intent launch = getPackageManager().getLaunchIntentForPackage("com.tencent.mm");
         if (launch != null) {

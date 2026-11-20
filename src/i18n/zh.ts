@@ -174,6 +174,7 @@ export const zh = {
   accountLoginButton: '登录 DeepSeek 账号并导入',
   accountLoginShort: '登录 DeepSeek 账号',
   accountRecharge: '充值',
+  accountScanAssist: '开启扫码辅助',
   accountRechargeHint: '充值页以电脑版打开，出微信二维码后会自动识别并拉起微信',
   accountTermsTitle: '使用条款',
   accountTermsBody:
