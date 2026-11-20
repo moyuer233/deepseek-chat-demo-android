@@ -108,6 +108,8 @@ private fun cleanSafety(raw: String): String {
 
 private data class ChatMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
+    val dbId: Int = 0,
+    val parentId: Int? = null,
     val role: String, // user / assistant
     var content: String = "",
     var thinking: String = "",
@@ -155,11 +157,28 @@ fun ChatScreen(
         }
     }
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
-    val messages = remember {
-        mutableStateListOf<ChatMessage>().apply {
-            initial?.linearPath()?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, liked = it.liked, done = true)) }
+    var session by remember { mutableStateOf(initial) }
+    val messages = remember { mutableStateListOf<ChatMessage>() }
+    fun rebuildFromTree() {
+        val tree = session ?: return
+        messages.clear()
+        tree.linearPath().forEach { m ->
+            messages.add(
+                ChatMessage(
+                    id = m.id.toString(),
+                    dbId = m.id,
+                    parentId = m.parentId,
+                    role = m.role,
+                    content = m.content,
+                    thinking = m.thinking,
+                    imagePath = m.imagePath,
+                    liked = m.liked,
+                    done = true,
+                )
+            )
         }
     }
+    androidx.compose.runtime.LaunchedEffect(Unit) { rebuildFromTree() }
     fun saveLocals() {
         val id = currentSessionId ?: return
         val list = LocalStore.load(context)
@@ -510,6 +529,36 @@ fun ChatScreen(
                         }
                         if (message.done && index == messages.lastIndex && message.content.isNotEmpty() && !streaming) {
                             TextButton(onClick = { continueLast() }) { Text("继续生成", fontSize = 13.sp) }
+                        }
+                        val tree = session
+                        if (tree != null && message.role == "assistant" && message.dbId != 0) {
+                            val siblings = tree.messages.filter { it.parentId == message.parentId }.sortedBy { it.id }
+                            if (siblings.size > 1) {
+                                val pos = siblings.indexOfFirst { it.id == message.dbId } + 1
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "‹",
+                                        color = TextSecondary,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.clickable {
+                                            val idx = (pos - 2 + siblings.size) % siblings.size
+                                            tree.currentMessageId = siblings[idx].id
+                                            rebuildFromTree()
+                                        }.padding(horizontal = 8.dp),
+                                    )
+                                    Text(pos.toString() + "/" + siblings.size, color = TextSecondary, fontSize = 12.sp)
+                                    Text(
+                                        "›",
+                                        color = TextSecondary,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.clickable {
+                                            val idx = pos % siblings.size
+                                            tree.currentMessageId = siblings[idx].id
+                                            rebuildFromTree()
+                                        }.padding(horizontal = 8.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
