@@ -73,6 +73,7 @@ import com.moyuer233.deepseeknative.data.DshAuth
 import com.moyuer233.deepseeknative.data.LocalMessage
 import com.moyuer233.deepseeknative.data.LocalSession
 import com.moyuer233.deepseeknative.data.LocalStore
+import com.moyuer233.deepseeknative.data.PcmPlayer
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
@@ -594,9 +595,19 @@ fun ChatScreen(
                             MessageAction(Icons.Filled.ThumbUp, tint = if (message.liked == 1) BrandBlue else Color(0xFF9AA0A9)) { toggleLike(message.id, 1) }
                             MessageAction(Icons.Filled.ThumbDown, tint = if (message.liked == -1) BrandBlue else Color(0xFF9AA0A9)) { toggleLike(message.id, -1) }
                             MessageAction(Icons.Filled.VolumeUp) {
-                                if (ttsReady && message.content.isNotEmpty()) {
+                                val speakText = cleanSafety(message.content)
+                                if (speakText.isEmpty()) return@MessageAction
+                                val grant = DshAuth.token(context)
+                                val key = SessionStore.apiKey(context)
+                                val voice = SessionStore.ttsVoice(context) ?: "stella"
+                                if (grant != null || key != null) {
+                                    scope.launch {
+                                        val pcm = withContext(Dispatchers.IO) { ApiClient.synthesizeTts(grant, key, speakText, voice) }
+                                        if (pcm != null) PcmPlayer.play(pcm) else error = "朗读失败，请稍后重试"
+                                    }
+                                } else if (ttsReady) {
                                     tts.language = Locale.SIMPLIFIED_CHINESE
-                                    tts.speak(message.content, TextToSpeech.QUEUE_FLUSH, null, "read_aloud")
+                                    tts.speak(speakText, TextToSpeech.QUEUE_FLUSH, null, "read_aloud")
                                 }
                             }
                             MessageAction(Icons.Filled.Share) {

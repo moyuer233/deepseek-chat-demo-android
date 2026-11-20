@@ -452,6 +452,37 @@ object ApiClient {
         )
     }
 
+    /** 账号/Key TTS：返回裸 PCM（24kHz 单声道 16-bit LE）。 */
+    fun synthesizeTts(grant: String?, apiKey: String?, text: String, voiceId: String): ByteArray? {
+        return try {
+            val conn = (URL("https://api.deepseek.com/v1/tools/tts").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 15000
+                readTimeout = 60000
+                doOutput = true
+                setRequestProperty("content-type", "application/json")
+                if (grant != null) setRequestProperty("x-dsh-auth-token", grant)
+                else setRequestProperty("authorization", "Bearer " + (apiKey ?: ""))
+            }
+            val body = JSONObject()
+                .put("text", text)
+                .put("voice_id", voiceId)
+                .put("format", "pcm")
+                .put("filter_markdown", true)
+            conn.outputStream.use { it.write(body.toString().toByteArray()) }
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                conn.disconnect()
+                return null
+            }
+            val bytes = conn.inputStream.use { it.readBytes() }
+            conn.disconnect()
+            bytes.takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun fetchSessions(token: String): Result<List<JSONObject>> = try {
         val json = post("/api/v0/chat_session/fetch_page", JSONObject().put("after_id", 0).put("count", 50), token)
         val list: JSONArray? = json.optJSONObject("data")?.optJSONObject("biz_data")?.optJSONArray("chat_sessions")

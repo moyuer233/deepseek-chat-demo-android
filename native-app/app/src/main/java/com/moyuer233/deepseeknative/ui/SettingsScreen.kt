@@ -139,7 +139,11 @@ fun SettingsScreen(
                 SettingsRow(
                     "朗读音色",
                     Icons.Filled.VolumeUp,
-                    value = SessionStore.ttsVoice(context) ?: "系统默认",
+                    value = when (SessionStore.ttsVoice(context)) {
+                        "tide" -> "tide（男声）"
+                        "stella" -> "stella（女声）"
+                        else -> "stella（女声）"
+                    },
                     onClick = { showVoiceDialog = true },
                 )
             }
@@ -189,17 +193,13 @@ fun SettingsScreen(
             title = { Text("朗读音色") },
             text = {
                 Column {
-                    TextButton(onClick = {
-                        SessionStore.saveTtsVoice(context, "")
-                        showVoiceDialog = false
-                    }) { Text("系统默认") }
-                    voices.take(8).forEach { name ->
+                    listOf("stella" to "stella（女声）", "tide" to "tide（男声）").forEach { (id, label) ->
+                        val selected = (SessionStore.ttsVoice(context) ?: "stella") == id
                         TextButton(onClick = {
-                            SessionStore.saveTtsVoice(context, name)
+                            SessionStore.saveTtsVoice(context, id)
                             showVoiceDialog = false
-                        }) { Text(name.take(40), fontSize = 13.sp) }
+                        }) { Text((if (selected) "✓ " else "   ") + label, fontSize = 14.sp) }
                     }
-                    if (voices.isEmpty()) Text("当前系统没有可用的中文音色", fontSize = 12.sp, color = TextSecondary)
                 }
             },
             confirmButton = { TextButton(onClick = { showVoiceDialog = false }) { Text("取消") } },

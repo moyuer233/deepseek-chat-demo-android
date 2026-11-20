@@ -62,6 +62,15 @@ class MainActivity : ComponentActivity() {
                 )
             }.start()
         }
+        if (intent.hasExtra("testTts")) {
+            Thread {
+                val grant = com.moyuer233.deepseeknative.data.DshAuth.token(this)
+                val bytes = com.moyuer233.deepseeknative.data.ApiClient.synthesizeTts(grant, null, "你好，这是朗读测试。", "stella")
+                android.util.Log.d("TtsTest", "grant=" + (grant != null) + " bytes=" + (bytes?.size ?: -1))
+                val ok = if (bytes != null) com.moyuer233.deepseeknative.data.PcmPlayer.play(bytes) else false
+                android.util.Log.d("TtsTest", "play=" + ok)
+            }.start()
+        }
         if (intent.hasExtra("testGrant")) {
             Thread {
                 val token = com.moyuer233.deepseeknative.data.DshAuth.token(this)
