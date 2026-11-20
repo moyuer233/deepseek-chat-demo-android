@@ -42,16 +42,26 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.moyuer233.deepseeknative.data.ApiClient
+import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方「密码登录」页 1:1 复刻。 */
 @Composable
-fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit) {
+fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn: () -> Unit = {}) {
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visible by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(modifier = Modifier.fillMaxSize().statusBarsPaddingCompat().background(Color.White)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -132,13 +142,45 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit) {
             textAlign = TextAlign.End,
         )
         Spacer(Modifier.height(12.dp))
+        if (error != null) {
+            Text(
+                error!!,
+                color = Color(0xFFD93025),
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+            )
+        }
         Button(
-            onClick = { },
+            onClick = {
+                if (loading) return@Button
+                if (phone.isBlank() || password.isBlank()) {
+                    error = "Please enter your phone number and password."
+                    return@Button
+                }
+                loading = true
+                error = null
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) { ApiClient.loginWithPassword(phone, password) }
+                    loading = false
+                    if (result.ok && result.token != null) {
+                        SessionStore.saveToken(context, result.token)
+                        onLoggedIn()
+                    } else {
+                        error = when (result.message) {
+                            "PASSWORD_OR_USER_NAME_IS_WRONG" -> "Password is invalid. Please try again."
+                            null -> "登录失败"
+                            else -> result.message
+                        }
+                    }
+                }
+            },
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+            enabled = !loading,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp),
         ) {
-            Text("Log in", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(if (loading) "..." else "Log in", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(18.dp))
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

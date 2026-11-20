@@ -1,6 +1,7 @@
 package com.moyuer233.deepseeknative
 
 import android.os.Bundle
+import com.moyuer233.deepseeknative.data.SessionStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,9 +22,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val debugScreen = intent.getStringExtra("screen")
+        val hasToken = SessionStore.token(this) != null
         setContent {
             DeepSeekTheme {
-                var screen by remember { mutableStateOf(if (debugScreen == "chat") Screen.Chat else Screen.Welcome) }
+                var screen by remember { mutableStateOf(if (debugScreen == "chat" || hasToken) Screen.Chat else Screen.Welcome) }
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
@@ -33,6 +35,7 @@ class MainActivity : ComponentActivity() {
                     Screen.PasswordLogin -> PasswordLoginScreen(
                         onBack = { screen = Screen.Welcome },
                         onPhoneLogin = { screen = Screen.PhoneLogin },
+                        onLoggedIn = { screen = Screen.Chat },
                     )
                     Screen.Chat -> ChatHomeScreen()
                 }
