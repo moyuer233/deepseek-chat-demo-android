@@ -340,23 +340,62 @@ object ApiClient {
         )
     }
 
+    /** 上传图片到 anthropic files，返回 file_id。 */
+    fun uploadImage(grant: String, bytes: ByteArray, filename: String, mime: String): String? {
+        return try {
+            val boundary = "----dsnative" + System.currentTimeMillis()
+            val conn = (URL("https://api.deepseek.com/anthropic/v1/files").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 20000
+                readTimeout = 60000
+                doOutput = true
+                setRequestProperty("content-type", "multipart/form-data; boundary=" + boundary)
+                setRequestProperty("x-dsh-auth-token", grant)
+                setRequestProperty("anthropic-beta", "files-api-2025-04-14")
+            }
+            conn.outputStream.use { out ->
+                val head = "--" + boundary + "\r\n" +
+                    "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
+                    "Content-Type: " + mime + "\r\n\r\n"
+                out.write(head.toByteArray())
+                out.write(bytes)
+                out.write(("\r\n--" + boundary + "--\r\n").toByteArray())
+            }
+            val code = conn.responseCode
+            val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
+                ?.bufferedReader()?.use { it.readText() }.orEmpty()
+            conn.disconnect()
+            if (code !in 200..299) null else JSONObject(text).optString("id", "").takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** 用 DSH grant 聊天（api.deepseek.com anthropic 兼容）。 */
     fun streamGrantChat(
         grant: String,
         prompt: String,
         thinking: Boolean,
+        imageFileId: String? = null,
         onContent: (String) -> Unit,
         onDone: () -> Unit,
         onError: (String) -> Unit,
     ) {
+        val content: Any = if (imageFileId != null) {
+            org.json.JSONArray()
+                .put(JSONObject().put("type", "image").put("source", JSONObject().put("type", "file").put("file_id", imageFileId)))
+                .put(JSONObject().put("type", "text").put("text", prompt))
+        } else prompt
         val body = JSONObject()
             .put("model", if (thinking) "deepseek-reasoner" else "deepseek-chat")
             .put("max_tokens", 4096)
             .put("stream", true)
-            .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", content)))
+        val headers = mutableMapOf("x-dsh-auth-token" to grant, "anthropic-version" to "2023-06-01")
+        if (imageFileId != null) headers["anthropic-beta"] = "files-api-2025-04-14"
         sseStream(
             url = "https://api.deepseek.com/anthropic/v1/messages",
-            headers = mapOf("x-dsh-auth-token" to grant, "anthropic-version" to "2023-06-01"),
+            headers = headers,
             body = body,
             onContent = onContent,
             onDone = onDone,

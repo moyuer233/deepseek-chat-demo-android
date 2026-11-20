@@ -75,6 +75,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import java.io.File
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -97,6 +105,7 @@ private data class ChatMessage(
     val role: String, // user / assistant
     var content: String = "",
     var thinking: String = "",
+    var imagePath: String = "",
     var done: Boolean = false,
 )
 
@@ -131,13 +140,13 @@ fun ChatScreen(
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     val messages = remember {
         mutableStateListOf<ChatMessage>().apply {
-            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, done = true)) }
+            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, done = true)) }
         }
     }
     fun saveLocals() {
         val id = currentSessionId ?: return
         val list = LocalStore.load(context)
-        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking)) }.toMutableList()
+        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking), it.imagePath) }.toMutableList()
         val index = list.indexOfFirst { it.id == id }
         if (index >= 0) {
             list[index].messages.clear()
@@ -152,6 +161,19 @@ fun ChatScreen(
     var streaming by remember { mutableStateOf(false) }
     var sendSeq by remember { mutableStateOf(0) }
     var editingIndex by remember { mutableStateOf(-1) }
+    var attachmentPath by remember { mutableStateOf<String?>(null) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val dir = File(context.filesDir, "images").apply { mkdirs() }
+            val file = File(dir, System.currentTimeMillis().toString() + ".png")
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output -> input.copyTo(output) }
+                }
+                attachmentPath = file.absolutePath
+            }
+        }
+    }
     var editText by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
@@ -167,7 +189,7 @@ fun ChatScreen(
 
     fun send() {
         val text = input.trim()
-        if (text.isEmpty() || streaming) return
+        if ((text.isEmpty() && attachmentPath == null) || streaming) return
         val grant = DshAuth.token(context)
         val chatToken = SessionStore.token(context)
         val apiKey = SessionStore.apiKey(context)
@@ -175,9 +197,11 @@ fun ChatScreen(
             showKeyDialog = true
             return
         }
+        val pendingImage = attachmentPath
         input = ""
+        attachmentPath = null
         error = null
-        messages.add(ChatMessage(role = "user", content = text, done = true))
+        messages.add(ChatMessage(role = "user", content = text, imagePath = pendingImage ?: "", done = true))
         messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
         saveLocals()
         streaming = true
@@ -191,10 +215,20 @@ fun ChatScreen(
         scope.launch {
             when {
                 grant != null -> withContext(Dispatchers.IO) {
+                    val fileId = if (pendingImage != null) {
+                        runCatching { java.io.File(pendingImage).readBytes() }.getOrNull()?.let { bytes ->
+                            ApiClient.uploadImage(grant, bytes, "image.png", "image/png")
+                        }
+                    } else null
+                    if (pendingImage != null && fileId == null) {
+                        scope.launch { updateAssistant { it.copy(done = true) }; error = "图片上传失败，请稍后重试" }
+                        return@withContext
+                    }
                     ApiClient.streamGrantChat(
                         grant = grant,
-                        prompt = text,
+                        prompt = text.ifEmpty { "请描述这张图片" },
                         thinking = thinkingEnabled,
+                        imageFileId = fileId,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
                         onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; saveLocals() } } },
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; saveLocals() } } },
@@ -288,7 +322,16 @@ fun ChatScreen(
                                 editText = message.content
                             },
                         ) {
-                            Text(message.content, color = TextPrimary, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                if (message.imagePath.isNotEmpty()) {
+                                    val bitmap = remember(message.imagePath) { android.graphics.BitmapFactory.decodeFile(message.imagePath)?.asImageBitmap() }
+                                    if (bitmap != null) {
+                                        Image(bitmap, contentDescription = null, modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 240.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Fit)
+                                        Spacer(Modifier.height(6.dp))
+                                    }
+                                }
+                                if (message.content.isNotEmpty()) Text(message.content, color = TextPrimary, fontSize = 16.sp)
+                            }
                         }
                     }
                 } else {
@@ -346,6 +389,17 @@ fun ChatScreen(
         ) {
             Surface(shape = RoundedCornerShape(24.dp), color = Color(0xFFF7F8FA), modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    attachmentPath?.let { path ->
+                        val bitmap = remember(path) { android.graphics.BitmapFactory.decodeFile(path)?.asImageBitmap() }
+                        if (bitmap != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(bitmap, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                                Spacer(Modifier.width(8.dp))
+                                Text("图片", color = TextSecondary, fontSize = 12.sp)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                        }
+                    }
                     BasicTextField(
                         value = input,
                         onValueChange = { input = it },
@@ -407,7 +461,12 @@ fun ChatScreen(
                                 }
                             }
                         } else {
-                            Icon(Icons.Filled.Add, contentDescription = "附件", tint = TextPrimary, modifier = Modifier.size(22.dp))
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "附件",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(22.dp).clickable { imagePicker.launch("image/*") },
+                            )
                             Spacer(Modifier.width(10.dp))
                             Icon(
                                 Icons.Filled.GraphicEq,
