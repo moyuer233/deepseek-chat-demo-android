@@ -10,12 +10,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.moyuer233.deepseeknative.ui.ChatHomeScreen
+import com.moyuer233.deepseeknative.ui.ChatScreen
 import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
 import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat }
+private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DeepSeekTheme {
                 var screen by remember { mutableStateOf(if (debugScreen == "chat" || hasToken) Screen.Chat else Screen.Welcome) }
+                var sessionTitle by remember { mutableStateOf("") }
                 when (screen) {
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
@@ -40,7 +42,16 @@ class MainActivity : ComponentActivity() {
                         onPhoneLogin = { screen = Screen.PhoneLogin },
                         onLoggedIn = { screen = Screen.Chat },
                     )
-                    Screen.Chat -> ChatHomeScreen()
+                    Screen.Chat -> ChatHomeScreen(
+                        onOpenSession = {
+                            sessionTitle = it.title
+                            screen = Screen.Session
+                        },
+                    )
+                    Screen.Session -> ChatScreen(
+                        title = sessionTitle,
+                        onBack = { screen = Screen.Chat },
+                    )
                 }
             }
         }

@@ -56,7 +56,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方聊天首页（空态）1:1 复刻。 */
 @Composable
-fun ChatHomeScreen() {
+fun ChatHomeScreen(onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {}) {
     var drawerOpen by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
@@ -114,7 +114,10 @@ fun ChatHomeScreen() {
                 enter = slideInHorizontally(initialOffsetX = { -it }),
                 exit = slideOutHorizontally(targetOffsetX = { -it }),
             ) {
-                DrawerContent(modifier = Modifier.fillMaxHeight().fillMaxWidth(0.72f))
+                DrawerContent(
+                    modifier = Modifier.fillMaxHeight().fillMaxWidth(0.72f),
+                    onOpenSession = onOpenSession,
+                )
             }
         }
     }
@@ -168,7 +171,32 @@ private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.
 
 /** 侧栏：搜索框、空态、账号行。 */
 @Composable
-private fun DrawerContent(modifier: Modifier = Modifier) {
+private fun DrawerContent(
+    modifier: Modifier = Modifier,
+    onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {},
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.ChatSession>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val token = com.moyuer233.deepseeknative.data.SessionStore.token(context)
+        if (token != null) {
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                com.moyuer233.deepseeknative.data.ApiClient.fetchSessions(token)
+            }
+            result.getOrNull()?.let { list ->
+                sessions = list.mapNotNull { item ->
+                    val id = item.optString("id", "")
+                    if (id.isEmpty()) null else com.moyuer233.deepseeknative.data.ChatSession(
+                        id = id,
+                        title = item.optString("title", "新对话"),
+                        updatedAt = item.optLong("updated_at", 0L),
+                    )
+                }
+            }
+        }
+        loading = false
+    }
     Surface(modifier = modifier, color = Color.White) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Spacer(Modifier.height(12.dp))
@@ -186,12 +214,34 @@ private fun DrawerContent(modifier: Modifier = Modifier) {
                     Text("搜索对话内容...", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                 }
             }
+            if (sessions.isNotEmpty()) {
+                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    items(sessions.size) { index ->
+                        val session = sessions[index]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenSession(session) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                session.title,
+                                color = TextPrimary,
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            } else {
             Column(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("暂无对话", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                Text(if (loading) "加载中…" else "暂无对话", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
                 Text("你与 DeepSeek 的对话\n将展示在这里", color = TextSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
                 Spacer(Modifier.height(16.dp))
@@ -204,6 +254,7 @@ private fun DrawerContent(modifier: Modifier = Modifier) {
                         Text("开启新对话", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
                 }
+            }
             }
             Row(
                 modifier = Modifier
