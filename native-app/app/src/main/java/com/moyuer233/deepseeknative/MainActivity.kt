@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.Settings -> SettingsScreen(
                         onBack = { screen = Screen.Chat },
+                        onLogout = { screen = Screen.Welcome },
                         onOpenAccount = { screen = Screen.AccountManage },
                         onOpenData = { screen = Screen.DataManage },
                         onOpenAgreement = { screen = Screen.Agreement },

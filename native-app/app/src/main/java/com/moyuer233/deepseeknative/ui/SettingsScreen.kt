@@ -67,11 +67,13 @@ fun SettingsScreen(
     onOpenAccount: () -> Unit = {},
     onOpenData: () -> Unit = {},
     onOpenAgreement: () -> Unit = {},
+    onLogout: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var showLogout by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -139,7 +141,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(16.dp))
             SettingsCard {
-                SettingsRow("退出登录", Icons.Filled.Logout)
+                SettingsRow("退出登录", Icons.Filled.Logout, onClick = { showLogout = true })
             }
             Spacer(Modifier.height(20.dp))
             Text(
@@ -151,6 +153,22 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             )
         }
+    }
+
+    if (showLogout) {
+        AlertDialog(
+            onDismissRequest = { showLogout = false },
+            title = { Text("退出登录") },
+            text = { Text("退出后需要重新登录才能继续使用。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogout = false
+                    com.moyuer233.deepseeknative.data.SessionStore.clear(context)
+                    onLogout()
+                }) { Text("退出登录") }
+            },
+            dismissButton = { TextButton(onClick = { showLogout = false }) { Text("取消") } },
+        )
     }
 
     updateResult?.let { result ->
