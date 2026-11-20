@@ -40,7 +40,7 @@ p = typeof WeixinJSBridge !== "undefined"
 if (isMobile && p && u) {
   // 微信内置浏览器：走公众号 OAuth，再回 /wechat-pay 做 JSAPI
   openLink("https://open.weixin.qq.com/connect/oauth2/authorize"
-         + "?appid=wx9fdce37c3d31a2de"
+         + "?appid=wx<redacted-appid>"
          + "&redirect_uri=" + location.origin + "/wechat-pay"
          + "&response_type=code&scope=snsapi_base&state=" + amount)
   return
@@ -72,7 +72,7 @@ pay(g) // POST /api/v1/payments
 
 微信内置浏览器里 <code>WeixinJSBridge</code> 存在，页面会跳转公众号 OAuth：
 
-- appid：<code>wx9fdce37c3d31a2de</code>（DeepSeek 的公众号）
+- appid：<code>wx&lt;redacted-appid&gt;</code>（DeepSeek 的公众号；微信 AppID 是公开的客户端标识，这里脱敏以避开 secret scanner 误报）
 - redirect_uri：<code>https://platform.deepseek.com/wechat-pay</code>
 - scope：<code>snsapi_base</code>
 
