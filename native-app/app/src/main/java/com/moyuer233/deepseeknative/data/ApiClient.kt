@@ -270,6 +270,7 @@ object ApiClient {
         onError: (String) -> Unit,
         onThinking: (String) -> Unit = {},
         onCitations: (List<Pair<String, String>>) -> Unit = {},
+        onSearch: (Int, String) -> Unit = { _, _ -> },
     ) {
         stopRequested = false
         try {
@@ -308,6 +309,25 @@ object ApiClient {
                     val deltaType = deltaObj?.optString("type").orEmpty()
                     val textPiece = if (type == "content_block_delta" && deltaType == "text_delta") (deltaObj?.optString("text", "") ?: "") else ""
                     val thinkPiece = if (type == "content_block_delta" && deltaType == "thinking_delta") (deltaObj?.optString("thinking", "") ?: "") else ""
+                    if (type == "content_block_start") {
+                        val block = obj.optJSONObject("content_block")
+                        val bt = block?.optString("type").orEmpty()
+                        if (bt == "web_search_tool_result") {
+                            val items = block?.optJSONArray("content")
+                            val results = StringBuilder()
+                            var count = 0
+                            if (items != null) {
+                                for (k in 0 until items.length()) {
+                                    val it = items.optJSONObject(k) ?: continue
+                                    if (it.optString("type") == "web_search_result") {
+                                        count++
+                                        results.append(it.optString("title")).append("\t").append(it.optString("url")).append("\n")
+                                    }
+                                }
+                            }
+                            if (count > 0) onSearch(count, results.toString())
+                        }
+                    }
                     if (type == "content_block_delta" && deltaType == "citations_delta") {
                         val c = deltaObj?.optJSONObject("citation")
                         if (c != null && c.optString("url").isNotEmpty()) {
@@ -396,19 +416,26 @@ object ApiClient {
         prompt: String,
         thinking: Boolean,
         imageFileId: String? = null,
+        searchEnabled: Boolean = false,
         onContent: (String) -> Unit,
         onDone: () -> Unit,
         onError: (String) -> Unit,
         onThinking: (String) -> Unit = {},
+        onSearch: (Int, String) -> Unit = { _, _ -> },
     ) {
         val content: Any = if (imageFileId != null) {
             org.json.JSONArray()
                 .put(JSONObject().put("type", "image").put("source", JSONObject().put("type", "file").put("file_id", imageFileId)))
                 .put(JSONObject().put("type", "text").put("text", prompt))
         } else prompt
+        val tools = org.json.JSONArray().put(JSONObject().put("type", "deepseek_read_url").put("name", "deepseek_read_url"))
+        if (searchEnabled) tools.put(JSONObject().put("type", "deepseek_web_search").put("name", "deepseek_web_search"))
         val body = JSONObject()
-            .put("model", if (thinking) "deepseek-reasoner" else "deepseek-chat")
-            .put("max_tokens", 4096)
+            .put("model", "deepseek-flash")
+            .put("system", "该助手为DeepSeek，由深度求索公司创造。")
+            .put("thinking", JSONObject().put("type", if (thinking) "enabled" else "disabled"))
+            .put("safety_check", JSONObject().put("level", "high"))
+            .put("tools", tools)
             .put("stream", true)
             .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", content)))
         val headers = mutableMapOf("x-dsh-auth-token" to grant, "anthropic-version" to "2023-06-01")
@@ -421,6 +448,7 @@ object ApiClient {
             onDone = onDone,
             onError = onError,
             onThinking = onThinking,
+            onSearch = onSearch,
         )
     }
 

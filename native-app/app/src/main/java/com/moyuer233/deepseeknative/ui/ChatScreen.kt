@@ -181,6 +181,8 @@ fun ChatScreen(
     var menuTarget by remember { mutableStateOf<ChatMessage?>(null) }
     var selectMode by remember { mutableStateOf(false) }
     val expandedThinking = remember { mutableStateMapOf<String, Boolean>() }
+    val searchResults = remember { mutableStateMapOf<String, Pair<Int, String>>() }
+    var searchDialogMessage by remember { mutableStateOf<ChatMessage?>(null) }
     val selectedIds = remember { mutableStateListOf<String>() }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -244,7 +246,7 @@ fun ChatScreen(
             }
             withContext(Dispatchers.IO) {
                 if (grant != null) {
-                    ApiClient.streamGrantChat(grant, prompt, thinkingEnabled, null, onDelta,
+                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, imageFileId = null, searchEnabled = false, onContent = onDelta,
                         onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); saveLocals() } } },
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; saveLocals() } } })
                 } else if (apiKey != null) {
@@ -302,10 +304,12 @@ fun ChatScreen(
                         prompt = outgoing.ifEmpty { "请描述这张图片" },
                         thinking = thinkingEnabled,
                         imageFileId = fileId,
+                        searchEnabled = searchEnabled,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
                         onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; saveLocals() } } },
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; saveLocals() } } },
                         onThinking = { t -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(thinking = t) } } },
+                        onSearch = { count, text -> scope.launch { if (mySeq == sendSeq) searchResults[assistantId] = count to text } },
                     )
                 }
                 apiKey != null -> withContext(Dispatchers.IO) {
@@ -457,6 +461,17 @@ fun ChatScreen(
                                 )
                             }
                             Spacer(Modifier.height(8.dp))
+                        }
+                        val searchInfo = searchResults[message.id]
+                        if (searchInfo != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { searchDialogMessage = message }.padding(bottom = 6.dp),
+                            ) {
+                                Icon(Icons.Filled.Public, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("已搜索 " + searchInfo.first + " 个网页", color = TextSecondary, fontSize = 13.sp)
+                            }
                         }
                         if (message.content.isEmpty() && !message.done) {
                             Text("正在思考…", color = TextSecondary, fontSize = 15.sp)
@@ -675,6 +690,28 @@ fun ChatScreen(
                 }) { Text("保存并发送") }
             },
             dismissButton = { TextButton(onClick = { showKeyDialog = false }) { Text("取消") } },
+        )
+    }
+
+    searchDialogMessage?.let { target ->
+        val info = searchResults[target.id]
+        AlertDialog(
+            onDismissRequest = { searchDialogMessage = null },
+            title = { Text("搜索来源") },
+            text = {
+                Column {
+                    val lines = info?.second?.split("\n")?.filter { it.contains("\t") }.orEmpty()
+                    lines.forEach { line ->
+                        val title = line.substringBefore("\t")
+                        val url = line.substringAfter("\t")
+                        TextButton(onClick = {
+                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                            searchDialogMessage = null
+                        }) { Text(title.take(40), fontSize = 13.sp) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { searchDialogMessage = null }) { Text("关闭") } },
         )
     }
 
