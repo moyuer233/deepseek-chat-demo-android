@@ -30,11 +30,26 @@ import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.moyuer233.deepseeknative.data.UpdateChecker
+import com.moyuer233.deepseeknative.data.UpdateResult
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +68,10 @@ fun SettingsScreen(
     onOpenData: () -> Unit = {},
     onOpenAgreement: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -96,7 +115,21 @@ fun SettingsScreen(
             }
             SectionLabel("关于")
             SettingsCard {
-                SettingsRow("检查更新", Icons.Filled.Update, value = "2.9.0(299)")
+                SettingsRow(
+                    if (checking) "检查更新中…" else "检查更新",
+                    Icons.Filled.Update,
+                    value = com.moyuer233.deepseeknative.BuildConfig.VERSION_NAME,
+                    onClick = {
+                        if (!checking) {
+                            checking = true
+                            scope.launch {
+                                val result = withContext(Dispatchers.IO) { UpdateChecker.check() }
+                                checking = false
+                                updateResult = result
+                            }
+                        }
+                    },
+                )
                 Divider()
                 SettingsRow("服务协议", Icons.Filled.Description, onClick = onOpenAgreement)
             }
@@ -118,6 +151,36 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             )
         }
+    }
+
+    updateResult?.let { result ->
+        val hasNew = result.latestVersion != null && result.latestVersion != result.currentVersion
+        AlertDialog(
+            onDismissRequest = { updateResult = null },
+            title = { Text("检查更新") },
+            text = {
+                Text(
+                    when {
+                        result.error != null -> result.error
+                        hasNew -> "发现新版本 v" + result.latestVersion + "（当前 " + result.currentVersion + "）"
+                        else -> "当前已是最新版本 " + result.currentVersion
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { updateResult = null }) { Text(if (hasNew) "取消" else "好") }
+            },
+            dismissButton = if (hasNew) {
+                {
+                    TextButton(onClick = {
+                        result.releaseUrl?.let { url ->
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        }
+                        updateResult = null
+                    }) { Text("去下载") }
+                }
+            } else null,
+        )
     }
 }
 
