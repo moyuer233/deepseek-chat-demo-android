@@ -56,7 +56,10 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方聊天首页（空态）1:1 复刻。 */
 @Composable
-fun ChatHomeScreen(onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {}) {
+fun ChatHomeScreen(
+    onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+) {
     var drawerOpen by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
@@ -117,6 +120,7 @@ fun ChatHomeScreen(onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession
                 DrawerContent(
                     modifier = Modifier.fillMaxHeight().fillMaxWidth(0.72f),
                     onOpenSession = onOpenSession,
+                    onOpenSettings = onOpenSettings,
                 )
             }
         }
@@ -174,6 +178,7 @@ private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.
 private fun DrawerContent(
     modifier: Modifier = Modifier,
     onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.ChatSession>>(emptyList()) }
@@ -268,7 +273,12 @@ private fun DrawerContent(
                 Spacer(Modifier.width(10.dp))
                 Text("193****64", color = TextPrimary, fontSize = 15.sp)
                 Spacer(Modifier.weight(1f))
-                Icon(Icons.Filled.MoreHoriz, contentDescription = "更多", tint = TextSecondary, modifier = Modifier.size(22.dp))
+                Icon(
+                    Icons.Filled.MoreHoriz,
+                    contentDescription = "设置",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(22.dp).clickable { onOpenSettings() },
+                )
             }
         }
     }

@@ -11,12 +11,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.moyuer233.deepseeknative.ui.ChatHomeScreen
 import com.moyuer233.deepseeknative.ui.ChatScreen
+import com.moyuer233.deepseeknative.ui.SettingsScreen
 import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
 import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session }
+private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,11 +48,13 @@ class MainActivity : ComponentActivity() {
                             sessionTitle = it.title
                             screen = Screen.Session
                         },
+                        onOpenSettings = { screen = Screen.Settings },
                     )
                     Screen.Session -> ChatScreen(
                         title = sessionTitle,
                         onBack = { screen = Screen.Chat },
                     )
+                    Screen.Settings -> SettingsScreen(onBack = { screen = Screen.Chat })
                 }
             }
         }
