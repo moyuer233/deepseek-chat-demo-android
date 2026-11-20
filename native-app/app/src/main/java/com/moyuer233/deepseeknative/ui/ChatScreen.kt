@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -571,7 +573,8 @@ fun ChatScreen(
                         value = input,
                         onValueChange = { input = it },
                         textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = (16 * fontScale).sp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Send),
+                        keyboardActions = KeyboardActions(onSend = { send() }),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (input.isEmpty()) {
