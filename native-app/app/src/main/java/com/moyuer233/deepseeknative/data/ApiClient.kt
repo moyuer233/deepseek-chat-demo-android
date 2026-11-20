@@ -164,8 +164,11 @@ object ApiClient {
 
     @Volatile
     private var streamConn: HttpURLConnection? = null
+    @Volatile
+    private var stopRequested = false
 
     fun stopStream() {
+        stopRequested = true
         try { streamConn?.disconnect() } catch (_: Exception) {}
     }
 
@@ -266,6 +269,7 @@ object ApiClient {
         onDone: () -> Unit,
         onError: (String) -> Unit,
     ) {
+        stopRequested = false
         try {
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
@@ -306,9 +310,10 @@ object ApiClient {
             }
             onDone()
         } catch (e: Exception) {
-            onError(e.message ?: "网络错误")
+            if (stopRequested) onDone() else onError(e.message ?: "网络错误")
         } finally {
             streamConn = null
+            stopRequested = false
         }
     }
 

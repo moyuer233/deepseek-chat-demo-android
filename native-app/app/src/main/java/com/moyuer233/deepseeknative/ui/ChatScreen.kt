@@ -293,6 +293,8 @@ fun ChatScreen(
                         }
                         if (message.content.isEmpty() && !message.done) {
                             Text("正在思考…", color = TextSecondary, fontSize = 15.sp)
+                        } else if (message.content.isEmpty() && message.done) {
+                            Text("已停止生成", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                         } else {
                             MarkdownText(cleanSafety(message.content))
                         }
@@ -374,7 +376,7 @@ fun ChatScreen(
                             Text("智能搜索", color = if (searchEnabled) Color(0xFF426EFE) else TextPrimary, fontSize = 13.sp)
                         }
                         Spacer(Modifier.weight(1f))
-                        if (input.isNotEmpty()) {
+                        if (streaming || input.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(50),
                                 color = if (streaming) Color(0xFF9AA0A9) else Color(0xFF426EFE),
