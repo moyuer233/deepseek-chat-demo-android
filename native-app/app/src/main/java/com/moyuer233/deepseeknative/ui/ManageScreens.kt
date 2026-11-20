@@ -2,6 +2,8 @@ package com.moyuer233.deepseeknative.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +21,11 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -116,16 +122,21 @@ private fun ManageLabel(text: String) {
 
 /** 官方「账号管理」页 1:1 复刻（静态版）。 */
 @Composable
-fun AccountManageScreen(onBack: () -> Unit, onOpenDevices: () -> Unit = {}) {
+fun AccountManageScreen(
+    onBack: () -> Unit,
+    onOpenDevices: () -> Unit = {},
+    onOpenMinor: () -> Unit = {},
+) {
+    var showChangePhone by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         ManageTopBar("账号管理", onBack)
         ManageLabel("账户")
         ManageCard {
-            ManageRow("手机号", value = "193******64", icon = Icons.Filled.Phone)
+            ManageRow("手机号", value = "193******64", icon = Icons.Filled.Phone, onClick = { showChangePhone = true })
         }
         Spacer(Modifier.height(16.dp))
         ManageCard {
-            ManageRow("未成年人模式", value = "已关闭")
+            ManageRow("未成年人模式", value = "已关闭", onClick = onOpenMinor)
         }
         ManageLabel("安全")
         ManageCard {
@@ -138,6 +149,17 @@ fun AccountManageScreen(onBack: () -> Unit, onOpenDevices: () -> Unit = {}) {
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().clickable { }.padding(vertical = 20.dp),
+        )
+    }
+    if (showChangePhone) {
+        AlertDialog(
+            onDismissRequest = { showChangePhone = false },
+            title = { Text("变更已绑定的手机号？") },
+            text = {
+                Text("当前绑定的手机号码为 193******64，变更后，你将无法使用该手机号登录 DeepSeek，当前账号的开放平台余额，网页端和 App 中的历史对话均会迁移至新手机号。如不希望历史对话被迁移至新手机号，可以在更换前删除所有对话。")
+            },
+            confirmButton = { TextButton(onClick = { showChangePhone = false }) { Text("去变更") } },
+            dismissButton = { TextButton(onClick = { showChangePhone = false }) { Text("取消") } },
         )
     }
 }
@@ -273,6 +295,98 @@ fun DeviceManageScreen(onBack: () -> Unit) {
                 fontSize = 16.sp,
                 modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 18.dp, vertical = 16.dp),
             )
+        }
+    }
+}
+
+
+/** 官方「未成年人模式」年龄验证页 1:1（滚轮选择年月 + 确认）。 */
+@Composable
+fun MinorModeScreen(onBack: () -> Unit) {
+    val years = (1980..2010).map { it.toString() + "年" }
+    val months = (1..12).map { it.toString() + "月" }
+    var yearIndex by remember { mutableStateOf(years.indexOf("2000年")) }
+    var monthIndex by remember { mutableStateOf(0) }
+    Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
+        Row(modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = CircleShape, color = Color(0xFFF2F3F5), modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                }
+            }
+        }
+        Text(
+            "修改你的出生年月，验证是否进入未成年人模式",
+            color = TextPrimary,
+            fontSize = 26.sp,
+            lineHeight = 34.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+        )
+        Text(
+            "仅用于确认你的年龄，以提供更好的服务，你的信息不会公开。",
+            color = TextSecondary,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier.fillMaxWidth().height(260.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            WheelColumn(years, yearIndex, Modifier.weight(1f)) { yearIndex = it }
+            WheelColumn(months, monthIndex, Modifier.weight(1f)) { monthIndex = it }
+        }
+        Spacer(Modifier.weight(1f))
+        Button(
+            onClick = onBack,
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF426EFE)),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp).height(52.dp),
+        ) {
+            Text("确认", fontSize = 17.sp)
+        }
+    }
+}
+
+@Composable
+private fun WheelColumn(
+    items: List<String>,
+    selectedIndex: Int,
+    modifier: Modifier = Modifier,
+    onSelected: (Int) -> Unit,
+) {
+    Box(modifier.height(220.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .padding(horizontal = 8.dp)
+                .background(Color(0xFFF2F3F5), RoundedCornerShape(8.dp)),
+        )
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = (selectedIndex - 2).coerceAtLeast(0)),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 88.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            items(items.size) { index ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clickable { onSelected(index) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        items[index],
+                        color = if (index == selectedIndex) TextPrimary else Color(0xFFB0B5BD),
+                        fontSize = if (index == selectedIndex) 20.sp else 18.sp,
+                        fontWeight = if (index == selectedIndex) FontWeight.SemiBold else FontWeight.Normal,
+                    )
+                }
+            }
         }
     }
 }

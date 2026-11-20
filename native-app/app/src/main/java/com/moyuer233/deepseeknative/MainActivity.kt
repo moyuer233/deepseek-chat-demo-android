@@ -15,13 +15,14 @@ import com.moyuer233.deepseeknative.ui.AccountManageScreen
 import com.moyuer233.deepseeknative.ui.AgreementScreen
 import com.moyuer233.deepseeknative.ui.DataManageScreen
 import com.moyuer233.deepseeknative.ui.DeviceManageScreen
+import com.moyuer233.deepseeknative.ui.MinorModeScreen
 import com.moyuer233.deepseeknative.ui.SettingsScreen
 import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
 import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices }
+private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,8 +76,10 @@ class MainActivity : ComponentActivity() {
                     Screen.AccountManage -> AccountManageScreen(
                         onBack = { screen = Screen.Settings },
                         onOpenDevices = { screen = Screen.Devices },
+                        onOpenMinor = { screen = Screen.MinorMode },
                     )
                     Screen.Devices -> DeviceManageScreen(onBack = { screen = Screen.AccountManage })
+                    Screen.MinorMode -> MinorModeScreen(onBack = { screen = Screen.AccountManage })
                     Screen.DataManage -> DataManageScreen(onBack = { screen = Screen.Settings })
                     Screen.Agreement -> AgreementScreen(onBack = { screen = Screen.Settings })
                 }
