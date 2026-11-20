@@ -34,6 +34,11 @@
             android:exported="false"
             android:configChanges="orientation|keyboardHidden|screenSize" />
 
+        <activity
+            android:name=".OAuthActivity"
+            android:exported="false"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

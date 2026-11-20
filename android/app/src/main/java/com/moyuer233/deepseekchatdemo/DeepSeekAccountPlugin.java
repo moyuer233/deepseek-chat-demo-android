@@ -1,4 +1,4 @@
-package com.moyuer233.deepseekchatapp;
+package com.moyuer233.deepseekchatdemo;
 
 import android.app.Activity;
 import android.content.Context;
@@ -395,5 +395,74 @@ public class DeepSeekAccountPlugin extends Plugin {
             prefs.edit().putString(KEY_DEVICE_ID, id).apply();
         }
         return id;
+    }
+
+    // ---------- DSH 式账号授权（实验） ----------
+
+    @PluginMethod
+    public void platformAuthLogin(PluginCall call) {
+        try {
+            JSONObject init = DshAuth.init(getContext());
+            Intent intent = new Intent(getContext(), OAuthActivity.class);
+            intent.putExtra(OAuthActivity.EXTRA_URL, init.getString("authorizeUrl"));
+            startActivityForResult(call, intent, "platformAuthResult");
+        } catch (Exception e) {
+            call.reject("auth_init 失败：" + e.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void platformAuthResult(PluginCall call, ActivityResult result) {
+        if (call == null) {
+            return;
+        }
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+            call.reject("已取消授权");
+            return;
+        }
+        String code = result.getData().getStringExtra(OAuthActivity.EXTRA_CODE);
+        if (code == null || code.isEmpty()) {
+            call.reject("没有拿到授权码");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                JSONObject exchange = DshAuth.exchange(getContext(), code);
+                JSObject ret = new JSObject();
+                ret.put("token", exchange.getString("token"));
+                ret.put("probes", DshAuth.probes(getContext()).toString());
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject("auth_exchange 失败：" + e.getMessage());
+            }
+        });
+    }
+
+    @PluginMethod
+    public void runAccountProbes(PluginCall call) {
+        executor.execute(() -> {
+            try {
+                String token = DshAuth.token(getContext());
+                if (token.isEmpty()) {
+                    call.reject("还没有授权 token");
+                    return;
+                }
+                JSObject ret = new JSObject();
+                ret.put("probes", DshAuth.probes(getContext()).toString());
+                String cookie = android.webkit.CookieManager.getInstance()
+                        .getCookie("https://chat.deepseek.com");
+                ret.put("chatCookie", cookie == null ? "" : cookie);
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject("探针失败：" + e.getMessage());
+            }
+        });
+    }
+
+    @PluginMethod
+    public void platformAuthToken(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("token", DshAuth.token(getContext()));
+        call.resolve(ret);
     }
 }

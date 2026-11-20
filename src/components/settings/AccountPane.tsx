@@ -5,6 +5,8 @@ import {
   confirmImportAndCreateKey,
   openRecharge,
   resetAccountFlow,
+  runAccountProbes,
+  startPlatformOAuth,
   startLoginAndImport,
   useAccount,
   type AccountPhase,
@@ -42,16 +44,19 @@ const formatUpdatedAt = (value: string) => {
 export const AccountPane = () => {
   const t = useTranslate()
   const apiKey = useSettings((state) => state.apiKey)
+  const accountToken = useSettings((state) => state.accountToken)
   const phase = useAccount((state) => state.phase)
   const error = useAccount((state) => state.error)
   const preview = useAccount((state) => state.preview)
   const importedCount = useAccount((state) => state.importedCount)
   const [termsOpen, setTermsOpen] = useState(false)
+  const [oauth, setOauth] = useState<string | null>(null)
   const progressKey = progressKeys[phase]
   // 预览清单挂在弹窗上，下面的按钮同样要停住
   const busy = Boolean(progressKey) || phase === 'preview'
 
-  let status = apiKey ? t('accountLoggedIn') : t('accountLoginHint')
+  const signedIn = Boolean(apiKey || accountToken)
+  let status = signedIn ? t('accountLoggedIn') : t('accountLoginHint')
   if (progressKey) {
     status = t(progressKey)
   } else if (phase === 'done') {
@@ -75,10 +80,46 @@ export const AccountPane = () => {
         ) : (
           <>
             <Button size="m" disabled={busy} onClick={() => setTermsOpen(true)}>
-              {apiKey ? t('accountReimportButton') : t('accountLoginButton')}
+              {signedIn ? t('accountReimportButton') : t('accountLoginButton')}
             </Button>
             <Button size="m" variant="outlined" disabled={busy} onClick={() => void openRecharge()}>
               {t('accountRecharge')}
+            </Button>
+            <Button
+              size="m"
+              variant="outlined"
+              disabled={busy || oauth === 'running'}
+              onClick={() => {
+                setOauth('running')
+                void startPlatformOAuth()
+                  .then((result) => setOauth(result.probes || 'token: ' + result.token.slice(0, 8) + '…'))
+                  .catch((error: unknown) =>
+                    setOauth(error instanceof Error ? error.message : String(error))
+                  )
+              }}
+            >
+              {oauth === 'running' ? t('accountOAuthRunning') : t('accountOAuthButton')}
+            </Button>
+            <Button
+              size="m"
+              variant="outlined"
+              disabled={busy}
+              onClick={() => {
+                setOauth('running')
+                void runAccountProbes()
+                  .then((result) =>
+                    setOauth(
+                      result.probes +
+                        ' | chatCookie: ' +
+                        (result.chatCookie ? result.chatCookie.length + ' chars' : 'empty')
+                    )
+                  )
+                  .catch((error: unknown) =>
+                    setOauth(error instanceof Error ? error.message : String(error))
+                  )
+              }}
+            >
+              {t('accountProbeButton')}
             </Button>
           </>
         )}
@@ -86,6 +127,7 @@ export const AccountPane = () => {
       {phase === 'done' || phase === 'error' ? null : (
         <div className={styles.hint}>{t('accountRechargeHint')}</div>
       )}
+      {oauth && oauth !== 'running' ? <div className={styles.hint}>{oauth}</div> : null}
       {phase === 'preview' && preview ? <PreviewDialog preview={preview} /> : null}
       {termsOpen ? (
         <Modal

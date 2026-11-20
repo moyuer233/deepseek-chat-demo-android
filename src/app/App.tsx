@@ -13,6 +13,7 @@ import {
   useChatStore,
 } from '../services/chat/store.js'
 import { cancelPreview, useAccount } from '../services/deepseek/account.js'
+import { loadAccountToken } from '../services/deepseek/auth.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
@@ -112,9 +113,12 @@ export const App = () => {
   }, [])
 
   useEffect(() => {
-    void initChat()
-    // 首次打开先在设置里输入 API Key
-    ensureApiKey()
+    // 先读原生保存的账号 grant，再决定是否要提示填 Key
+    void (async () => {
+      await loadAccountToken()
+      await initChat()
+      ensureApiKey()
+    })()
   }, [])
 
   return (

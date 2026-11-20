@@ -10,6 +10,8 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
+  /** DSH 账号 grant（免 Key 模式）；只在内存里，启动时从原生读 */
+  accountToken: string | null
   locale: Locale
   themePreference: ThemePreference
   location: UserLocation | null
@@ -89,6 +91,7 @@ const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide'
 
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
+  accountToken: null,
   locale: initialLocale(),
   location: initialLocation(),
   themePreference: initialThemePreference(),
@@ -122,6 +125,10 @@ export const setTtsVoice = (ttsVoice: TtsVoice) => {
 export const setApiKey = (apiKey: string | null) => {
   write(KEYS.apiKey, apiKey)
   useSettings.setState({ apiKey })
+}
+
+export const setAccountToken = (accountToken: string | null) => {
+  useSettings.setState({ accountToken })
 }
 
 export const setThinking = (thinking: boolean) => {

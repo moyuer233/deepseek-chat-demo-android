@@ -189,6 +189,9 @@ export const en = {
   accountTermsBody:
     'By continuing you confirm that you have read and agree to the DeepSeek Terms of Use and Privacy Policy. After signing in, the app imports your chats and creates an API Key stored only on this device.',
   accountTermsAgree: 'Agree and continue',
+  accountOAuthButton: 'Experiment: account sign-in',
+  accountOAuthRunning: 'Waiting for authorization…',
+  accountProbeButton: 'Re-run probes',
   accountLoggedIn: 'Signed in. API Key saved on this device.',
   accountReimportButton: 'Import again',
   accountProgressChatLogin: 'Opening DeepSeek sign-in...',

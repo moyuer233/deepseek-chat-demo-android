@@ -1,4 +1,4 @@
-package com.moyuer233.deepseekchatapp;
+package com.moyuer233.deepseekchatdemo;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;

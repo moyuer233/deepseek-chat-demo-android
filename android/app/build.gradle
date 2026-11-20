@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.moyuer233.deepseekchatapp"
+    namespace = "com.moyuer233.deepseekchatdemo"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.moyuer233.deepseekchatdemo"

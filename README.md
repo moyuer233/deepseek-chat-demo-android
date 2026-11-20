@@ -1,75 +1,45 @@
-# chat-demo
+# DeepSeek Chat Demo (Android)
 
 English | [简体中文](README.zh-CN.md)
 
-A static chat demo powered by the DeepSeek API. No application backend is required: the browser connects directly to the configured API service.
+An unofficial Android app built on top of [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT).
 
-You can [try the app online](https://deepseek-ai.github.io/chat-demo/) or download the archive from [Releases](https://github.com/deepseek-ai/deepseek-chat-demo/releases), extract it, and double-click `index.html` to use it locally without installation or a build. Enter your API key in Settings before your first chat.
+> This project is not affiliated with, endorsed by, or supported by DeepSeek. "DeepSeek" is used only to describe interoperability.
 
-## Getting started
+## What it does
 
-Install Node.js 22.12+ and pnpm, then run:
+- **Sign in and import everything.** Sign in to `chat.deepseek.com` in a native WebView, then import all conversations through the official export API (same v3 archive format chat-demo already reads).
+- **Chat without an API key.** The app signs in to the DeepSeek account through the same OAuth flow DeepSeek Harness uses (PKCE, `auth_init` → `/dsh/authorize` → `auth_exchange`) and sends the account grant as `x-dsh-auth-token`. An API key can still be entered manually as a fallback.
+- **Top-up page with WeChat QR detection (experimental).** Opens the platform top-up page with a desktop user agent, decodes the payment QR on the page with jsQR and hands the `weixin://` link to WeChat.
+- Native Android behaviour: back-button hierarchy, edge-to-edge safe areas, system share for exported archives, terms confirmation before sign-in.
 
-```sh
-git clone https://github.com/deepseek-ai/chat-demo.git
-cd chat-demo
+## Status
+
+- M1 (Android shell, chat UI, manual API key): done.
+- M2 (sign in → import all chats; account grant chat): import flow implemented; account grant verified on an emulator (`GET /models` and `POST /anthropic/v1/messages` both 200).
+- Import with a real `chat.deepseek.com` account and the WeChat payment QR path are still being verified.
+- No store release yet; build a debug APK from source.
+
+## Build
+
+Requirements: Node.js, pnpm, JDK 21, Android SDK (compileSdk 36).
+
+```bash
 pnpm install
-pnpm dev
+pnpm build                 # builds the web bundle into dist/
+pnpm exec cap sync android
+cd android && ./gradlew assembleDebug
 ```
 
-Open http://localhost:8090.
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-To build the static site:
+## How it fits together
 
-```sh
-pnpm build
-```
+- `src/` — the unmodified chat-demo web client plus a small Android adaptation layer.
+- `src/services/deepseek/` — account flow, export/import glue, native plugin bridge.
+- `android/` — Capacitor shell, `DeepSeekAccountPlugin`, login/OAuth/top-up WebView activities.
+- `docs/research/` — the API and UX research this implementation is based on.
 
-The output is written to `dist/`. Deploy it to a static web server or open `dist/index.html` directly. Opening the file directly requires browser support for storage on `file://` pages and an API service that permits their cross-origin requests.
+## Credits and licence
 
-## Features
-
-- Multiple conversations with automatic titles, renaming, and deletion; edit prompts, regenerate replies, and switch between message branches.
-- Streaming replies, deep thinking, smart search, link reading, and source citations; stop generation or continue eligible replies.
-- Upload, paste, or drag and drop attachments; use voice input and read replies aloud. A live audio spectrum appears in the first row of the input area while recording on mobile.
-- Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
-- Simplified Chinese and English, light and dark themes, mobile layouts, location settings, and chat history import and export.
-
-## Data and storage
-
-Your API key and settings are stored in the browser's localStorage. Conversations and original attachments are stored in IndexedDB. Local data is isolated by browser profile and site origin. Sending messages, uploading attachments, and using speech features sends the relevant content to the configured API service.
-
-History import and export in Settings use ZIP archives. After confirmation and successful validation, importing replaces all local conversations and attachments. Exports include conversations and locally available original images, but exclude API keys, settings, and original non-image attachments. See the [history import/export documentation (Chinese)](src/services/chat/history/README.md) for the archive format and preservation details.
-
-Settings → Data → Delete all chats clears all local conversations, original attachments, and unsent drafts after confirmation. It stops ongoing replies and returns to a new chat. Your API key and settings are preserved; files already uploaded to the API service are not deleted.
-
-## Development
-
-| Command       | Description                  |
-| ------------- | ---------------------------- |
-| `pnpm dev`    | Start the development server |
-| `pnpm build`  | Build into `dist/`           |
-| `pnpm type`   | Run TypeScript type checks   |
-| `pnpm lint`   | Lint with oxlint             |
-| `pnpm format` | Format with oxfmt            |
-
-[rspack.config.ts](rspack.config.ts) uses `https://api.deepseek.com` by default. Use `createConfig({ apiOrigin, devServer })` to customize the API origin and development server proxy.
-
-Chat uses `deepseek-flash` by default through Anthropic-compatible Messages / Files APIs. Speech features use ASR / TTS endpoints. Requests include extensions for search, link reading, titles, and `latest_reminder`, so the configured service must support the corresponding capabilities. Supported attachment formats are determined by server-side validation.
-
-```text
-src/
-  app/                 Application layout, themes, and global styles
-  components/          Chat, settings, Markdown, and other UI components
-  i18n/                English and Chinese translations
-  services/
-    api/               API requests, SSE, and protocol types
-    chat/              Conversations, message branches, storage, and history import/export
-    markdown/          Markdown parsing, syntax highlighting, and diagrams
-    speech/            Audio recording and read-aloud playback
-  utils/               Shared utilities
-```
-
-## License
-
-[MIT](LICENSE). The build copies the license to `dist/LICENSE`; include it when distributing the app. Third-party dependencies are subject to their own licenses.
+Based on [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo), MIT. See [LICENSE](LICENSE). The original copyright notice is kept in that file.

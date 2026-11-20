@@ -1,11 +1,10 @@
-package com.moyuer233.deepseekchatapp;
+package com.moyuer233.deepseekchatdemo;
 
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -23,76 +22,21 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
-/** 独立的 WebView 登录页：用户自己完成登录，本 Activity 只负责把 userToken 交回去。 */
-public class LoginActivity extends AppCompatActivity {
+/** 打开 platform 的 DSH 授权页，拦截 loopback 回调把 code 交回去。 */
+public class OAuthActivity extends AppCompatActivity {
 
     public static final String EXTRA_URL = "url";
-    public static final String EXTRA_TITLE = "title";
-    public static final String EXTRA_TOKEN = "token";
-
-    private static final String READ_TOKEN_JS =
-            "(function(){try{var raw=localStorage.getItem('userToken');if(!raw)return '';"
-            + "var o=JSON.parse(raw);if(!o)return '';"
-            + "return String(o.token||o.access_token||'');}catch(e){return '';}})()";
+    public static final String EXTRA_CODE = "code";
 
     private WebView webView;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private boolean finished = false;
 
-    private final Runnable poll = new Runnable() {
-        @Override
-        public void run() {
-            if (finished) {
-                return;
-            }
-            if (webView != null) {
-                webView.evaluateJavascript(READ_TOKEN_JS, value -> {
-                    if (finished) {
-                        return;
-                    }
-                    String token = unquote(value);
-                    if (!token.isEmpty()) {
-                        deliver(token);
-                    }
-                });
-            }
-            handler.postDelayed(this, 700);
-        }
-    };
-
-    /** evaluateJavascript 返回的是 JSON 字面量：字符串带引号，空值是 "" 或 null。 */
-    private static String unquote(@Nullable String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String value = raw.trim();
-        if (value.isEmpty() || "null".equals(value)) {
-            return "";
-        }
-        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-            value = value.replace("\\\"", "\"").replace("\\\\", "\\");
-        }
-        return value;
-    }
-
-    private void deliver(String token) {
-        if (finished) {
-            return;
-        }
-        finished = true;
-        handler.removeCallbacks(poll);
-        setResult(Activity.RESULT_OK, new Intent().putExtra(EXTRA_TOKEN, token));
-        finish();
-    }
-
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         String url = getIntent().getStringExtra(EXTRA_URL);
-        String title = getIntent().getStringExtra(EXTRA_TITLE);
         if (url == null || url.isEmpty()) {
-            setResult(Activity.RESULT_CANCELED);
+            setResult(RESULT_CANCELED);
             finish();
             return;
         }
@@ -102,7 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         root.setBackgroundColor(Color.WHITE);
 
         TextView bar = new TextView(this);
-        bar.setText(title == null ? "登录" : title);
+        bar.setText("登录 DeepSeek 账号");
         bar.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         bar.setTextColor(Color.parseColor("#111111"));
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -117,16 +61,28 @@ public class LoginActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setUserAgentString(
-                "Mozilla/5.0 (Linux; Android 14; Pixel 6) AppleWebKit/537.36 "
-                        + "(KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36");
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
         cookies.setAcceptThirdPartyCookies(webView, true);
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String target) {
+                if (target != null && target.startsWith(DshAuth.REDIRECT_URI)) {
+                    String code = Uri.parse(target).getQueryParameter("code");
+                    if (code != null && !code.isEmpty()) {
+                        setResult(RESULT_OK, new Intent().putExtra(EXTRA_CODE, code));
+                    } else {
+                        setResult(RESULT_CANCELED);
+                    }
+                    finish();
+                    return true;
+                }
+                return false;
+            }
+        });
         root.addView(webView);
-
         setContentView(root);
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), root);
         controller.setAppearanceLightStatusBars(true);
@@ -136,8 +92,13 @@ public class LoginActivity extends AppCompatActivity {
             view.setPadding(0, bars.top, 0, bars.bottom);
             return insets;
         });
+
         webView.loadUrl(url);
-        handler.postDelayed(poll, 800);
+    }
+
+    private void cancel() {
+        setResult(RESULT_CANCELED);
+        finish();
     }
 
     @Override
@@ -149,19 +110,8 @@ public class LoginActivity extends AppCompatActivity {
         cancel();
     }
 
-    private void cancel() {
-        if (finished) {
-            return;
-        }
-        finished = true;
-        handler.removeCallbacks(poll);
-        setResult(Activity.RESULT_CANCELED);
-        finish();
-    }
-
     @Override
     protected void onDestroy() {
-        handler.removeCallbacks(poll);
         if (webView != null) {
             webView.destroy();
             webView = null;

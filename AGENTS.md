@@ -10,8 +10,8 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 ## 目标（用户拍板）
 
 1. 用户在 App 里登录 chat.deepseek.com 账号后：
-   - App 自动为它自己创建一把 API Key（不让用户去 platform 手动建）；
-   - 一键导入该账号下的全部会话。
+   - 一键导入该账号下的全部会话（导入需要 chat.deepseek.com 登录态）；
+   - App 用 DeepSeek 账号授权（DSH OAuth grant）直接聊天，不需要 API Key。
 2. 聊天走 api.deepseek.com，界面与交互沿用 chat-demo（不重做视觉）。
 3. 登录一次之后就该"能直接聊"，不要求用户手动填 Key、手动导数据。
 4. 内置充值入口：内置 TopUpActivity 用**桌面 UA** 打开 https://platform.deepseek.com/top_up，页面出微信二维码后注入 jsQR
@@ -27,7 +27,7 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 
 - Android 优先，Capacitor 8 套壳（WebView 装现有 dist），不重写 UI；iOS 暂不做。
 - 应用 id：com.moyuer233.deepseekchatdemo；显示名：DeepSeek Chat Demo。
-- 聊天请求走 api.deepseek.com（App 自己的 Key）；登录/导出/建 Key 走原生 HTTP，绕开 CORS。
+- 聊天请求走 api.deepseek.com：账号模式下 `x-dsh-auth-token`（grant），无 grant 时回退 API Key；登录/导出走原生 HTTP，绕开 CORS。
 - 改动尽量少：新增 `capacitor.config.ts`、`android/`、登录插件、导入服务；上游文件只在必要处补 Android 适配
   （返回键、安全区/edge-to-edge、外链用系统浏览器、历史导出改系统分享保存）。
 
@@ -44,11 +44,14 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
     返回 history_download_url / legacy_history_download_url / exported_at / expires_at，下载链接 7 天有效。
 - 分享链接导入（备选）：`GET /api/v0/share/content?share_id=<id>` 匿名可用；接口无 CORS 头，必须原生 HTTP。
 - DeepSeek API 的 CORS 会回显任意 Origin（`https://localhost` 实测可用），WebView 里可直接请求 api.deepseek.com。
-- 自动建 API Key：platform 是**独立登录态**，chat 的 userToken 调 platform 接口返回 40003；
-  创建接口是 `POST /api/v0/users/edit_api_keys`（`action=create`，无验证码），成功返回完整 `sensitive_id`。
-  方案：一次引导里让用户先登 chat、再登 platform，App 用 platform token 自动建 Key。详见 docs/research/platform-api-key.md。
+- API Key 方案（已降级为 fallback）：platform 是独立登录态，chat token 调 platform 返回 40003；
+  创建接口是 `POST /api/v0/users/edit_api_keys`（action=create，无验证码）。详见 docs/research/platform-api-key.md。
+  2026-11-20 起主路线改为 DSH 账号 grant（见下），只有 grant 失败时才回退建 Key。
 - 登录 WebView 已在模拟器实测：点「登录并导入」会打开 `LoginActivity`，chat.deepseek.com 登录页正常渲染（手机号+验证码/密码/Apple）。
   真正登录后的 token 提取、导出、导入、建 Key 还没验证过（需要用户账号）。
+- DSH 账号 grant 实测（2026-11-20 真实账号）：`GET api.deepseek.com/models` 200、`POST /anthropic/v1/messages` 200、
+  `GET platform/api/v0/users/get_api_keys` 200；`edit_api_keys` 404（x-dsh）/40003（Bearer）；
+  `chat.deepseek.com/api/v0/export_all` 40002、Cookie 只有 WAF → 无 SSO。结论：**聊天免 Key，导入仍需 chat 登录**。
 - 微信支付：手机 UA 下充值页**不提供微信支付**（321 个 chunk 里 weixin:// 命中 0）；但桌面 UA 下会走 PC 二维码流程。
   2026-11-20 用户改口径做 hack，已实现 TopUpActivity（桌面 UA + jsQR + Intent），登录二维码在跨域 iframe 里扫不到也不该扫；
   支付二维码的解码/拉起链路**尚未用真实账号验证**。详见 docs/research/wechat-pay.md。
@@ -94,9 +97,9 @@ cd android && ./gradlew assembleDebug    # Windows: gradlew.bat assembleDebug
 
 1. ~~安装 SDK 组件，出第一个 debug APK~~（已完成：app-debug.apk 6.18MB，模拟器上已跑起来，主界面与 chat-demo 一致）。
 2. 登录 WebView 插件：打开 chat.deepseek.com → 用户自己登录 → 取 `userToken`。
-3. 验证 platform.deepseek.com 建 Key 的内部接口；不通就退回手动填 Key。
+3. ~~验证 platform 建 Key~~（已验证；现为 fallback，主路线是 DSH 账号 grant）。
 4. 导入流程：export_all → 轮询 download_export_history → 下载 ZIP → 交给现有 importArchive；验证与 DeepSeek 导出包兼容。
-5. 真机验证：登录、建 Key、全量导入、聊天流式、图片上传、语音输入、朗读、历史导出、返回键、刘海屏。
+5. 真机验证：chat 登录 → 全量导入、账号授权 → 聊天流式、图片上传（grant 是否支持 Files API 待测）、语音输入、朗读、历史导出、返回键、刘海屏。
 6. 充值 hack 真机验证：登录 platform → 选微信支付 → 页面出码 → 应自动弹「打开微信」；失败回退系统浏览器。
 7. ~~需要官方 App 做 UX 参照~~（2026-11-20 用户确认给 APK；只在本机截图对照，不进仓库、不反编译分发）。
    拿到后：装在模拟器上逐屏截图 → 列差异清单 → 逐项改（返回键/状态栏/安全区/启动图/登录页/导出保存/外链）。
@@ -105,5 +108,5 @@ cd android && ./gradlew assembleDebug    # Windows: gradlew.bat assembleDebug
 ## 里程碑
 
 - M1：能装、能聊（手动填 Key），界面与 chat-demo 一致。
-- M2：登录 → 自动建 Key → 全量导入会话。
+- M2：登录 → 账号授权（免 Key）→ 全量导入会话。
 - M3：充值 hack（桌面 UA 二维码 → 拉起微信），失败回退系统浏览器。

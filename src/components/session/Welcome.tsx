@@ -11,6 +11,7 @@ export const Welcome = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
   const apiKey = useSettings((state) => state.apiKey)
+  const accountToken = useSettings((state) => state.accountToken)
   // 登录导入进行中不再重复触发
   const phase = useAccount((state) => state.phase)
   const busy = phase !== 'idle' && phase !== 'error' && phase !== 'done'
@@ -20,7 +21,7 @@ export const Welcome = () => {
       <div className={styles.welcome}>
         <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
         <ChatInput sessionId={null} />
-        {!apiKey ? (
+        {!apiKey && !accountToken ? (
           <button
             type="button"
             className={styles.login}
