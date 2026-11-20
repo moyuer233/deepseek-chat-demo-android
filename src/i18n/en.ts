@@ -196,7 +196,6 @@ export const en = {
   onboardingStep2: 'Authorize your DeepSeek account and chat on your API quota',
   onboardingStep3: 'Not subject to web limits; top up from inside the app when needed',
   onboardingStart: 'Get started',
-  onboardingManual: 'Enter an API key',
   onboardingNote: 'Unofficial app. Not affiliated with DeepSeek.',
   onboardingImportTitle: 'Step 1: import your chats',
   onboardingImportPitch:

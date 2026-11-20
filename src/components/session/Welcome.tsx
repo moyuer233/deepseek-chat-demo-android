@@ -1,7 +1,7 @@
 import { useIsMobile } from '../../app/viewport.js'
 import { useTranslate } from '../../i18n/index.js'
-import { startLoginAndImport, useAccount } from '../../services/deepseek/account.js'
 import { useSettings } from '../../services/settings.js'
+import { openSettings } from '../settings/settingsDialogState.js'
 import { ChatInput } from '../chatInput/ChatInput.js'
 import { MobileHeader } from './MobileHeader.js'
 import styles from './Welcome.module.css'
@@ -12,9 +12,6 @@ export const Welcome = () => {
   const isMobile = useIsMobile()
   const apiKey = useSettings((state) => state.apiKey)
   const accountToken = useSettings((state) => state.accountToken)
-  // 登录导入进行中不再重复触发
-  const phase = useAccount((state) => state.phase)
-  const busy = phase !== 'idle' && phase !== 'error' && phase !== 'done'
   return (
     <div className={styles.container}>
       {isMobile ? <MobileHeader /> : null}
@@ -25,8 +22,7 @@ export const Welcome = () => {
           <button
             type="button"
             className={styles.login}
-            disabled={busy}
-            onClick={() => void startLoginAndImport()}
+            onClick={() => openSettings('account')}
           >
             {t('accountLoginShort')}
           </button>

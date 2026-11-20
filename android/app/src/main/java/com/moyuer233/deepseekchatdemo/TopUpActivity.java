@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -89,6 +88,12 @@ public class TopUpActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 injectScanner(view);
             }
+
+            @Override
+            public void onReceivedError(WebView view, android.webkit.WebResourceRequest request,
+                    android.webkit.WebResourceError error) {
+                Toast.makeText(TopUpActivity.this, "充值页加载失败，请检查网络", Toast.LENGTH_LONG).show();
+            }
         });
         root.addView(webView);
 
@@ -109,8 +114,8 @@ public class TopUpActivity extends AppCompatActivity {
         if (jsQrSource.isEmpty() || scanSource.isEmpty()) {
             return;
         }
-        view.evaluateJavascript(jsQrSource, value -> Log.i("DSQR", "jsqr injected: " + value));
-        view.evaluateJavascript(scanSource, value -> Log.i("DSQR", "scan injected: " + value));
+        view.evaluateJavascript(jsQrSource, null);
+        view.evaluateJavascript(scanSource, null);
     }
 
     private String readAsset(String name) {
@@ -143,6 +148,11 @@ public class TopUpActivity extends AppCompatActivity {
     }
 
     private void openUrl(String text) {
+        // 只放行微信支付与 https，防止远程页面借二维码内容拉起任意组件
+        if (!text.startsWith("weixin://wxpay") && !text.startsWith("https://")) {
+            copyText(text);
+            return;
+        }
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(text));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -183,7 +193,17 @@ public class TopUpActivity extends AppCompatActivity {
     private class Bridge {
         @JavascriptInterface
         public void onQr(String text) {
-            main.post(() -> handleQr(text));
+            main.post(() -> {
+                if (isFinishing() || isDestroyed() || webView == null) {
+                    return;
+                }
+                String current = webView.getUrl();
+                String host = current == null ? null : Uri.parse(current).getHost();
+                if (host == null || !(host.equals("platform.deepseek.com") || host.endsWith(".deepseek.com"))) {
+                    return;
+                }
+                handleQr(text);
+            });
         }
     }
 }

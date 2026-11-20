@@ -67,6 +67,20 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 - REA Android 反编译：JAR 在 H:\tools\jadx-headless-mcp\jadx-headless-mcp-0.7.1-all.jar，
   REA_JADX_MCP_JAR 已写入用户环境变量；CLI 用法 rea inspect-android-package <apk>。
 
+## 代码审查（2026-11-20，OCR delegate 全量）
+
+范围：8ad7b56..HEAD 的 58 个可审文件（跳过 jsqr.js 第三方）。三个子代理分别审安卓/服务层/UI，主代理汇总并修了高危项：
+
+- **minSdk24 兼容**：DshAuth 用 android.util.Base64 替代 java.util.Base64（API 26+），否则 Android 7.x 点授权会崩。
+- **OAuth state 校验**：回调 state 与 init 的 state 比对（RFC 6749），OAuthActivity 一起回传。
+- **manifest 按名扫描**：importArchive 先用 skipEntry 消费非 manifest 条目，否则 readArchive 的未读完校验会抛错（容错实际未生效）。
+- **预览内存**：readArchivePreview 用 fflate filter 只解压 index，不再把 100MB+ 包整包解进 JS 堆。
+- **导出**：zipWriter 串行测 size=0 blob；share.ts 按 512KB 分块读取并校验写入字节数；FileProvider 只暴露 cache/export 与 cache/share。
+- **安全**：allowBackup=false；beginExportFile/append/share 做路径穿越校验；download 精确校验 chat.deepseek.com；TopUp 的 JS 桥只接受 deepseek 域页面 + weixin://wxpay/https；登录路径不再跑探针。
+- **UX**：欢迎页登录入口改为打开账户设置；向导授权失败不再当成功；导入确认 autoFocus 给「取消」；卡片 max-height 可滚动；账户页状态 aria-live。
+- **失效 grant**：401 时清掉 accountToken，回退 API Key；登录 WebView 加 5 分钟超时。
+- **遗留（未改）**：LoginActivity 复用旧会话导致重新导入可能直接用旧 token（有超时但无强制清登录态）；openTopUp 的「回退系统浏览器」实际不可达；i18n 仍有少量未用键（已删 onboardingManual）；无自动化测试（建议补 import/export 自检脚本）。
+
 ## 本机环境（换机器要重看）
 
 - JDK 21：`C:\Program Files\Java\jdk-21.0.10`

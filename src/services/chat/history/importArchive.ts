@@ -59,9 +59,11 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
     fail('backupUnrecognized')
   }
   try {
-    // manifest 不再要求必须是第一个条目：按条目名扫描即可。
+    // manifest 不再要求必须是第一个条目：按条目名扫描；非 manifest 条目必须消费流，
+    // 否则 readArchive 的「条目未读完」校验会在取下一个条目时抛错。
     for await (const entry of readArchive(file)) {
       if (entry.path !== MANIFEST_PATH) {
+        await skipEntry(entry)
         continue
       }
       checkManifest(await readJson(entry))

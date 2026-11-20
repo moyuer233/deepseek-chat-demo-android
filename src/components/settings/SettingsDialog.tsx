@@ -17,6 +17,7 @@ import {
 } from '../../services/chat/backup.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { shareBlob } from '../../services/deepseek/share.js'
+import { useAccount } from '../../services/deepseek/account.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import {
@@ -82,6 +83,8 @@ const SettingsContent = () => {
   const historyDelete = useHistoryDelete()
   const replacingHistory = useChatStore((state) => state.importingHistory)
   const historyBusy = historyImport.busy || historyDelete.busy || replacingHistory
+  const accountPhase = useAccount((state) => state.phase)
+  const accountBusy = !['idle', 'error', 'done'].includes(accountPhase)
   return (
     <>
       <Modal
@@ -90,7 +93,7 @@ const SettingsContent = () => {
         className={styles.dialog}
         mainClassName={styles.dialogMain}
         onClose={() => {
-          if (!historyDelete.busy) {
+          if (!historyDelete.busy && !accountBusy) {
             closeSettings()
           }
         }}

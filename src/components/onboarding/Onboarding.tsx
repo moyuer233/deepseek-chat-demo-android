@@ -3,6 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import {
   cancelPreview,
   confirmImportAndCreateKey,
+  resetAccountFlow,
   startLoginAndImport,
   startPlatformOAuth,
   useAccount,
@@ -30,6 +31,8 @@ export const Onboarding = ({ onFinish }: { onFinish: () => void }) => {
   const importedCount = useAccount((state) => state.importedCount)
   const accountToken = useSettings((state) => state.accountToken)
   const [step, setStep] = useState<Step>('welcome')
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   // 导入流程自己会接着做授权；完成或已有授权时直接进入下一步
   useEffect(() => {
@@ -48,6 +51,7 @@ export const Onboarding = ({ onFinish }: { onFinish: () => void }) => {
   const progressKey = progressKeys[phase as keyof typeof progressKeys]
 
   const finish = () => {
+    resetAccountFlow()
     try {
       localStorage.setItem('chat-demo:onboarded', '1')
     } catch {
@@ -109,11 +113,11 @@ export const Onboarding = ({ onFinish }: { onFinish: () => void }) => {
             <div className={styles.actions}>
               {phase === 'preview' ? (
                 <>
-                  <Button size="m" autoFocus onClick={() => void confirmImportAndCreateKey()}>
-                    {t('accountPreviewConfirm')}
-                  </Button>
-                  <Button size="m" variant="outlined" onClick={cancelPreview}>
+                  <Button size="m" variant="outlined" autoFocus onClick={cancelPreview}>
                     {t('cancel')}
+                  </Button>
+                  <Button size="m" onClick={() => void confirmImportAndCreateKey()}>
+                    {t('accountPreviewConfirm')}
                   </Button>
                 </>
               ) : phase === 'error' ? (
@@ -147,6 +151,7 @@ export const Onboarding = ({ onFinish }: { onFinish: () => void }) => {
             </h1>
             <p className={styles.pitch}>{t('onboardingAuthPitch')}</p>
             {accountToken ? <p className={styles.status}>{t('accountLoggedInAccount')}</p> : null}
+            {authError ? <p className={styles.error}>{authError}</p> : null}
             <div className={styles.actions}>
               {accountToken ? (
                 <Button size="m" autoFocus onClick={() => setStep('done')}>
@@ -157,15 +162,26 @@ export const Onboarding = ({ onFinish }: { onFinish: () => void }) => {
                   <Button
                     size="m"
                     autoFocus
+                    disabled={authBusy}
                     onClick={() => {
+                      setAuthBusy(true)
+                      setAuthError(null)
                       void startPlatformOAuth()
                         .then(() => setStep('done'))
-                        .catch(() => setStep('done'))
+                        .catch((error: unknown) =>
+                          setAuthError(error instanceof Error ? error.message : String(error))
+                        )
+                        .finally(() => setAuthBusy(false))
                     }}
                   >
                     {t('onboardingAuthButton')}
                   </Button>
-                  <Button size="m" variant="outlined" onClick={() => setStep('done')}>
+                  <Button
+                    size="m"
+                    variant="outlined"
+                    disabled={authBusy}
+                    onClick={() => setStep('done')}
+                  >
                     {t('onboardingSkip')}
                   </Button>
                 </>

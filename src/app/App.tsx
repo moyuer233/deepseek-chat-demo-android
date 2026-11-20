@@ -1,6 +1,6 @@
 import { App as NativeApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
@@ -36,6 +36,17 @@ import { closeMobileSider, useMobileSider } from '../components/sider/mobileSide
 import { MobileSider, Sider } from '../components/sider/Sider.js'
 import styles from './App.module.css'
 
+/** 首启标记只在模块加载时读一次，避免把 localStorage 读进 effect 依赖。 */
+const readOnboarded = (): boolean => {
+  try {
+    return localStorage.getItem('chat-demo:onboarded') === '1'
+  } catch {
+    return false
+  }
+}
+const isNativeApp = Capacitor.isNativePlatform()
+const showOnboardingInitially = isNativeApp && !readOnboarded()
+
 export const App = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
@@ -60,23 +71,11 @@ export const App = () => {
   )
   const activeId = useChatStore((state) => state.activeId)
   // 首次启动引导：只在原生端、且没看过时展示一次
-  const seenOnboarding = (() => {
-    try {
-      return localStorage.getItem('chat-demo:onboarded') === '1'
-    } catch {
-      return false
-    }
-  })()
-  const [onboarding, setOnboarding] = useState(() => {
-    if (!Capacitor.isNativePlatform()) {
-      return false
-    }
-    try {
-      return localStorage.getItem('chat-demo:onboarded') !== '1'
-    } catch {
-      return true
-    }
-  })
+  const [onboarding, setOnboarding] = useState(showOnboardingInitially)
+  const onboardingRef = useRef(onboarding)
+  useEffect(() => {
+    onboardingRef.current = onboarding
+  }, [onboarding])
 
   usePreventPageScroll(isMobile)
 
@@ -101,7 +100,12 @@ export const App = () => {
       return
     }
     let listener: { remove: () => void } | null = null
+    let cancelled = false
     void NativeApp.addListener('backButton', () => {
+      // 引导期间吞掉返回键，避免误退出
+      if (onboardingRef.current) {
+        return
+      }
       if (useAccount.getState().phase === 'preview') {
         cancelPreview()
         return
@@ -123,10 +127,19 @@ export const App = () => {
         return
       }
       void NativeApp.exitApp()
-    }).then((handle) => {
-      listener = handle
     })
+      .then((handle) => {
+        if (cancelled) {
+          handle.remove()
+        } else {
+          listener = handle
+        }
+      })
+      .catch(() => {
+        // 注册失败时不阻塞应用
+      })
     return () => {
+      cancelled = true
       listener?.remove()
     }
   }, [])
@@ -136,8 +149,8 @@ export const App = () => {
     void (async () => {
       await loadAccountToken()
       await initChat()
-      // 引导页展示中、或用户已看过引导时都不再自动弹设置；欢迎页有登录入口
-      if (!onboarding && !seenOnboarding) {
+      // 原生端不再强制弹设置（欢迎页/引导页都有入口）；Web 端保持上游行为
+      if (!isNativeApp) {
         ensureApiKey()
       }
     })()

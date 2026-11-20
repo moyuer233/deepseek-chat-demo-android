@@ -47,9 +47,11 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
   if (entries.length >= ZIP64_COUNT) {
     throw new ArchiveLimitError()
   }
-  const resolved = await Promise.all(
-    entries.map(async ({ name, blob }) => ({ name, blob, size: await resolveSize(blob) }))
-  )
+  // 串行测量 size=0 的 blob，避免同时把多个大图读进内存。
+  const resolved: { name: string; blob: Blob; size: number }[] = []
+  for (const entry of entries) {
+    resolved.push({ ...entry, size: await resolveSize(entry.blob) })
+  }
   const names = new Set<string>()
   let dataSize = 0
   let directorySize = 0

@@ -15,7 +15,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -42,16 +41,21 @@ final class DshAuth {
         return prefs(context).getString(KEY_TOKEN, "");
     }
 
+    /** API 24 起可用；避免 java.util.Base64（Android 上 since 26）。 */
+    private static String base64Url(byte[] bytes) {
+        return android.util.Base64.encodeToString(bytes,
+                android.util.Base64.URL_SAFE | android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING);
+    }
+
     private static String randomUrlSafe(int bytes) {
         byte[] buffer = new byte[bytes];
         new SecureRandom().nextBytes(buffer);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer);
+        return base64Url(buffer);
     }
 
     private static String challenge(String verifier) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(digest.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
+        return base64Url(digest.digest(verifier.getBytes(StandardCharsets.US_ASCII)));
     }
 
     private static Map<String, String> clientHeaders(Context context) {
@@ -129,11 +133,16 @@ final class DshAuth {
     }
 
     /** 第三步：用回调 code 换 token。 */
-    static JSONObject exchange(Context context, String code) throws Exception {
+    static JSONObject exchange(Context context, String code, String state) throws Exception {
         SharedPreferences store = prefs(context);
         String verifier = store.getString(KEY_VERIFIER, "");
-        if (verifier.isEmpty()) {
-            throw new IllegalStateException("no pending verifier");
+        String expectedState = store.getString(KEY_STATE, "");
+        if (verifier.isEmpty() || expectedState.isEmpty()) {
+            throw new IllegalStateException("no pending authorization");
+        }
+        // 防授权码注入：回调 state 必须与本次 init 生成的一致（RFC 6749 §10.12）。
+        if (state == null || !expectedState.equals(state)) {
+            throw new IllegalStateException("state mismatch");
         }
         String deviceId = store.getString(KEY_DEVICE, "");
         if (deviceId.isEmpty()) {

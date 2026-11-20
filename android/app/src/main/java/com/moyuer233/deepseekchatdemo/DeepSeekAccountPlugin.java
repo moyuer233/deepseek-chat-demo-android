@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.activity.result.ActivityResult;
 
@@ -22,6 +20,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -42,7 +41,6 @@ public class DeepSeekAccountPlugin extends Plugin {
     private static final String KEY_DEVICE_ID = "device-id";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Handler main = new Handler(Looper.getMainLooper());
 
     // ---------- 登录 ----------
 
@@ -192,16 +190,39 @@ public class DeepSeekAccountPlugin extends Plugin {
 
     // ---------- 导出文件：分块写缓存，再交给系统分享 ----------
 
+    /** 只允许安全字符，避免 JS 通过文件名做路径穿越。 */
+    private static String safeFileName(String name) {
+        String base = (name == null ? "export" : name).replaceAll("[^A-Za-z0-9._-]", "_");
+        if (base.isEmpty() || ".".equals(base) || "..".equals(base)) {
+            base = "export";
+        }
+        return base;
+    }
+
+    private File cacheSubDir(String name) throws IOException {
+        File dir = new File(getContext().getCacheDir(), name);
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建缓存目录");
+        }
+        return dir;
+    }
+
+    /** 校验 JS 传来的路径确实位于指定缓存目录内（防路径穿越）。 */
+    private File requireInDir(File dir, String path) throws IOException {
+        File file = new File(path).getCanonicalFile();
+        String base = dir.getCanonicalPath() + File.separator;
+        if (!file.getPath().startsWith(base)) {
+            throw new IOException("非法文件路径");
+        }
+        return file;
+    }
+
     @PluginMethod
     public void beginExportFile(PluginCall call) {
         String name = call.getString("name", "export.zip");
         try {
-            File dir = new File(getContext().getCacheDir(), "share");
-            if (!dir.exists() && !dir.mkdirs()) {
-                call.reject("无法创建缓存目录");
-                return;
-            }
-            File target = new File(dir, name);
+            File dir = cacheSubDir("share");
+            File target = requireInDir(dir, new File(dir, safeFileName(name)).getAbsolutePath());
             try (FileOutputStream ignored = new FileOutputStream(target, false)) {
                 // 截断旧文件
             }
@@ -224,7 +245,8 @@ public class DeepSeekAccountPlugin extends Plugin {
         executor.execute(() -> {
             try {
                 byte[] bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
-                try (FileOutputStream out = new FileOutputStream(path, true)) {
+                File target = requireInDir(cacheSubDir("share"), path);
+                try (FileOutputStream out = new FileOutputStream(target, true)) {
                     out.write(bytes);
                 }
                 JSObject ret = new JSObject();
@@ -246,7 +268,7 @@ public class DeepSeekAccountPlugin extends Plugin {
             return;
         }
         try {
-            File file = new File(path);
+            File file = requireInDir(cacheSubDir("share"), path);
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
                     getContext(),
                     getContext().getPackageName() + ".fileprovider",
@@ -345,7 +367,9 @@ public class DeepSeekAccountPlugin extends Plugin {
         conn.setConnectTimeout(20000);
         conn.setReadTimeout(120000);
         conn.setInstanceFollowRedirects(true);
-        if (url.startsWith(CHAT_ORIGIN)) {
+        java.net.URI parsed = new java.net.URI(url);
+        if ("https".equalsIgnoreCase(parsed.getScheme())
+                && "chat.deepseek.com".equalsIgnoreCase(parsed.getHost())) {
             conn.setRequestProperty("Authorization", "Bearer " + token);
         }
         int status = conn.getResponseCode();
@@ -417,20 +441,22 @@ public class DeepSeekAccountPlugin extends Plugin {
             return;
         }
         if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
-            call.reject("已取消授权");
+            call.reject("已取消授权", "AUTH_CANCELLED");
             return;
         }
         String code = result.getData().getStringExtra(OAuthActivity.EXTRA_CODE);
+        String state = result.getData().getStringExtra(OAuthActivity.EXTRA_STATE);
         if (code == null || code.isEmpty()) {
             call.reject("没有拿到授权码");
             return;
         }
         executor.execute(() -> {
             try {
-                JSONObject exchange = DshAuth.exchange(getContext(), code);
+                JSONObject exchange = DshAuth.exchange(getContext(), code, state);
                 JSObject ret = new JSObject();
                 ret.put("token", exchange.getString("token"));
-                ret.put("probes", DshAuth.probes(getContext()).toString());
+                // 登录路径不跑探针（避免有副作用的写请求与额外等待）
+                ret.put("probes", "[]");
                 call.resolve(ret);
             } catch (Exception e) {
                 call.reject("auth_exchange 失败：" + e.getMessage());
@@ -464,5 +490,10 @@ public class DeepSeekAccountPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("token", DshAuth.token(getContext()));
         call.resolve(ret);
+    }
+    @Override
+    protected void handleOnDestroy() {
+        executor.shutdownNow();
+        super.handleOnDestroy();
     }
 }

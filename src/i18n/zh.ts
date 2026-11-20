@@ -186,7 +186,6 @@ export const zh = {
   onboardingStep2: '授权 DeepSeek 账号，App 直接用 API 额度聊天',
   onboardingStep3: '不消耗网页版次数；余额不足时可在 App 内充值',
   onboardingStart: '开始使用',
-  onboardingManual: '手动填 API Key',
   onboardingNote: '非官方应用，与 DeepSeek 无隶属关系。',
   onboardingImportTitle: '第 1 步：导入聊天记录',
   onboardingImportPitch:

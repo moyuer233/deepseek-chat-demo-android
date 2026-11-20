@@ -1,5 +1,5 @@
 import { translate, type TranslationMessage } from '../../i18n/index.js'
-import { useSettings } from '../settings.js'
+import { setAccountToken, useSettings } from '../settings.js'
 import { resizeUploadImage } from '../../utils/resizeUploadImage.js'
 import { readMessageEvent } from './parseEvent.js'
 import { readServerSentEvents } from './sse.js'
@@ -79,6 +79,13 @@ export const request = async (url: string, init: RequestInit): Promise<Response>
     throw new ApiError('network', error instanceof Error ? error.message : String(error))
   }
   if (!response.ok) {
+    // 账号 grant 失效时清掉，避免所有请求都卡在过期凭证上
+    if (response.status === 401) {
+      const { accountToken } = useSettings.getState()
+      if (accountToken) {
+        setAccountToken(null)
+      }
+    }
     throw await readErrorResponse(response)
   }
   return response
@@ -96,10 +103,8 @@ const authHeaders = (beta: boolean): Record<string, string> => {
 
 /** 用 GET /models 校验 API Key（不产生费用） */
 export const verifyApiKey = async (apiKey: string, signal?: AbortSignal): Promise<void> => {
-  const { accountToken } = useSettings.getState()
-  const headers: Record<string, string> = accountToken
-    ? { 'x-dsh-auth-token': accountToken }
-    : { Authorization: `Bearer ${apiKey}` }
+  // 契约是「校验传入的这把 Key」：始终用它，账号 grant 的校验另走别的入口。
+  const headers: Record<string, string> = { Authorization: `Bearer ${apiKey}` }
   await request(`${API_ORIGIN}/models`, {
     method: 'GET',
     headers,

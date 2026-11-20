@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core'
+import { showToast } from '../../components/base/toastState.js'
 import { create } from 'zustand'
 import { importHistory } from '../chat/backup.js'
 import { setAccountToken, setApiKey, useSettings } from '../settings.js'
@@ -23,7 +24,6 @@ type AccountState = {
   preview: ArchivePreview | null
   importedCount: number | null
   archivePath: string | null
-  chatToken: string | null
 }
 
 export const useAccount = create<AccountState>(() => ({
@@ -32,7 +32,6 @@ export const useAccount = create<AccountState>(() => ({
   preview: null,
   importedCount: null,
   archivePath: null,
-  chatToken: null,
 }))
 
 const set = (patch: Partial<AccountState>) => useAccount.setState(patch)
@@ -59,7 +58,7 @@ export const startLoginAndImport = async () => {
     requireNative()
     set({ phase: 'chatLogin', error: null, preview: null, importedCount: null })
     const { token } = await DeepSeekAccount.loginChat()
-    set({ chatToken: token, phase: 'exporting' })
+    set({ phase: 'exporting' })
     const archive = await DeepSeekAccount.fetchExportArchive({ token })
     const preview = await loadArchive(archive.path, archive.fileName)
     if (preview.sessions.length === 0) {
@@ -81,8 +80,12 @@ export const confirmImportAndCreateKey = async () => {
   try {
     set({ phase: 'importing', error: null })
     const response = await fetch(Capacitor.convertFileSrc(state.archivePath))
-    const bytes = await response.arrayBuffer()
-    const file = new File([bytes], state.preview.fileName, { type: 'application/zip' })
+    if (!response.ok) {
+      set({ phase: 'error', error: '导出包已失效，请重新导出' })
+      return
+    }
+    const blob = await response.blob()
+    const file = new File([blob], state.preview.fileName, { type: 'application/zip' })
     const importedCount = await importHistory(file)
 
     // 已有账号授权：导入完就结束，不再建 Key。
@@ -97,7 +100,8 @@ export const confirmImportAndCreateKey = async () => {
       await startPlatformOAuth()
       set({ phase: 'done' })
     } catch (oauthError) {
-      if (String(oauthError).includes('取消')) {
+      const code = (oauthError as { code?: string } | null)?.code
+      if (code === 'AUTH_CANCELLED' || String(oauthError).includes('取消')) {
         set({ phase: 'done' })
         return
       }
@@ -113,9 +117,11 @@ export const confirmImportAndCreateKey = async () => {
   }
 }
 
-export const cancelPreview = () => set({ phase: 'idle', preview: null })
+export const cancelPreview = () =>
+  set({ phase: 'idle', preview: null, archivePath: null })
 
-export const resetAccountFlow = () => set({ phase: 'idle', error: null, preview: null })
+export const resetAccountFlow = () =>
+  set({ phase: 'idle', error: null, preview: null, archivePath: null })
 
 /** 实验：DSH 式账号授权，返回 grant token 与三条探针结果（JSON 字符串）。 */
 export const startPlatformOAuth = async (): Promise<{ token: string; probes: string }> => {
@@ -132,23 +138,21 @@ export const runAccountProbes = async (): Promise<{ probes: string; chatCookie: 
   return DeepSeekAccount.runAccountProbes()
 }
 
-/** 充值入口：内置页用桌面 UA 拿微信二维码并解码；打不开才退回系统浏览器。 */
+const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
+
+/** 充值入口：原生内置页（桌面 UA + 二维码）；Web 端直接开官方页；失败只提示，不污染账户状态机。 */
 export const openRecharge = async () => {
+  if (!Capacitor.isNativePlatform()) {
+    window.open(TOP_UP_URL, '_blank', 'noreferrer')
+    return
+  }
   try {
-    requireNative()
     await DeepSeekAccount.openTopUp()
-  } catch (error) {
+  } catch {
     try {
-      await DeepSeekAccount.openExternal({ url: 'https://platform.deepseek.com/top_up' })
-    } catch (fallbackError) {
-      set({
-        phase: 'error',
-        error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-      })
+      await DeepSeekAccount.openExternal({ url: TOP_UP_URL })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error))
     }
   }
 }
-
-/** 当前是否已经有可用的 Key（登录成功的标志）。 */
-export const hasApiKey = () =>
-  Boolean(useSettings.getState().apiKey || useSettings.getState().accountToken)

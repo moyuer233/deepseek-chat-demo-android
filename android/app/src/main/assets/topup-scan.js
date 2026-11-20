@@ -2,7 +2,8 @@
   if (window.__dsTopupScanInstalled) return;
   window.__dsTopupScanInstalled = true;
   var last = '';
-  // 只认支付类二维码：微信登录码是 weixin://dl/…，支付码是 weixin://wxpay/bizpayurl?…
+  var MAX_PIXELS = 1500000;
+  var MAX_NODES = 40;
   function isPay(text) {
     var s = String(text).toLowerCase();
     if (s.indexOf('weixin://dl/') === 0) return false;
@@ -14,10 +15,21 @@
     if (!isPay(text)) return;
     try { if (window.DSTopUp) window.DSTopUp.onQr(String(text)); } catch (e) {}
   }
+  function visible(el) {
+    var r = el.getBoundingClientRect();
+    if (r.width < 100 || r.height < 100) return false;
+    var vh = window.innerHeight || 0;
+    var vw = window.innerWidth || 0;
+    return r.bottom > -200 && r.top < vh + 200 && r.right > -200 && r.left < vw + 200;
+  }
   function scanCanvas(c) {
     try {
+      if (!c.width || !c.height || c.width * c.height > MAX_PIXELS) return;
+      var now = Date.now();
+      if (c.__dsLast && now - c.__dsLast < 2500) return;
+      c.__dsLast = now;
       var ctx = c.getContext('2d');
-      if (!ctx || !c.width || !c.height) return;
+      if (!ctx) return;
       var data = ctx.getImageData(0, 0, c.width, c.height);
       var code = jsQR(data.data, data.width, data.height);
       if (code && code.data) report(code.data);
@@ -26,6 +38,7 @@
   function scanImg(el) {
     try {
       if (!el.complete || !el.naturalWidth) return;
+      if (el.naturalWidth * el.naturalHeight > MAX_PIXELS) return;
       var now = Date.now();
       if (el.__dsLast && now - el.__dsLast < 2500) return;
       el.__dsLast = now;
@@ -38,14 +51,13 @@
   }
   function scanSvg(svg) {
     try {
-      var r = svg.getBoundingClientRect();
-      if (r.width < 100 || r.height < 100) return;
+      if (!visible(svg)) return;
       var now = Date.now();
       if (svg.__dsLast && now - svg.__dsLast < 2500) return;
       svg.__dsLast = now;
       var clone = svg.cloneNode(true);
-      clone.setAttribute('width', String(Math.round(r.width)));
-      clone.setAttribute('height', String(Math.round(r.height)));
+      clone.setAttribute('width', '512');
+      clone.setAttribute('height', '512');
       var xml = new XMLSerializer().serializeToString(clone);
       var url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
       var img = new Image();
@@ -66,9 +78,12 @@
   }
   setInterval(function () {
     try {
-      var nodes = document.querySelectorAll('img, canvas, svg');
-      for (var i = 0; i < nodes.length && i < 80; i++) {
+      var nodes = document.querySelectorAll('canvas, img, svg');
+      var scanned = 0;
+      for (var i = 0; i < nodes.length && scanned < MAX_NODES; i++) {
         var el = nodes[i];
+        if (!visible(el)) continue;
+        scanned++;
         if (el.tagName === 'SVG') scanSvg(el);
         else if (el.tagName === 'CANVAS') scanCanvas(el);
         else scanImg(el);

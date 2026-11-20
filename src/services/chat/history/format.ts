@@ -1,7 +1,7 @@
 /**
  * 历史会话导出产物（deepseek_data-*.zip）的类型定义。
  *
- * - 时间均为 UTC RFC 3339、Z 结尾，小数秒精度不固定；
+ * - 时间接受 RFC 3339 的 Z 与合法时区偏移，导入时会归一化成 UTC，小数秒精度不固定；
  * - 消息树按 id 排序和引用；
  * - 可空字段用 null 表示；可选字段允许缺省。
  */
@@ -11,7 +11,7 @@ export type Iso8601Utc = string
 
 export const EXPORT_FORMAT_VERSION = 3
 
-/** manifest.json，ZIP 的第一个条目 */
+/** manifest.json 按条目名查找（正常导出包里它仍是第一个文件条目） */
 export type Manifest = { export_format_version: typeof EXPORT_FORMAT_VERSION }
 
 /** chat_session_index.json 的一项，只列出成功写出的会话；位于全部会话 JSON 之后、图片之前 */

@@ -68,7 +68,13 @@ export const AccountPane = () => {
 
   return (
     <div className={styles.pane} aria-busy={busy}>
-      <div className={clsx(styles.status, phase === 'error' && styles.error)}>{status}</div>
+      <div
+        className={clsx(styles.status, phase === 'error' && styles.error)}
+        role={phase === 'error' ? 'alert' : 'status'}
+        aria-live="polite"
+      >
+        {status}
+      </div>
       <div className={styles.actions}>
         {phase === 'done' ? (
           <Button size="m" onClick={resetAccountFlow}>

@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo } from 'react'
@@ -24,6 +25,8 @@ import {
   type SelectMessageVersion,
 } from './BranchSwitcher.js'
 import styles from './AssistantMessage.module.css'
+
+const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
 
 export const AssistantMessage = memo(function AssistantMessage({
   sessionId,
@@ -113,7 +116,13 @@ export const AssistantMessage = memo(function AssistantMessage({
                 <button
                   type="button"
                   className={styles.noticeAction}
-                  onClick={() => void openRecharge()}
+                  onClick={() => {
+                    if (Capacitor.isNativePlatform()) {
+                      void openRecharge()
+                    } else {
+                      window.open(TOP_UP_URL, '_blank', 'noreferrer')
+                    }
+                  }}
                 >
                   {t('topUp')}
                 </button>

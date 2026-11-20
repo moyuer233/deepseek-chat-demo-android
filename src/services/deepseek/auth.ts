@@ -12,8 +12,10 @@ export const loadAccountToken = async (): Promise<void> => {
     if (token) {
       setAccountToken(token)
     }
-  } catch {
-    // 没有授权或原生不可用时保持 API Key 模式
+  } catch (error) {
+    // 没有授权是预期情况；其他异常留一条 warn 便于线上定位
+    // eslint-disable-next-line no-console
+    console.warn('[deepseek-auth] platformAuthToken failed', error)
   }
 }
 

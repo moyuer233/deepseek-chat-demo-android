@@ -27,6 +27,7 @@ public class OAuthActivity extends AppCompatActivity {
 
     public static final String EXTRA_URL = "url";
     public static final String EXTRA_CODE = "code";
+    public static final String EXTRA_STATE = "state";
 
     private WebView webView;
 
@@ -68,9 +69,13 @@ public class OAuthActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String target) {
                 if (target != null && target.startsWith(DshAuth.REDIRECT_URI)) {
-                    String code = Uri.parse(target).getQueryParameter("code");
+                    Uri uri = Uri.parse(target);
+                    String code = uri.getQueryParameter("code");
+                    String state = uri.getQueryParameter("state");
                     if (code != null && !code.isEmpty()) {
-                        setResult(RESULT_OK, new Intent().putExtra(EXTRA_CODE, code));
+                        setResult(RESULT_OK, new Intent()
+                                .putExtra(EXTRA_CODE, code)
+                                .putExtra(EXTRA_STATE, state == null ? "" : state));
                     } else {
                         setResult(RESULT_CANCELED);
                     }

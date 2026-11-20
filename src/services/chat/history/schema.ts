@@ -48,7 +48,8 @@ const time: Read<string> = (value) => {
     return invalid()
   }
   if (match[3] !== 'Z') {
-    return value
+    // 统一归一化成 UTC，保持 Iso8601Utc 契约与排序稳定。
+    return parsed.toISOString()
   }
   // Date 只保留毫秒；校验时补齐/截断精度，返回时保留原文，避免丢失微秒或纳秒。
   const milliseconds = `${match[1]}.${(match[2] ?? '').padEnd(3, '0').slice(0, 3)}Z`

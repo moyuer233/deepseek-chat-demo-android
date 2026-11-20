@@ -30,6 +30,8 @@ public class LoginActivity extends AppCompatActivity {
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_TOKEN = "token";
 
+    private static final long POLL_TIMEOUT_MS = 5 * 60 * 1000L;
+
     private static final String READ_TOKEN_JS =
             "(function(){try{var raw=localStorage.getItem('userToken');if(!raw)return '';"
             + "var o=JSON.parse(raw);if(!o)return '';"
@@ -138,6 +140,12 @@ public class LoginActivity extends AppCompatActivity {
         });
         webView.loadUrl(url);
         handler.postDelayed(poll, 800);
+        handler.postDelayed(() -> {
+            if (!finished) {
+                android.widget.Toast.makeText(this, "登录超时，请重试", android.widget.Toast.LENGTH_LONG).show();
+                cancel();
+            }
+        }, POLL_TIMEOUT_MS);
     }
 
     @Override
@@ -161,7 +169,7 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        handler.removeCallbacks(poll);
+        handler.removeCallbacksAndMessages(null);
         if (webView != null) {
             webView.destroy();
             webView = null;

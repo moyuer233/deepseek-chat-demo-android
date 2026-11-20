@@ -17,12 +17,18 @@ const toBase64 = (bytes: Uint8Array) => {
 export const shareBlob = async (name: string, blob: Blob) => {
   if (Capacitor.isNativePlatform()) {
     const { path } = await DeepSeekAccount.beginExportFile({ name })
-    const bytes = new Uint8Array(await blob.arrayBuffer())
-    for (let offset = 0; offset < bytes.length; offset += CHUNK) {
-      await DeepSeekAccount.appendExportChunk({
+    let written = 0
+    for (let offset = 0; offset < blob.size; offset += CHUNK) {
+      // 按块读取，避免整个导出包再复制进 JS 堆。
+      const chunk = new Uint8Array(await blob.slice(offset, offset + CHUNK).arrayBuffer())
+      const result = await DeepSeekAccount.appendExportChunk({
         path,
-        base64: toBase64(bytes.subarray(offset, offset + CHUNK)),
+        base64: toBase64(chunk),
       })
+      written += result.bytes
+    }
+    if (written !== blob.size) {
+      throw new Error('导出文件写入不完整，请重试')
     }
     await DeepSeekAccount.shareFile({
       path,

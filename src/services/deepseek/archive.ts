@@ -1,5 +1,6 @@
 import { strFromU8, unzipSync } from 'fflate'
 import type { SessionIndexEntry } from '../chat/history/format.js'
+import { INDEX_PATH } from '../chat/history/paths.js'
 
 /** 导入前给用户看的会话清单。 */
 export type PreviewSession = {
@@ -19,11 +20,12 @@ export type ArchivePreview = {
 export const readArchivePreview = (bytes: Uint8Array, fileName: string): ArchivePreview => {
   let entries: Record<string, Uint8Array>
   try {
-    entries = unzipSync(bytes)
+    // filter 让 fflate 只解压索引条目，避免 100MB+ 导出包整包展开进 JS 堆。
+    entries = unzipSync(bytes, { filter: (file) => file.name === INDEX_PATH })
   } catch {
     throw new Error('这个文件不是有效的 ZIP')
   }
-  const index = entries['chat_session_index.json']
+  const index = entries[INDEX_PATH]
   if (!index) {
     throw new Error('压缩包里没有 chat_session_index.json，不是 DeepSeek 导出包')
   }
