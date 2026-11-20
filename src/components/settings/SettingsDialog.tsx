@@ -124,7 +124,7 @@ const SettingsContent = () => {
                 <div className={styles.aboutTitle}>{t('aboutTitle')}</div>
                 <div className={styles.aboutRow}>
                   <span>{t('aboutVersion')}</span>
-                  <span>0.1.0</span>
+                  <span>0.2.0</span>
                 </div>
                 <a
                   className={styles.aboutRow}

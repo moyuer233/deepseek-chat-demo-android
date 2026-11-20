@@ -1,32 +1,45 @@
-# DeepSeek Chat Demo（安卓版）
+<p align="center">
+  <a href="https://github.com/moyuer233/deepseek-chat-demo-android">
+    <img src="docs/assets/icon.png" width="128" alt="DeepSeek Chat Demo" />
+  </a>
+</p>
+
+<h1 align="center">DeepSeek Chat Demo</h1>
+
+<p align="center"><i>✨ DeepSeek 网页版聊天，装进安卓 App ✨</i></p>
+
+<p align="center">
+  <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
+  <a href="https://github.com/moyuer233/deepseek-chat-demo-android/blob/main/LICENSE"><img src="https://img.shields.io/github/license/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=opensourceinitiative&logoColor=white&color=3DA639" alt="license" /></a>
+  <a href="https://github.com/moyuer233/deepseek-chat-demo-android/actions/workflows/pages.yml"><img src="https://img.shields.io/github/actions/workflow/status/moyuer233/deepseek-chat-demo-android/pages.yml?style=flat-square&labelColor=161b22&logo=githubactions&logoColor=white&color=2088FF&label=pages" alt="pages" /></a>
+</p>
 
 [English](README.md) | 简体中文
 
-基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）二次开发的**非官方**安卓 App。
+基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）二次开发的非官方安卓 App，与 DeepSeek 官方无隶属或背书关系。
 
-> 本项目与 DeepSeek 官方无隶属、无背书关系；"DeepSeek" 仅用于说明接口兼容性。
+登录一次 DeepSeek 账号就能导入全部会话，之后用账号授权直接聊天，不用手动填 API Key。
 
 ## 功能
 
-- **登录即导入**：在原生 WebView 里登录 `chat.deepseek.com`，走官方导出接口一键导入全部会话（与 chat-demo 相同的 v3 归档格式）。
-- **免 API Key 聊天**：用与 DeepSeek Harness 相同的账号 OAuth（PKCE，`auth_init` → `/dsh/authorize` → `auth_exchange`）拿到 grant，聊天请求带 `x-dsh-auth-token`；也保留手动填 API Key 的兜底。
-- **充值页微信二维码识别（实验）**：桌面 UA 打开 platform 充值页，用 jsQR 解出支付二维码，`weixin://` 链接交给微信打开。
-- 原生体验：返回键逐级后退、edge-to-edge 安全区、导出走系统分享、登录前条款确认。
+- 登录 chat.deepseek.com 后，通过官方导出接口导入该账号的全部会话。
+- 用账号 grant 聊天，不需要 API Key；也可以手动填 Key 兜底。
+- 聊天页支持深度思考、智能搜索、图片上传和朗读。
+- 内置充值页能识别支付二维码，把码存进相册并拉起微信。
 
 ## 下载
 
-预编译 APK：[Releases · v0.1.0-android](https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.1.0-android)（`app-release-signed.apk`，自签名，Android 7.0+）。
+APK 在 [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) 里，自签名，支持 Android 7.0 及以上。
 
-## 状态
+## 说明
 
-- M1（安卓壳 + 聊天界面 + 手动 Key）：完成。
-- M2（登录导入全部会话 + 账号 grant 聊天）：导入流程已实现；账号 grant 已在模拟器实测（`GET /models`、`POST /anthropic/v1/messages` 均 200）。
-- 真实账号的导入全链路、充值二维码链路仍在验证中。
-- 暂未上架；从源码构建 debug APK。
+- 聊天消耗 API 额度，账号没余额时会返回 402，App 里会给出充值入口。
+- 微信支付二维码是银联码（qr.95516.com）。App 能打开微信，码本身需要在微信里扫。
+- 语音输入需要麦克风权限；选图和选文件都走系统选择器。
 
 ## 构建
 
-依赖：Node.js、pnpm、JDK 21、Android SDK（compileSdk 36）。
+在仓库根目录执行，需要 Node.js、pnpm、JDK 21 和 Android SDK 36。
 
 ```bash
 pnpm install
@@ -35,15 +48,15 @@ pnpm exec cap sync android
 cd android && ./gradlew assembleDebug
 ```
 
-产物：`android/app/build/outputs/apk/debug/app-debug.apk`。
+debug APK 在 `android/app/build/outputs/apk/debug/app-debug.apk`；release 需要你自己的签名文件。
 
 ## 结构
 
-- `src/` — chat-demo 原有 Web 客户端 + 少量安卓适配层。
-- `src/services/deepseek/` — 账号流程、导入导出、原生插件桥接。
-- `android/` — Capacitor 壳、`DeepSeekAccountPlugin`、登录/OAuth/充值三个 WebView Activity。
-- `docs/research/` — 实现所依据的接口与 UX 调研。
+- `src/` — chat-demo 原有 Web 客户端和安卓适配层。
+- `src/services/deepseek/` — 账号流程、导入导出、原生桥接。
+- `android/` — Capacitor 壳、登录/OAuth/充值三个 Activity。
+- `docs/research/` — 接口与 UX 调研记录。
 
-## 致谢与许可
+## 许可
 
-基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT），见 [LICENSE](LICENSE)，保留原版权声明。
+MIT，基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)，保留原版权声明，见 [LICENSE](LICENSE)。

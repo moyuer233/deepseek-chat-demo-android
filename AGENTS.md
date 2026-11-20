@@ -97,9 +97,9 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 
 ## 发布
 
-- 版本：0.1.0（versionCode 1，versionName 0.1.0）
+- 版本：0.2.0（versionCode 2，versionName 0.2.0）；上一版 0.1.0 对应 tag v0.1.0-android
 - 签名密钥：`H:\Android\keystores\dsapp-release.jks`，密码在 `H:\Android\keystores\dsapp-release.txt`（都不进仓库）
-- Release：https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.1.0-android （附 app-release-signed.apk）
+- Release：v0.2.0 → https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.2.0 （APK 自签名）；历史版 v0.1.0-android
 - **gh 命令必须带 `-R moyuer233/deepseek-chat-demo-android`**：本地 `origin` 指向 chat-demo fork，不带 -R 会操作错仓库。
 
 ## 构建
