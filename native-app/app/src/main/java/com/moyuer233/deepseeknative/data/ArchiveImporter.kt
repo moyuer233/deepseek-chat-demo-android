@@ -67,9 +67,9 @@ object ArchiveImporter {
             }
             chain.reverse()
             val messages = mutableListOf<LocalMessage>()
-            for (node in chain) {
+            for (node in nodes.values.sortedBy { it.optInt("id") }) {
                 val role = node.optString("role")
-                val fragments = node.optJSONArray("fragments") ?: continue
+                val fragments = node.optJSONArray("fragments") ?: JSONArray()
                 var content = ""
                 var thinking = ""
                 for (j in 0 until fragments.length()) {
@@ -80,10 +80,27 @@ object ArchiveImporter {
                     }
                 }
                 if (content.isNotEmpty() || thinking.isNotEmpty()) {
-                    messages.add(LocalMessage(if (role == "USER") "user" else "assistant", content, thinking))
+                    val parent = if (node.isNull("parent_id")) null else node.optInt("parent_id")
+                    messages.add(
+                        LocalMessage(
+                            id = node.optInt("id"),
+                            parentId = parent,
+                            role = if (role == "USER") "user" else "assistant",
+                            content = content,
+                            thinking = thinking,
+                        )
+                    )
                 }
             }
-            LocalSession(id = id, title = title, updatedAt = updatedAt, pinned = o.optBoolean("pinned", false), messages = messages)
+            val current = if (o.isNull("current_message_id")) messages.maxByOrNull { it.id }?.id else o.optInt("current_message_id", 0)
+            LocalSession(
+                id = id,
+                title = title,
+                updatedAt = updatedAt,
+                pinned = o.optBoolean("pinned", false),
+                currentMessageId = current,
+                messages = messages,
+            )
         }
     } catch (e: Exception) {
         null

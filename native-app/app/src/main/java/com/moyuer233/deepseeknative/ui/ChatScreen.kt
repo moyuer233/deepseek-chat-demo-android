@@ -157,13 +157,13 @@ fun ChatScreen(
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     val messages = remember {
         mutableStateListOf<ChatMessage>().apply {
-            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, liked = it.liked, done = true)) }
+            initial?.linearPath()?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, imagePath = it.imagePath, liked = it.liked, done = true)) }
         }
     }
     fun saveLocals() {
         val id = currentSessionId ?: return
         val list = LocalStore.load(context)
-        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking), it.imagePath, it.liked) }.toMutableList()
+        val msgs = messages.map { LocalMessage(role = it.role, content = cleanSafety(it.content), thinking = cleanSafety(it.thinking), imagePath = it.imagePath, liked = it.liked) }.toMutableList()
         val index = list.indexOfFirst { it.id == id }
         if (index >= 0) {
             list[index].messages.clear()

@@ -26,9 +26,9 @@ object ArchiveExporter {
             val index = JSONArray()
             for (s in sessions) {
                 val messages = JSONArray()
-                var parentId: Int? = null
                 for ((i, m) in s.messages.withIndex()) {
-                    val id = i + 1
+                    val id = if (m.id != 0) m.id else i + 1
+                    val parentId: Int? = m.parentId
                     val fragments = JSONArray()
                     when {
                         m.role == "user" -> fragments.put(JSONObject().put("type", "REQUEST").put("content", m.content))
@@ -49,13 +49,12 @@ object ArchiveExporter {
                             .put("inserted_at", "2026-01-01T00:00:00Z")
                             .put("fragments", fragments)
                     )
-                    parentId = id
                 }
                 val sessionJson = JSONObject()
                     .put("id", s.id)
                     .put("title", s.title)
                     .put("pinned", s.pinned)
-                    .put("current_message_id", s.messages.size)
+                    .put("current_message_id", s.currentMessageId ?: s.messages.maxOfOrNull { it.id } ?: 0)
                     .put("inserted_at", "2026-01-01T00:00:00Z")
                     .put("updated_at", "2026-01-01T00:00:00Z")
                     .put("messages", messages)
