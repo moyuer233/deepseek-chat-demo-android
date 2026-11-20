@@ -77,9 +77,15 @@ private fun ManageCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun ManageRow(title: String, value: String? = null, icon: ImageVector? = null, danger: Boolean = false) {
+private fun ManageRow(
+    title: String,
+    value: String? = null,
+    icon: ImageVector? = null,
+    danger: Boolean = false,
+    onClick: () -> Unit = {},
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 18.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
@@ -110,7 +116,7 @@ private fun ManageLabel(text: String) {
 
 /** 官方「账号管理」页 1:1 复刻（静态版）。 */
 @Composable
-fun AccountManageScreen(onBack: () -> Unit) {
+fun AccountManageScreen(onBack: () -> Unit, onOpenDevices: () -> Unit = {}) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         ManageTopBar("账号管理", onBack)
         ManageLabel("账户")
@@ -123,7 +129,7 @@ fun AccountManageScreen(onBack: () -> Unit) {
         }
         ManageLabel("安全")
         ManageCard {
-            ManageRow("登录设备管理", icon = Icons.Filled.Smartphone)
+            ManageRow("登录设备管理", icon = Icons.Filled.Smartphone, onClick = onOpenDevices)
         }
         Spacer(Modifier.weight(1f))
         Text(
@@ -190,6 +196,83 @@ fun AgreementScreen(onBack: () -> Unit) {
             ManageRow("第三方信息共享清单")
             ManageRow("个人信息收集清单")
             ManageRow("应用权限")
+        }
+    }
+}
+
+
+private data class DeviceEntry(
+    val name: String,
+    val badge: String?,
+    val current: Boolean,
+    val os: String,
+    val loginTime: String,
+)
+
+/** 官方「登录设备管理」页 1:1 复刻（静态数据，接口后续接）。 */
+@Composable
+fun DeviceManageScreen(onBack: () -> Unit) {
+    val devices = listOf(
+        DeviceEntry("Google emulator", "当前设备", true, "Android 16", "2026/11/20 22:55:52"),
+        DeviceEntry("android-arm64", "Harness", false, "Android 13", "2026/11/20 21:54:20"),
+        DeviceEntry("Chrome", "开放平台", false, "Windows", "2026/11/20 21:54:19"),
+        DeviceEntry("Chrome", null, false, "Android 14", "2026/11/20 21:52:45"),
+    )
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+        ManageTopBar("登录设备管理", onBack)
+        Text(
+            "以下为本账号已登录的设备，点击“退出登录”后，该设备上将退出登录。",
+            color = TextSecondary,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
+        )
+        ManageCard {
+            devices.forEachIndexed { index, device ->
+                if (index > 0) {
+                    HorizontalDivider(color = Color(0xFFF0F1F3), modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(device.name, color = TextPrimary, fontSize = 16.sp)
+                            if (device.badge != null) {
+                                Spacer(Modifier.width(8.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = if (device.current) Color(0xFFEAF0FE) else Color(0xFFF0F1F3),
+                                ) {
+                                    Text(
+                                        device.badge,
+                                        color = if (device.current) Color(0xFF426EFE) else TextSecondary,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(device.os, color = TextSecondary, fontSize = 13.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Text("登录时间：" + device.loginTime, color = TextSecondary, fontSize = 13.sp)
+                    }
+                    if (!device.current) {
+                        Text("退出登录", color = Color(0xFF426EFE), fontSize = 15.sp, modifier = Modifier.clickable { })
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        ManageCard {
+            Text(
+                "登出所有设备",
+                color = Color(0xFFD93025),
+                fontSize = 16.sp,
+                modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 18.dp, vertical = 16.dp),
+            )
         }
     }
 }
