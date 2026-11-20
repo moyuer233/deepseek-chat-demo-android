@@ -1,4 +1,5 @@
 import { ApiError, API_ORIGIN, request } from './client.js'
+import { useSettings } from '../settings.js'
 
 /**
  * 语音接口：
@@ -7,6 +8,17 @@ import { ApiError, API_ORIGIN, request } from './client.js'
  * 鉴权都用 Authorization: Bearer。
  */
 const TOOLS_BASE_URL = `${API_ORIGIN}/v1/tools`
+
+/** 账号 grant 优先；没有授权时回退 API Key。 */
+const speechHeaders = (apiKey: string, contentType?: string): Record<string, string> => {
+  const { accountToken } = useSettings.getState()
+  return {
+    ...(accountToken
+      ? { 'x-dsh-auth-token': accountToken }
+      : { Authorization: `Bearer ${apiKey}` }),
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+  }
+}
 
 export type TtsVoice = 'stella' | 'tide'
 
@@ -23,7 +35,7 @@ export const transcribe = async (
   form.append('file', audio, 'recording.wav')
   const response = await request(`${TOOLS_BASE_URL}/asr`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
+    headers: speechHeaders(apiKey),
     body: form,
     signal,
   })
@@ -54,7 +66,7 @@ export const synthesize = async (
 ): Promise<ReadableStream<Uint8Array>> => {
   const response = await request(`${TOOLS_BASE_URL}/tts`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: speechHeaders(apiKey, 'application/json'),
     body: JSON.stringify({ text, voice_id: voice, format: 'pcm', filter_markdown: true }),
     signal,
   })

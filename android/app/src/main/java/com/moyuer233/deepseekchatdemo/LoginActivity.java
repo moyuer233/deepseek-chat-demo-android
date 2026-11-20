@@ -33,7 +33,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String READ_TOKEN_JS =
             "(function(){try{var raw=localStorage.getItem('userToken');if(!raw)return '';"
             + "var o=JSON.parse(raw);if(!o)return '';"
-            + "return String(o.token||o.access_token||'');}catch(e){return '';}})()";
+            + "return String(o.token||o.access_token||o.value||'');}catch(e){return '';}})()";
 
     private WebView webView;
     private final Handler handler = new Handler(Looper.getMainLooper());

@@ -47,11 +47,16 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 - API Key 方案（已降级为 fallback）：platform 是独立登录态，chat token 调 platform 返回 40003；
   创建接口是 `POST /api/v0/users/edit_api_keys`（action=create，无验证码）。详见 docs/research/platform-api-key.md。
   2026-11-20 起主路线改为 DSH 账号 grant（见下），只有 grant 失败时才回退建 Key。
-- 登录 WebView 已在模拟器实测：点「登录并导入」会打开 `LoginActivity`，chat.deepseek.com 登录页正常渲染（手机号+验证码/密码/Apple）。
-  真正登录后的 token 提取、导出、导入、建 Key 还没验证过（需要用户账号）。
+- **导入全链路已实测通过（2026-11-20，真实账号）**：`LoginActivity` 从 `localStorage.userToken` 的 `value` 字段取 token
+  （结构是 `{value:"...",__version__:"0"}`，不是 `{token}`）→ `export_all` → 轮询 `download_export_history` →
+  下载 115MB ZIP → 预览显示 150 个会话 → 导入成功，侧边栏按 Today/Yesterday/7 Days 正常分组。
 - DSH 账号 grant 实测（2026-11-20 真实账号）：`GET api.deepseek.com/models` 200、`POST /anthropic/v1/messages` 200、
   `GET platform/api/v0/users/get_api_keys` 200；`edit_api_keys` 404（x-dsh）/40003（Bearer）；
   `chat.deepseek.com/api/v0/export_all` 40002、Cookie 只有 WAF → 无 SSO。结论：**聊天免 Key，导入仍需 chat 登录**。
+- 导出修复（2026-11-20）：Android WebView 从 `content://` 取到的 File 可能 `size=0` 但流里有字节；
+  `zipWriter` 改为按实际读取长度记账，否则整次导出报 `Invalid history archive entry`。修复后导出 ZIP 已走通系统分享。
+- 功能实测（2026-11-20 模拟器）：深度思考（思考块）、智能搜索（18 网页 + 图像结果）、图片上传（Files API + grant，模型能描述图）、
+  朗读（grant 鉴权通过，模拟器音频设备报 I/O 错属环境问题）、导入 150 会话、导出分享，均通过；语音输入需真机麦克风验证。
 - 微信支付：手机 UA 下充值页**不提供微信支付**（321 个 chunk 里 weixin:// 命中 0）；但桌面 UA 下会走 PC 二维码流程。
   2026-11-20 用户改口径做 hack，已实现 TopUpActivity（桌面 UA + jsQR + Intent），登录二维码在跨域 iframe 里扫不到也不该扫；
   支付二维码的解码/拉起链路**尚未用真实账号验证**。详见 docs/research/wechat-pay.md。

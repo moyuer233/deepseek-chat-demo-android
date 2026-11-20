@@ -56,7 +56,11 @@ export const AccountPane = () => {
   const busy = Boolean(progressKey) || phase === 'preview'
 
   const signedIn = Boolean(apiKey || accountToken)
-  let status = signedIn ? t('accountLoggedIn') : t('accountLoginHint')
+  let status = apiKey
+    ? t('accountLoggedIn')
+    : accountToken
+      ? t('accountLoggedInAccount')
+      : t('accountLoginHint')
   if (progressKey) {
     status = t(progressKey)
   } else if (phase === 'done') {

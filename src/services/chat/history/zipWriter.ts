@@ -38,29 +38,36 @@ const entryName = (name: string) => {
   return { name: normalized, byteLength: bytes.length }
 }
 
+/** Android WebView 里从 content:// 取到的 File 可能 size 为 0，但流有数据；以实际读取长度为准。 */
+const resolveSize = async (blob: Blob): Promise<number> =>
+  blob.size > 0 ? blob.size : (await blob.arrayBuffer()).byteLength
+
 /** STORE 流式写入；成品必须能再次导入。 */
 export const writeArchive = async (entries: { name: string; blob: Blob }[]): Promise<Blob> => {
   if (entries.length >= ZIP64_COUNT) {
     throw new ArchiveLimitError()
   }
+  const resolved = await Promise.all(
+    entries.map(async ({ name, blob }) => ({ name, blob, size: await resolveSize(blob) }))
+  )
   const names = new Set<string>()
   let dataSize = 0
   let directorySize = 0
-  const prepared = entries.map(({ name, blob }) => {
+  const prepared = resolved.map(({ name, blob, size }) => {
     const normalized = entryName(name)
     if (names.has(normalized.name)) {
       invalid()
     }
     names.add(normalized.name)
-    if (blob.size >= ZIP64_SIZE) {
+    if (size >= ZIP64_SIZE) {
       throw new ArchiveLimitError()
     }
-    dataSize += blob.size + 46 + normalized.byteLength
+    dataSize += size + 46 + normalized.byteLength
     directorySize += 46 + normalized.byteLength
     if (dataSize >= ZIP64_SIZE || directorySize >= ZIP64_SIZE) {
       throw new ArchiveLimitError()
     }
-    return { name: normalized.name, blob }
+    return { name: normalized.name, blob, size }
   })
 
   const expectedSize = dataSize + directorySize + 22
@@ -79,7 +86,7 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
     completed = final
   })
   try {
-    for (const { name, blob } of prepared) {
+    for (const { name, blob, size: blobSize } of prepared) {
       const entry = new ZipPassThrough(name)
       entry.mtime = new Date(1980, 0, 1)
       zip.add(entry)
@@ -92,12 +99,12 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
             break
           }
           written += value.byteLength
-          if (written > blob.size) {
+          if (written > blobSize) {
             invalid()
           }
           entry.push(value)
         }
-        if (written !== blob.size) {
+        if (written !== blobSize) {
           invalid()
         }
         entry.push(new Uint8Array(), true)

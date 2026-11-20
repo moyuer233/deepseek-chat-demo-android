@@ -8,6 +8,7 @@ import { continueReply, regenerateReply } from '../../services/chat/store.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import type { AssistantMessage as AssistantMessageType } from '../../services/chat/types.js'
 import { openSettings } from '../settings/settingsDialogState.js'
+import { openRecharge } from '../../services/deepseek/account.js'
 import { IconButton } from '../base/IconButton.js'
 import { Button } from '../base/Button.js'
 import { Markdown } from '../markdown/Markdown.js'
@@ -23,8 +24,6 @@ import {
   type SelectMessageVersion,
 } from './BranchSwitcher.js'
 import styles from './AssistantMessage.module.css'
-
-const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
 
 export const AssistantMessage = memo(function AssistantMessage({
   sessionId,
@@ -111,14 +110,13 @@ export const AssistantMessage = memo(function AssistantMessage({
             {notice.action === 'topUp' ? (
               <>
                 {' '}
-                <a
+                <button
+                  type="button"
                   className={styles.noticeAction}
-                  href={TOP_UP_URL}
-                  target="_blank"
-                  rel="noreferrer"
+                  onClick={() => void openRecharge()}
                 >
                   {t('topUp')}
-                </a>
+                </button>
               </>
             ) : null}
           </span>
