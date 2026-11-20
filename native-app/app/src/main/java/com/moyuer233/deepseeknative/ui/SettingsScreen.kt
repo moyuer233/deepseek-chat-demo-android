@@ -47,7 +47,12 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
 /** 官方设置页 1:1 复刻（静态版，逐项功能后续接）。 */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenAccount: () -> Unit = {}, onOpenData: () -> Unit = {}) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenAccount: () -> Unit = {},
+    onOpenData: () -> Unit = {},
+    onOpenAgreement: () -> Unit = {},
+) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -93,7 +98,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenAccount: () -> Unit = {}, onOpenDat
             SettingsCard {
                 SettingsRow("检查更新", Icons.Filled.Update, value = "2.9.0(299)")
                 Divider()
-                SettingsRow("服务协议", Icons.Filled.Description)
+                SettingsRow("服务协议", Icons.Filled.Description, onClick = onOpenAgreement)
             }
             Spacer(Modifier.height(16.dp))
             SettingsCard {

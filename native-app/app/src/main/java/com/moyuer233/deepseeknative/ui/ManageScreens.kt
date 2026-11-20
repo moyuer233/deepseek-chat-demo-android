@@ -177,3 +177,19 @@ fun DataManageScreen(onBack: () -> Unit) {
         }
     }
 }
+
+
+/** 官方「服务协议」页 1:1 复刻（列表项后续接 WebView/文档）。 */
+@Composable
+fun AgreementScreen(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+        ManageTopBar("服务协议", onBack)
+        ManageCard {
+            ManageRow("用户协议")
+            ManageRow("隐私政策")
+            ManageRow("第三方信息共享清单")
+            ManageRow("个人信息收集清单")
+            ManageRow("应用权限")
+        }
+    }
+}

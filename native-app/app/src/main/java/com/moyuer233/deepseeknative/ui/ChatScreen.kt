@@ -38,6 +38,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,6 +54,8 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 /** 会话页骨架：顶栏 + 消息区 + 输入卡（消息流下一步接）。 */
 @Composable
 fun ChatScreen(title: String, onBack: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp),
@@ -104,11 +110,17 @@ fun ChatScreen(title: String, onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MessageAction(Icons.Filled.ContentCopy)
+                    MessageAction(Icons.Filled.ContentCopy) { clipboard.setText(AnnotatedString("Hello! How can I help you today?")) }
                     MessageAction(Icons.Filled.ThumbUp)
                     MessageAction(Icons.Filled.ThumbDown)
                     MessageAction(Icons.Filled.VolumeUp)
-                    MessageAction(Icons.Filled.Share)
+                    MessageAction(Icons.Filled.Share) {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, "Hello! How can I help you today?")
+                        }
+                        context.startActivity(Intent.createChooser(intent, "分享"))
+                    }
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Filled.Refresh, contentDescription = "重新生成", tint = Color(0xFF9AA0A9), modifier = Modifier.size(20.dp))
                 }
@@ -129,8 +141,12 @@ fun ChatScreen(title: String, onBack: () -> Unit) {
                     Text("发消息或按住说话", color = Color(0xFF9AA0A9), fontSize = 15.sp)
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text("深度思考", color = TextPrimary, fontSize = 13.sp)
                         Spacer(Modifier.width(10.dp))
+                        Icon(Icons.Filled.Public, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text("智能搜索", color = TextPrimary, fontSize = 13.sp)
                         Spacer(Modifier.weight(1f))
                         Icon(Icons.Filled.Add, contentDescription = "附件", tint = TextPrimary, modifier = Modifier.size(22.dp))
@@ -140,17 +156,24 @@ fun ChatScreen(title: String, onBack: () -> Unit) {
                 }
             }
         }
+        Text(
+            "回答由 AI 生成，仅供参考",
+            color = Color(0xFFB0B5BD),
+            fontSize = 11.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        )
         Spacer(Modifier.navigationBarsPadding())
     }
 }
 
 @Composable
-private fun MessageAction(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun MessageAction(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit = {}) {
     Icon(
         icon,
         contentDescription = null,
         tint = Color(0xFF9AA0A9),
-        modifier = Modifier.size(20.dp).clickable { },
+        modifier = Modifier.size(20.dp).clickable(onClick = onClick),
     )
     Spacer(Modifier.width(20.dp))
 }
