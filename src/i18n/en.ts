@@ -189,6 +189,28 @@ export const en = {
   accountTermsBody:
     'By continuing you confirm that you have read and agree to the DeepSeek Terms of Use and Privacy Policy. After signing in, the app imports your chats and chats through your DeepSeek account (no API key needed).',
   accountTermsAgree: 'Agree and continue',
+  onboardingTitle: 'Welcome to DeepSeek Chat Demo',
+  onboardingPitch:
+    'DeepSeek web chat, on Android: sign in once, import every conversation, then chat through your DeepSeek account without an API key.',
+  onboardingStep1: 'Sign in to chat.deepseek.com and import all conversations',
+  onboardingStep2: 'Authorize your DeepSeek account and chat on your API quota',
+  onboardingStep3: 'Not subject to web limits; top up from inside the app when needed',
+  onboardingStart: 'Get started',
+  onboardingManual: 'Enter an API key',
+  onboardingNote: 'Unofficial app. Not affiliated with DeepSeek.',
+  onboardingImportTitle: 'Step 1: import your chats',
+  onboardingImportPitch:
+    'After you sign in to chat.deepseek.com the app pulls that account export and imports it. You can skip and import later from Settings → Account.',
+  onboardingLoginImport: 'Sign in and import',
+  onboardingSkip: 'Skip',
+  onboardingAuthTitle: 'Step 2: authorize your DeepSeek account',
+  onboardingAuthPitch:
+    'Chat through your API quota instead of the web limits, without creating an API key by hand.',
+  onboardingAuthButton: 'Authorize and continue',
+  onboardingNext: 'Next',
+  onboardingDoneTitle: 'Ready',
+  onboardingDonePitch: 'You can start chatting now. Import or authorize again anytime in Settings → Account.',
+  onboardingEnter: 'Enter the app',
   accountLoggedIn: 'Signed in. API Key saved on this device.',
   accountLoggedInAccount: 'Signed in with your DeepSeek account (no API key needed)',
   accountReimportButton: 'Import again',

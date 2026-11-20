@@ -1,6 +1,6 @@
 import { App as NativeApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
@@ -25,6 +25,7 @@ import {
   useSettingsDialog,
 } from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
+import { Onboarding } from '../components/onboarding/Onboarding.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
@@ -58,6 +59,24 @@ export const App = () => {
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
   const activeId = useChatStore((state) => state.activeId)
+  // 首次启动引导：只在原生端、且没看过时展示一次
+  const seenOnboarding = (() => {
+    try {
+      return localStorage.getItem('chat-demo:onboarded') === '1'
+    } catch {
+      return false
+    }
+  })()
+  const [onboarding, setOnboarding] = useState(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return false
+    }
+    try {
+      return localStorage.getItem('chat-demo:onboarded') !== '1'
+    } catch {
+      return true
+    }
+  })
 
   usePreventPageScroll(isMobile)
 
@@ -117,7 +136,10 @@ export const App = () => {
     void (async () => {
       await loadAccountToken()
       await initChat()
-      ensureApiKey()
+      // 引导页展示中、或用户已看过引导时都不再自动弹设置；欢迎页有登录入口
+      if (!onboarding && !seenOnboarding) {
+        ensureApiKey()
+      }
     })()
   }, [])
 
@@ -180,6 +202,14 @@ export const App = () => {
         </main>
         <SearchPanel />
       </div>
+      {onboarding ? (
+        <Onboarding
+          onFinish={() => {
+            setOnboarding(false)
+            newChat()
+          }}
+        />
+      ) : null}
       <SettingsDialog />
       <Toast />
     </>

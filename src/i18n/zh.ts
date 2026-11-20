@@ -179,6 +179,28 @@ export const zh = {
   accountTermsBody:
     '继续登录即表示你已阅读并同意 DeepSeek 的《使用条款》和《隐私政策》。登录成功后，App 会导入该账号的会话，并用账号授权直接聊天（不需要 API Key）。',
   accountTermsAgree: '同意并继续',
+  onboardingTitle: '欢迎使用 DeepSeek Chat Demo',
+  onboardingPitch:
+    '把 DeepSeek 网页版聊天搬到安卓：登录一次，导入全部会话；用 DeepSeek 账号授权直接聊天，不需要 API Key。',
+  onboardingStep1: '登录 chat.deepseek.com，导入该账号的全部会话',
+  onboardingStep2: '授权 DeepSeek 账号，App 直接用 API 额度聊天',
+  onboardingStep3: '不消耗网页版次数；余额不足时可在 App 内充值',
+  onboardingStart: '开始使用',
+  onboardingManual: '手动填 API Key',
+  onboardingNote: '非官方应用，与 DeepSeek 无隶属关系。',
+  onboardingImportTitle: '第 1 步：导入聊天记录',
+  onboardingImportPitch:
+    '登录 chat.deepseek.com 后，App 会拉取该账号的导出包并导入；也可以先跳过，之后在设置 → 账户里导入。',
+  onboardingLoginImport: '登录并导入',
+  onboardingSkip: '跳过',
+  onboardingAuthTitle: '第 2 步：授权 DeepSeek 账号',
+  onboardingAuthPitch:
+    '授权后 App 用你的 API 额度聊天，不消耗网页版次数，也不需要手动创建 API Key。',
+  onboardingAuthButton: '授权并继续',
+  onboardingNext: '下一步',
+  onboardingDoneTitle: '准备好了',
+  onboardingDonePitch: '可以开始聊天了。随时可以在设置 → 账户里重新导入或授权。',
+  onboardingEnter: '进入应用',
   accountLoggedIn: '已登录，API Key 已保存在本机',
   accountLoggedInAccount: '已通过 DeepSeek 账号登录（免 API Key）',
   accountReimportButton: '重新导入',
