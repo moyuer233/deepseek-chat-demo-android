@@ -17,6 +17,7 @@ data class LocalSession(
     val id: String,
     var title: String,
     var updatedAt: Long,
+    var pinned: Boolean = false,
     val messages: MutableList<LocalMessage> = mutableListOf(),
 )
 
@@ -38,7 +39,7 @@ object LocalStore {
                     val m = marr.getJSONObject(j)
                     msgs.add(LocalMessage(m.optString("role"), m.optString("content"), m.optString("thinking"), m.optString("imagePath"), m.optInt("liked", 0)))
                 }
-                out.add(LocalSession(o.optString("id"), o.optString("title"), o.optLong("updatedAt"), msgs))
+                out.add(LocalSession(o.optString("id"), o.optString("title"), o.optLong("updatedAt"), o.optBoolean("pinned", false), msgs))
             }
             out
         } catch (e: Exception) {
@@ -53,7 +54,7 @@ object LocalStore {
             for (m in s.messages) {
                 marr.put(JSONObject().put("role", m.role).put("content", m.content).put("thinking", m.thinking).put("imagePath", m.imagePath).put("liked", m.liked))
             }
-            arr.put(JSONObject().put("id", s.id).put("title", s.title).put("updatedAt", s.updatedAt).put("messages", marr))
+            arr.put(JSONObject().put("id", s.id).put("title", s.title).put("updatedAt", s.updatedAt).put("pinned", s.pinned).put("messages", marr))
         }
         file(context).writeText(arr.toString())
     }

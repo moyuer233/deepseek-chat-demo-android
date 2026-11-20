@@ -268,6 +268,8 @@ object ApiClient {
         onContent: (String) -> Unit,
         onDone: () -> Unit,
         onError: (String) -> Unit,
+        onThinking: (String) -> Unit = {},
+        onCitations: (List<Pair<String, String>>) -> Unit = {},
     ) {
         stopRequested = false
         try {
@@ -289,6 +291,8 @@ object ApiClient {
                 return
             }
             var content = ""
+            var thinking = ""
+            val citations = mutableListOf<Pair<String, String>>()
             conn.inputStream.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     if (!line.startsWith("data:")) continue
@@ -299,9 +303,23 @@ object ApiClient {
                     // OpenAI 风格
                     val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta")?.optString("content", "")
                     // Anthropic 风格
-                    val anth = if (obj.optString("type") == "content_block_delta")
-                        obj.optJSONObject("delta")?.optString("text", "") else ""
-                    val piece = delta?.takeIf { it.isNotEmpty() } ?: anth
+                    val type = obj.optString("type")
+                    val deltaObj = obj.optJSONObject("delta")
+                    val deltaType = deltaObj?.optString("type").orEmpty()
+                    val textPiece = if (type == "content_block_delta" && deltaType == "text_delta") (deltaObj?.optString("text", "") ?: "") else ""
+                    val thinkPiece = if (type == "content_block_delta" && deltaType == "thinking_delta") (deltaObj?.optString("thinking", "") ?: "") else ""
+                    if (type == "content_block_delta" && deltaType == "citations_delta") {
+                        val c = deltaObj?.optJSONObject("citation")
+                        if (c != null && c.optString("url").isNotEmpty()) {
+                            citations.add(c.optString("url") to c.optString("title"))
+                            onCitations(citations.toList())
+                        }
+                    }
+                    val piece = delta?.takeIf { it.isNotEmpty() } ?: textPiece
+                    if (thinkPiece.isNotEmpty()) {
+                        thinking += thinkPiece
+                        onThinking(sanitizeStreamText(thinking))
+                    }
                     if (!piece.isNullOrEmpty()) {
                         content += piece
                         onContent(sanitizeStreamText(content))
@@ -325,6 +343,7 @@ object ApiClient {
         onContent: (String) -> Unit,
         onDone: () -> Unit,
         onError: (String) -> Unit,
+        onThinking: (String) -> Unit = {},
     ) {
         val body = JSONObject()
             .put("model", if (thinking) "deepseek-reasoner" else "deepseek-chat")
@@ -380,6 +399,7 @@ object ApiClient {
         onContent: (String) -> Unit,
         onDone: () -> Unit,
         onError: (String) -> Unit,
+        onThinking: (String) -> Unit = {},
     ) {
         val content: Any = if (imageFileId != null) {
             org.json.JSONArray()
@@ -400,6 +420,7 @@ object ApiClient {
             onContent = onContent,
             onDone = onDone,
             onError = onError,
+            onThinking = onThinking,
         )
     }
 

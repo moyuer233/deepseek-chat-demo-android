@@ -50,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -129,7 +130,15 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     var ttsReady by remember { mutableStateOf(false) }
     val tts = remember {
-        TextToSpeech(context) { status -> ttsReady = status == TextToSpeech.SUCCESS }
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(context) { status ->
+            ttsReady = status == TextToSpeech.SUCCESS
+            val saved = SessionStore.ttsVoice(context)
+            if (ttsReady && !saved.isNullOrEmpty()) {
+                engine?.voices?.firstOrNull { it.name == saved }?.let { voice -> engine?.voice = voice }
+            }
+        }
+        engine
     }
     DisposableEffect(Unit) {
         onDispose {
@@ -160,7 +169,7 @@ fun ChatScreen(
             list[index].updatedAt = System.currentTimeMillis()
             if (list[index].title.isBlank()) list[index].title = title.ifBlank { "新对话" }
         } else {
-            list.add(LocalSession(id, title.ifBlank { "新对话" }, System.currentTimeMillis(), msgs))
+            list.add(LocalSession(id = id, title = title.ifBlank { "新对话" }, updatedAt = System.currentTimeMillis(), messages = msgs))
         }
         LocalStore.save(context, list)
     }
@@ -171,6 +180,7 @@ fun ChatScreen(
     var quoted by remember { mutableStateOf<String?>(null) }
     var menuTarget by remember { mutableStateOf<ChatMessage?>(null) }
     var selectMode by remember { mutableStateOf(false) }
+    val expandedThinking = remember { mutableStateMapOf<String, Boolean>() }
     val selectedIds = remember { mutableStateListOf<String>() }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -295,6 +305,7 @@ fun ChatScreen(
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
                         onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; saveLocals() } } },
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; saveLocals() } } },
+                        onThinking = { t -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(thinking = t) } } },
                     )
                 }
                 apiKey != null -> withContext(Dispatchers.IO) {
@@ -428,9 +439,22 @@ fun ChatScreen(
                 } else {
                     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                         if (message.thinking.isNotEmpty()) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { }) {
+                            val expanded = expandedThinking[message.id] == true
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { expandedThinking[message.id] = !expanded },
+                            ) {
                                 Text("已思考", color = Color(0xFF9AA0A9), fontSize = 14.sp)
                                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFF9AA0A9), modifier = Modifier.size(16.dp))
+                            }
+                            if (expanded) {
+                                Text(
+                                    cleanSafety(message.thinking),
+                                    color = Color(0xFF8A9099),
+                                    fontSize = 13.sp,
+                                    lineHeight = 19.sp,
+                                    modifier = Modifier.padding(vertical = 6.dp),
+                                )
                             }
                             Spacer(Modifier.height(8.dp))
                         }

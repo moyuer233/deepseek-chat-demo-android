@@ -83,7 +83,7 @@ object ArchiveImporter {
                     messages.add(LocalMessage(if (role == "USER") "user" else "assistant", content, thinking))
                 }
             }
-            LocalSession(id = id, title = title, updatedAt = updatedAt, messages = messages)
+            LocalSession(id = id, title = title, updatedAt = updatedAt, pinned = o.optBoolean("pinned", false), messages = messages)
         }
     } catch (e: Exception) {
         null

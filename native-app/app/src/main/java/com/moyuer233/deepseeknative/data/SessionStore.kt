@@ -10,6 +10,7 @@ object SessionStore {
     private const val KEY_API_KEY = "api_key"
     private const val KEY_ONBOARDED = "onboarded"
     private const val KEY_FONT_STEP = "font_step"
+    private const val KEY_TTS_VOICE = "tts_voice"
 
     fun token(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TOKEN, null)
@@ -43,6 +44,13 @@ object SessionStore {
 
     fun saveFontStep(context: Context, step: Int) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt(KEY_FONT_STEP, step).apply()
+    }
+
+    fun ttsVoice(context: Context): String? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TTS_VOICE, null)
+
+    fun saveTtsVoice(context: Context, name: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_TTS_VOICE, name).apply()
     }
 
     fun isOnboarded(context: Context): Boolean =

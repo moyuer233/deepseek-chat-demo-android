@@ -78,6 +78,16 @@ fun SettingsScreen(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showLogout by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
+    var showVoiceDialog by remember { mutableStateOf(false) }
+    var voices by remember { mutableStateOf<List<String>>(emptyList()) }
+    val ttsHolder = remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
+    androidx.compose.runtime.LaunchedEffect(showVoiceDialog) {
+        if (showVoiceDialog && ttsHolder.value == null) {
+            val engine = android.speech.tts.TextToSpeech(context) { }
+            ttsHolder.value = engine
+            voices = engine.voices?.filter { it.locale.language == "zh" }?.map { it.name }?.sorted().orEmpty()
+        }
+    }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -126,7 +136,12 @@ fun SettingsScreen(
             }
             SectionLabel("语音")
             SettingsCard {
-                SettingsRow("朗读音色", Icons.Filled.VolumeUp)
+                SettingsRow(
+                    "朗读音色",
+                    Icons.Filled.VolumeUp,
+                    value = SessionStore.ttsVoice(context) ?: "系统默认",
+                    onClick = { showVoiceDialog = true },
+                )
             }
             SectionLabel("关于")
             SettingsCard {
@@ -166,6 +181,29 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             )
         }
+    }
+
+    if (showVoiceDialog) {
+        AlertDialog(
+            onDismissRequest = { showVoiceDialog = false },
+            title = { Text("朗读音色") },
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        SessionStore.saveTtsVoice(context, "")
+                        showVoiceDialog = false
+                    }) { Text("系统默认") }
+                    voices.take(8).forEach { name ->
+                        TextButton(onClick = {
+                            SessionStore.saveTtsVoice(context, name)
+                            showVoiceDialog = false
+                        }) { Text(name.take(40), fontSize = 13.sp) }
+                    }
+                    if (voices.isEmpty()) Text("当前系统没有可用的中文音色", fontSize = 12.sp, color = TextSecondary)
+                }
+            },
+            confirmButton = { TextButton(onClick = { showVoiceDialog = false }) { Text("取消") } },
+        )
     }
 
     if (showFontDialog) {

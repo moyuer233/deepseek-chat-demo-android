@@ -203,7 +203,7 @@ private fun DrawerContent(
     var renameText by remember { mutableStateOf("") }
     var renaming by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        sessions = com.moyuer233.deepseeknative.data.LocalStore.load(context).sortedByDescending { it.updatedAt }
+        sessions = com.moyuer233.deepseeknative.data.LocalStore.load(context).sortedWith(compareByDescending<com.moyuer233.deepseeknative.data.LocalSession> { it.pinned }.thenByDescending { it.updatedAt })
         loading = false
     }
     Surface(modifier = modifier, color = Color.White) {
@@ -346,6 +346,16 @@ private fun DrawerContent(
                     title = { Text(target.title) },
                     text = {
                         Column {
+                            TextButton(onClick = {
+                                val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
+                                val index = list.indexOfFirst { it.id == target.id }
+                                if (index >= 0) {
+                                    list[index].pinned = !list[index].pinned
+                                    com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
+                                    sessions = list.sortedWith(compareByDescending<com.moyuer233.deepseeknative.data.LocalSession> { it.pinned }.thenByDescending { it.updatedAt })
+                                }
+                                menuSession = null
+                            }) { Text(if (target.pinned) "取消置顶" else "置顶") }
                             TextButton(onClick = { renaming = true }) { Text("重命名") }
                             TextButton(onClick = {
                                 val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
@@ -398,7 +408,8 @@ private fun groupSessions(sessions: List<com.moyuer233.deepseeknative.data.Local
         "30 Days" to mutableListOf(),
         "Earlier" to mutableListOf(),
     )
-    for (s in sessions.sortedByDescending { it.updatedAt }) {
+    for (s in sessions.sortedWith(compareByDescending<com.moyuer233.deepseeknative.data.LocalSession> { it.pinned }.thenByDescending { it.updatedAt })) {
+        if (s.pinned) { buckets.getOrPut("Pinned") { mutableListOf() }.add(s); continue }
         val age = now - s.updatedAt
         when {
             age < day -> buckets["Today"]!!.add(s)
