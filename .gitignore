@@ -24,3 +24,6 @@ android/build/
 .samples/
 
 .android-skills-src/
+native-app/.gradle/
+native-app/build/
+native-app/app/build/
