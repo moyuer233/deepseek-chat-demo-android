@@ -61,7 +61,7 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
   用 localStorage `chat-demo:onboarded` 只展示一次；看过之后启动不再强制弹设置页。
 - 微信支付：手机 UA 下充值页**不提供微信支付**（321 个 chunk 里 weixin:// 命中 0）；但桌面 UA 下会走 PC 二维码流程。
   2026-11-20 用户改口径做 hack，已实现 TopUpActivity（桌面 UA + jsQR + Intent），登录二维码在跨域 iframe 里扫不到也不该扫；
-  支付二维码的解码/拉起链路**尚未用真实账号验证**。详见 docs/research/wechat-pay.md。
+  支付二维码链路已实测（2026-11-20 真机）：jsQR 解码出银联 URL → 存图到相册 → 打开微信扫一扫/相册 → 微信显示「聚合收款 杭州深度求索… ¥10.00 确认付款」页，用户手动确认成功（未实际付款）。接口只返回银联 url、无 weixin://，所以无法自动直跳微信收银台。详见 docs/research/wechat-pay.md。
 - 官方 App 支付实证（REA + jadx-headless-mcp 0.7.1）：全包 Pay 命中 7 个全是微信 SDK 自带类，
   trace-android-references 查 PayReq 只有 2 条 SDK 内部引用、应用层零引用 → 官方 App 没接微信支付。
 - REA Android 反编译：JAR 在 H:\tools\jadx-headless-mcp\jadx-headless-mcp-0.7.1-all.jar，
