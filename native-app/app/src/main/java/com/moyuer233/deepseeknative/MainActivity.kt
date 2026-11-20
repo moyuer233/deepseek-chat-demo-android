@@ -11,6 +11,7 @@ import android.app.Activity
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
 import com.moyuer233.deepseeknative.ui.OAuthActivity
+import com.moyuer233.deepseeknative.ui.OnboardingScreen
 import com.moyuer233.deepseeknative.data.DshAuth
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -30,7 +31,7 @@ import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
 import com.moyuer233.deepseeknative.ui.WelcomeScreen
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 
-private enum class Screen { Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
+private enum class Screen { Onboarding, Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,12 +62,30 @@ class MainActivity : ComponentActivity() {
                 )
             }.start()
         }
-        val hasToken = SessionStore.token(this) != null
+        if (intent.hasExtra("testGrant")) {
+            Thread {
+                val token = com.moyuer233.deepseeknative.data.DshAuth.token(this)
+                android.util.Log.d("ChatTest", "grant token? " + (token != null))
+                if (token != null) {
+                    com.moyuer233.deepseeknative.data.ApiClient.streamGrantChat(
+                        grant = token,
+                        prompt = "say hi",
+                        thinking = false,
+                        onContent = { android.util.Log.d("ChatTest", "delta: " + it.take(120)) },
+                        onDone = { android.util.Log.d("ChatTest", "done") },
+                        onError = { android.util.Log.d("ChatTest", "error: " + it.take(300)) },
+                    )
+                }
+            }.start()
+        }
+        val hasToken = SessionStore.token(this) != null || com.moyuer233.deepseeknative.data.DshAuth.token(this) != null || SessionStore.apiKey(this) != null
+        val onboarded = SessionStore.isOnboarded(this)
         setContent {
             DeepSeekTheme {
                 var screen by remember {
                     mutableStateOf(
                         when {
+                            !onboarded -> Screen.Onboarding
                             debugScreen == "session" -> Screen.Session
                             debugScreen == "chat" || hasToken -> Screen.Chat
                             else -> Screen.Welcome
@@ -96,6 +115,10 @@ class MainActivity : ComponentActivity() {
                     }.start()
                 }
                 when (screen) {
+                    Screen.Onboarding -> OnboardingScreen(onDone = {
+                        SessionStore.setOnboarded(context)
+                        screen = if (hasToken) Screen.Chat else Screen.Welcome
+                    })
                     Screen.Welcome -> WelcomeScreen(
                         onPhone = { screen = Screen.PhoneLogin },
                         onPassword = { screen = Screen.PasswordLogin },
