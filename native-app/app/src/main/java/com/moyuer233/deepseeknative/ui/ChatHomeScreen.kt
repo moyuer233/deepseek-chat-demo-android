@@ -5,6 +5,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
@@ -197,6 +198,7 @@ private fun DrawerContent(
     val context = androidx.compose.ui.platform.LocalContext.current
     var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.LocalSession>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var query by remember { mutableStateOf("") }
     var menuSession by remember { mutableStateOf<com.moyuer233.deepseeknative.data.LocalSession?>(null) }
     var renameText by remember { mutableStateOf("") }
     var renaming by remember { mutableStateOf(false) }
@@ -218,11 +220,28 @@ private fun DrawerContent(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
                     Icon(Icons.Filled.Search, contentDescription = null, tint = Color(0xFF9AA0A9), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("搜索对话内容...", color = Color(0xFF9AA0A9), fontSize = 15.sp)
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 15.sp),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { inner ->
+                            if (query.isEmpty()) {
+                                Text("搜索对话内容...", color = Color(0xFF9AA0A9), fontSize = 15.sp)
+                            }
+                            inner()
+                        },
+                    )
                 }
             }
-            val groups = remember(sessions) { groupSessions(sessions) }
-            if (sessions.isNotEmpty()) {
+            val filtered = remember(sessions, query) {
+                if (query.isBlank()) sessions else sessions.filter { s ->
+                    s.title.contains(query, ignoreCase = true) || s.messages.any { it.content.contains(query, ignoreCase = true) }
+                }
+            }
+            val groups = remember(filtered) { groupSessions(filtered) }
+            if (filtered.isNotEmpty()) {
                 androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     groups.forEach { (label, list) ->
                         item {
@@ -262,7 +281,16 @@ private fun DrawerContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(if (loading) "加载中…" else "暂无对话", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    when {
+                        loading -> "加载中…"
+                        query.isNotBlank() -> "无匹配结果"
+                        else -> "暂无对话"
+                    },
+                    color = TextPrimary,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium,
+                )
                 Spacer(Modifier.height(8.dp))
                 Text("你与 DeepSeek 的对话\n将展示在这里", color = TextSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
                 Spacer(Modifier.height(16.dp))
