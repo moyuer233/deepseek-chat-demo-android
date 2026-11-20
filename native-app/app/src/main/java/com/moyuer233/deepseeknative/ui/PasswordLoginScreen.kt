@@ -165,6 +165,7 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn
                     loading = false
                     if (result.ok && result.token != null) {
                         SessionStore.saveToken(context, result.token)
+                        SessionStore.saveMobile(context, phone)
                         onLoggedIn()
                     } else {
                         error = when (result.message) {

@@ -278,7 +278,11 @@ private fun DrawerContent(
                     Icon(Icons.Filled.Person, contentDescription = null, tint = Color(0xFF8A9099), modifier = Modifier.padding(6.dp))
                 }
                 Spacer(Modifier.width(10.dp))
-                Text("193****64", color = TextPrimary, fontSize = 15.sp)
+                Text(
+                    com.moyuer233.deepseeknative.data.SessionStore.maskedMobile(context) ?: "未登录",
+                    color = TextPrimary,
+                    fontSize = 15.sp,
+                )
                 Spacer(Modifier.weight(1f))
                 Icon(
                     Icons.Filled.MoreHoriz,

@@ -153,6 +153,7 @@ fun PhoneLoginScreen(onBack: () -> Unit, onLoggedIn: () -> Unit = {}) {
                     loading = false
                     if (result.ok && result.token != null) {
                         SessionStore.saveToken(context, result.token)
+                        SessionStore.saveMobile(context, phone)
                         onLoggedIn()
                     } else {
                         error = result.message
