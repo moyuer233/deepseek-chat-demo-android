@@ -13,6 +13,10 @@
 - **充值页微信二维码识别（实验）**：桌面 UA 打开 platform 充值页，用 jsQR 解出支付二维码，`weixin://` 链接交给微信打开。
 - 原生体验：返回键逐级后退、edge-to-edge 安全区、导出走系统分享、登录前条款确认。
 
+## 下载
+
+预编译 APK：[Releases · v0.1.0-android](https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.1.0-android)（`app-release-signed.apk`，自签名，Android 7.0+）。
+
 ## 状态
 
 - M1（安卓壳 + 聊天界面 + 手动 Key）：完成。

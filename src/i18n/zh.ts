@@ -179,9 +179,6 @@ export const zh = {
   accountTermsBody:
     '继续登录即表示你已阅读并同意 DeepSeek 的《使用条款》和《隐私政策》。登录成功后，App 会导入该账号的会话，并用账号授权直接聊天（不需要 API Key）。',
   accountTermsAgree: '同意并继续',
-  accountOAuthButton: '实验：账号授权',
-  accountOAuthRunning: '等待授权…',
-  accountProbeButton: '重跑探针',
   accountLoggedIn: '已登录，API Key 已保存在本机',
   accountLoggedInAccount: '已通过 DeepSeek 账号登录（免 API Key）',
   accountReimportButton: '重新导入',

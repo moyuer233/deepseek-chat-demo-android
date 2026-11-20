@@ -13,6 +13,10 @@ An unofficial Android app built on top of [deepseek-ai/chat-demo](https://github
 - **Top-up page with WeChat QR detection (experimental).** Opens the platform top-up page with a desktop user agent, decodes the payment QR on the page with jsQR and hands the `weixin://` link to WeChat.
 - Native Android behaviour: back-button hierarchy, edge-to-edge safe areas, system share for exported archives, terms confirmation before sign-in.
 
+## Download
+
+Prebuilt APK: [Releases · v0.1.0-android](https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.1.0-android) (`app-release-signed.apk`, self-signed, Android 7.0+).
+
 ## Status
 
 - M1 (Android shell, chat UI, manual API key): done.

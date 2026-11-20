@@ -79,6 +79,13 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
   `gh` 不要设 HTTPS_PROXY。npm 走 npmmirror；`maven.google.com` 直连不通，Gradle 需配阿里云镜像。
 - 会话沙箱为 danger-full-access，不需要申请审批。
 
+## 发布
+
+- 版本：0.1.0（versionCode 1，versionName 0.1.0）
+- 签名密钥：`H:\Android\keystores\dsapp-release.jks`，密码在 `H:\Android\keystores\dsapp-release.txt`（都不进仓库）
+- Release：https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.1.0-android （附 app-release-signed.apk）
+- **gh 命令必须带 `-R moyuer233/deepseek-chat-demo-android`**：本地 `origin` 指向 chat-demo fork，不带 -R 会操作错仓库。
+
 ## 构建
 
 ```
