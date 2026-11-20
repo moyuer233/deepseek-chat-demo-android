@@ -82,7 +82,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.DisposableEffect
 import java.util.Locale
 
+/** 显示/落库前清掉服务端安全标签。 */
+private fun cleanSafety(raw: String): String {
+    var text = raw.replace(Regex("<ds_safety>[\\s\\S]*?</ds_safety>"), "")
+    val open = text.indexOf("<ds_safety>")
+    if (open >= 0) text = text.substring(0, open)
+    text = text.replace(Regex("</?ds_safety>"), "")
+    text = text.replace(Regex("\\bSafe\\s*$"), "")
+    return text.trimEnd()
+}
+
 private data class ChatMessage(
+    val id: String = java.util.UUID.randomUUID().toString(),
     val role: String, // user / assistant
     var content: String = "",
     var thinking: String = "",
@@ -120,13 +131,13 @@ fun ChatScreen(
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     val messages = remember {
         mutableStateListOf<ChatMessage>().apply {
-            initial?.messages?.forEach { add(ChatMessage(it.role, it.content, it.thinking, true)) }
+            initial?.messages?.forEach { add(ChatMessage(role = it.role, content = it.content, thinking = it.thinking, done = true)) }
         }
     }
     fun saveLocals() {
         val id = currentSessionId ?: return
         val list = LocalStore.load(context)
-        val msgs = messages.map { LocalMessage(it.role, it.content, it.thinking) }.toMutableList()
+        val msgs = messages.map { LocalMessage(it.role, cleanSafety(it.content), cleanSafety(it.thinking)) }.toMutableList()
         val index = list.indexOfFirst { it.id == id }
         if (index >= 0) {
             list[index].messages.clear()
@@ -139,12 +150,18 @@ fun ChatScreen(
         LocalStore.save(context, list)
     }
     var streaming by remember { mutableStateOf(false) }
+    var sendSeq by remember { mutableStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf("") }
     var thinkingEnabled by remember { mutableStateOf(true) }
     var searchEnabled by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(messages.size, messages.lastOrNull()?.content?.length) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
 
     fun send() {
         val text = input.trim()
@@ -162,6 +179,13 @@ fun ChatScreen(
         messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
         saveLocals()
         streaming = true
+        sendSeq += 1
+        val mySeq = sendSeq
+        val assistantId = messages[messages.size - 1].id
+        fun updateAssistant(block: (ChatMessage) -> ChatMessage) {
+            val index = messages.indexOfFirst { it.id == assistantId }
+            if (index >= 0) messages[index] = block(messages[index])
+        }
         scope.launch {
             when {
                 grant != null -> withContext(Dispatchers.IO) {
@@ -169,9 +193,9 @@ fun ChatScreen(
                         grant = grant,
                         prompt = text,
                         thinking = thinkingEnabled,
-                        onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
-                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); saveLocals() } },
-                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg; saveLocals() } },
+                        onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
+                        onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; saveLocals() } } },
+                        onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; saveLocals() } } },
                     )
                 }
                 apiKey != null -> withContext(Dispatchers.IO) {
@@ -179,8 +203,8 @@ fun ChatScreen(
                         apiKey = apiKey,
                         prompt = text,
                         thinking = true,
-                        onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
-                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
+                        onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
+                        onDone = { scope.launch { updateAssistant { it.copy(done = true) } } },
                         onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
                     )
                 }
@@ -200,7 +224,7 @@ fun ChatScreen(
                                 thinkingEnabled = thinkingEnabled,
                                 searchEnabled = searchEnabled,
                                 onDelta = { content, thinking ->
-                                    scope.launch { messages[messages.size - 1] = messages.last().copy(content = content, thinking = thinking) }
+                                    scope.launch { updateAssistant { it.copy(content = content, thinking = thinking) } }
                                 },
                                 onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
                                 onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
@@ -258,11 +282,11 @@ fun ChatScreen(
                         if (message.content.isEmpty() && !message.done) {
                             Text("正在思考…", color = TextSecondary, fontSize = 15.sp)
                         } else {
-                            Text(message.content, color = TextPrimary, fontSize = 16.sp, lineHeight = 24.sp)
+                            Text(cleanSafety(message.content), color = TextPrimary, fontSize = 16.sp, lineHeight = 24.sp)
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            MessageAction(Icons.Filled.ContentCopy) { clipboard.setText(AnnotatedString(message.content)) }
+                            MessageAction(Icons.Filled.ContentCopy) { clipboard.setText(AnnotatedString(cleanSafety(message.content))) }
                             MessageAction(Icons.Filled.ThumbUp)
                             MessageAction(Icons.Filled.ThumbDown)
                             MessageAction(Icons.Filled.VolumeUp) {
@@ -274,7 +298,7 @@ fun ChatScreen(
                             MessageAction(Icons.Filled.Share) {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, message.content)
+                                    putExtra(Intent.EXTRA_TEXT, cleanSafety(message.content))
                                 }
                                 context.startActivity(Intent.createChooser(intent, "分享"))
                             }

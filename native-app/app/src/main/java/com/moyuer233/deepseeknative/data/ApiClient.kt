@@ -248,6 +248,16 @@ object ApiClient {
     private fun mergeStream(prev: String, next: String): String =
         if (next.startsWith(prev)) next else prev + next
 
+    /** 去掉服务端安全分类标签（<ds_safety>...</ds_safety>）及其后的 Safe 标记。 */
+    private fun sanitizeStreamText(raw: String): String {
+        var text = raw.replace(Regex("<ds_safety>[\\s\\S]*?</ds_safety>"), "")
+        val open = text.indexOf("<ds_safety>")
+        if (open >= 0) text = text.substring(0, open)
+        text = text.replace(Regex("</?ds_safety>"), "")
+        text = text.replace(Regex("\\bSafe\\s*$"), "")
+        return text.trimEnd()
+    }
+
     private fun sseStream(
         url: String,
         headers: Map<String, String>,
@@ -280,6 +290,7 @@ object ApiClient {
                     if (!line.startsWith("data:")) continue
                     val payload = line.removePrefix("data:").trim()
                     if (payload.isEmpty() || payload == "[DONE]") continue
+                    android.util.Log.d("ChatSSE", payload.take(400))
                     val obj = runCatching { JSONObject(payload) }.getOrNull() ?: continue
                     // OpenAI 风格
                     val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta")?.optString("content", "")
@@ -289,7 +300,7 @@ object ApiClient {
                     val piece = delta?.takeIf { it.isNotEmpty() } ?: anth
                     if (!piece.isNullOrEmpty()) {
                         content += piece
-                        onContent(content)
+                        onContent(sanitizeStreamText(content))
                     }
                 }
             }
