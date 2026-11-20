@@ -125,6 +125,7 @@ fun ChatScreen(
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val fontScale = remember { listOf(0.85f, 1f, 1.15f, 1.3f).getOrElse(SessionStore.fontStep(context)) { 1f } }
     var input by remember { mutableStateOf("") }
     var ttsReady by remember { mutableStateOf(false) }
     val tts = remember {
@@ -420,7 +421,7 @@ fun ChatScreen(
                                         Spacer(Modifier.height(6.dp))
                                     }
                                 }
-                                if (message.content.isNotEmpty()) Text(message.content, color = TextPrimary, fontSize = 16.sp)
+                                if (message.content.isNotEmpty()) Text(message.content, color = TextPrimary, fontSize = (16 * fontScale).sp)
                             }
                         }
                     }
@@ -442,7 +443,7 @@ fun ChatScreen(
                                 onClick = { if (selectMode) { if (!selectedIds.remove(message.id)) selectedIds.add(message.id) } },
                                 onLongClick = { if (!selectMode) menuTarget = message },
                             )) {
-                                MarkdownText(cleanSafety(message.content))
+                                MarkdownText(cleanSafety(message.content), scale = fontScale)
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -530,7 +531,7 @@ fun ChatScreen(
                     BasicTextField(
                         value = input,
                         onValueChange = { input = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 16.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = (16 * fontScale).sp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->

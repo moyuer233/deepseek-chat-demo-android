@@ -27,7 +27,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 
 /** 轻量 Markdown：代码块 / 行内代码 / 粗体 / 斜体 / 标题 / 列表 / 链接。 */
 @Composable
-fun MarkdownText(text: String, color: Color = TextPrimary) {
+fun MarkdownText(text: String, color: Color = TextPrimary, scale: Float = 1f) {
     val parts = splitFences(text)
     Column {
         for (part in parts) {
@@ -50,7 +50,7 @@ fun MarkdownText(text: String, color: Color = TextPrimary) {
                         Text(
                             part.content.trimEnd(),
                             color = TextPrimary,
-                            fontSize = 13.sp,
+                            fontSize = (13 * scale).sp,
                             fontFamily = FontFamily.Monospace,
                             lineHeight = 19.sp,
                             modifier = Modifier
@@ -67,14 +67,14 @@ fun MarkdownText(text: String, color: Color = TextPrimary) {
                         continue
                     }
                     when {
-                        line.startsWith("### ") -> Text(inline(line.removePrefix("### ")), color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        line.startsWith("## ") -> Text(inline(line.removePrefix("## ")), color = color, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        line.startsWith("# ") -> Text(inline(line.removePrefix("# ")), color = color, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                        line.startsWith("### ") -> Text(inline(line.removePrefix("### ")), color = color, fontSize = (15 * scale).sp, fontWeight = FontWeight.SemiBold)
+                        line.startsWith("## ") -> Text(inline(line.removePrefix("## ")), color = color, fontSize = (17 * scale).sp, fontWeight = FontWeight.SemiBold)
+                        line.startsWith("# ") -> Text(inline(line.removePrefix("# ")), color = color, fontSize = (19 * scale).sp, fontWeight = FontWeight.SemiBold)
                         line.startsWith("- ") || line.startsWith("* ") -> Row {
-                            Text("•", color = color, fontSize = 15.sp, modifier = Modifier.padding(end = 6.dp))
-                            Text(inline(line.drop(2)), color = color, fontSize = 15.sp, lineHeight = 22.sp)
+                            Text("•", color = color, fontSize = (15 * scale).sp, modifier = Modifier.padding(end = 6.dp))
+                            Text(inline(line.drop(2)), color = color, fontSize = (15 * scale).sp, lineHeight = (22 * scale).sp)
                         }
-                        Regex("^\\d+\\. ").containsMatchIn(line) -> Text(inline(line), color = color, fontSize = 15.sp, lineHeight = 22.sp)
+                        Regex("^\\d+\\. ").containsMatchIn(line) -> Text(inline(line), color = color, fontSize = (15 * scale).sp, lineHeight = (22 * scale).sp)
                         else -> Text(inline(line), color = color, fontSize = 15.sp, lineHeight = 22.sp)
                     }
                 }

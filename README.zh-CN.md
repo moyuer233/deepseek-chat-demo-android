@@ -20,6 +20,11 @@
 
 登录一次 DeepSeek 账号就能导入全部会话，之后用账号授权直接聊天，不用手动填 API Key。
 
+## 两个版本
+
+- **0.2.x（当前发布版）** — Capacitor 版：chat-demo 的网页客户端装进安卓壳。
+- **0.3.0（开发中，原生版）** — `native-app/` 里的 Jetpack Compose 版，界面按官方 App 还原；内核仍然是 chat-demo 那套：DSH 账号授权（API Key 兜底）、chat-demo 归档导入导出、本地会话存储。暂未发布，可按下文在本地构建。
+
 ## 功能
 
 - 登录 chat.deepseek.com 后，通过官方导出接口导入该账号的全部会话。
@@ -50,11 +55,21 @@ cd android && ./gradlew assembleDebug
 
 debug APK 在 `android/app/build/outputs/apk/debug/app-debug.apk`；release 需要你自己的签名文件。
 
+原生版（`0.3.0`）：
+
+```bash
+cd native-app
+./gradlew assembleDebug
+```
+
+APK 在 `native-app/app/build/outputs/apk/debug/app-debug.apk`。
+
 ## 结构
 
 - `src/` — chat-demo 原有 Web 客户端和安卓适配层。
 - `src/services/deepseek/` — 账号流程、导入导出、原生桥接。
 - `android/` — Capacitor 壳、登录/OAuth/充值三个 Activity。
+- `native-app/` — 0.3.0 原生版（Compose）：界面还原官方 App，内核仍是 chat-demo。
 - `docs/research/` — 接口与 UX 调研记录。
 
 ## 许可

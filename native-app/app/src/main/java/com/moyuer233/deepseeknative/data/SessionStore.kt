@@ -9,6 +9,7 @@ object SessionStore {
     private const val KEY_MOBILE = "mobile"
     private const val KEY_API_KEY = "api_key"
     private const val KEY_ONBOARDED = "onboarded"
+    private const val KEY_FONT_STEP = "font_step"
 
     fun token(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TOKEN, null)
@@ -35,6 +36,13 @@ object SessionStore {
 
     fun saveApiKey(context: Context, key: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_API_KEY, key).apply()
+    }
+
+    fun fontStep(context: Context): Int =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_FONT_STEP, 1)
+
+    fun saveFontStep(context: Context, step: Int) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt(KEY_FONT_STEP, step).apply()
     }
 
     fun isOnboarded(context: Context): Boolean =

@@ -50,6 +50,7 @@ import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.data.UpdateChecker
 import com.moyuer233.deepseeknative.data.UpdateResult
 import androidx.compose.ui.Alignment
@@ -76,6 +77,7 @@ fun SettingsScreen(
     var checking by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showLogout by remember { mutableStateOf(false) }
+    var showFontDialog by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
@@ -113,7 +115,12 @@ fun SettingsScreen(
                 Divider()
                 SettingsRow("外观", Icons.Filled.DarkMode, value = "系统")
                 Divider()
-                SettingsRow("字体大小", Icons.Filled.FormatSize)
+                SettingsRow(
+                    "字体大小",
+                    Icons.Filled.FormatSize,
+                    value = listOf("小", "标准", "大", "超大").getOrElse(SessionStore.fontStep(context)) { "标准" },
+                    onClick = { showFontDialog = true },
+                )
                 Divider()
                 SettingsRow("个性化", Icons.Filled.Palette)
             }
@@ -159,6 +166,27 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             )
         }
+    }
+
+    if (showFontDialog) {
+        AlertDialog(
+            onDismissRequest = { showFontDialog = false },
+            title = { Text("字体大小") },
+            text = {
+                Column {
+                    listOf("小", "标准", "大", "超大").forEachIndexed { index, label ->
+                        val selected = SessionStore.fontStep(context) == index
+                        TextButton(onClick = {
+                            SessionStore.saveFontStep(context, index)
+                            showFontDialog = false
+                        }) {
+                            Text(if (selected) "✓ " + label else "   " + label)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showFontDialog = false }) { Text("取消") } },
+        )
     }
 
     if (showLogout) {

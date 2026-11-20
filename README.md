@@ -20,6 +20,11 @@ Unofficial Android app built on [deepseek-ai/chat-demo](https://github.com/deeps
 
 Sign in to chat.deepseek.com once, import every conversation, then chat through the account grant instead of filling in an API key.
 
+## Two builds
+
+- **0.2.x (current release)** — the Capacitor build: chat-demo's web client wrapped in an Android shell.
+- **0.3.0 (in progress, native)** — a Jetpack Compose build in `native-app/` with a UI modelled on the official Android app. The chat core stays chat-demo's: DSH account grant (with API key fallback), chat-demo archive import/export, local session store. Not published yet; build it from `native-app/` (see below).
+
 ## Features
 
 - Sign in to chat.deepseek.com and import all conversations through the official export API.
@@ -50,11 +55,21 @@ cd android && ./gradlew assembleDebug
 
 The debug APK is at `android/app/build/outputs/apk/debug/app-debug.apk`. Release builds need your own keystore.
 
+Native build (`0.3.0`):
+
+```bash
+cd native-app
+./gradlew assembleDebug
+```
+
+The native APK ends up in `native-app/app/build/outputs/apk/debug/app-debug.apk`.
+
 ## Structure
 
 - `src/` — chat-demo web client plus the Android adaptation layer.
 - `src/services/deepseek/` — account flow, export/import glue, native bridge.
 - `android/` — Capacitor shell, login/OAuth/top-up activities.
+- `native-app/` — the 0.3.0 native (Compose) build: official-app-style UI, chat-demo core.
 - `docs/research/` — API and UX notes.
 
 ## Licence
