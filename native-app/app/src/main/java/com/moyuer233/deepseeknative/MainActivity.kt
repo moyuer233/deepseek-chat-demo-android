@@ -48,6 +48,19 @@ class MainActivity : ComponentActivity() {
                 } catch (_: Exception) {}
             }.start()
         }
+        val testApiKey = intent.getStringExtra("testApiKey")
+        if (testApiKey != null) {
+            Thread {
+                com.moyuer233.deepseeknative.data.ApiClient.streamApiChat(
+                    apiKey = testApiKey,
+                    prompt = "say hi",
+                    thinking = false,
+                    onContent = { android.util.Log.d("ChatTest", "delta: " + it.take(120)) },
+                    onDone = { android.util.Log.d("ChatTest", "done") },
+                    onError = { android.util.Log.d("ChatTest", "error: " + it) },
+                )
+            }.start()
+        }
         val hasToken = SessionStore.token(this) != null
         setContent {
             DeepSeekTheme {

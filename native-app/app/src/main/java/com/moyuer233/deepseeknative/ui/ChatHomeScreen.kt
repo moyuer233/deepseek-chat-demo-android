@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import com.moyuer233.deepseeknative.data.LocalStore
@@ -187,6 +188,7 @@ private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.
 
 /** 侧栏：搜索框、空态、账号行。 */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun DrawerContent(
     modifier: Modifier = Modifier,
     onOpenSession: (com.moyuer233.deepseeknative.data.LocalSession) -> Unit = {},
@@ -195,6 +197,9 @@ private fun DrawerContent(
     val context = androidx.compose.ui.platform.LocalContext.current
     var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.LocalSession>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var menuSession by remember { mutableStateOf<com.moyuer233.deepseeknative.data.LocalSession?>(null) }
+    var renameText by remember { mutableStateOf("") }
+    var renaming by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         sessions = com.moyuer233.deepseeknative.data.LocalStore.load(context).sortedByDescending { it.updatedAt }
         loading = false
@@ -233,7 +238,10 @@ private fun DrawerContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onOpenSession(session) }
+                                    .combinedClickable(
+                                        onClick = { onOpenSession(session) },
+                                        onLongClick = { menuSession = session; renameText = session.title },
+                                    )
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -301,6 +309,49 @@ private fun DrawerContent(
                     contentDescription = "设置",
                     tint = TextSecondary,
                     modifier = Modifier.size(22.dp).clickable { onOpenSettings() },
+                )
+            }
+            val target = menuSession
+            if (target != null && !renaming) {
+                AlertDialog(
+                    onDismissRequest = { menuSession = null },
+                    title = { Text(target.title) },
+                    text = {
+                        Column {
+                            TextButton(onClick = { renaming = true }) { Text("重命名") }
+                            TextButton(onClick = {
+                                val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
+                                list.removeAll { it.id == target.id }
+                                com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
+                                sessions = list.sortedByDescending { it.updatedAt }
+                                menuSession = null
+                            }) { Text("删除", color = Color(0xFFD93025)) }
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { menuSession = null }) { Text("取消") } },
+                )
+            }
+            if (target != null && renaming) {
+                AlertDialog(
+                    onDismissRequest = { renaming = false; menuSession = null },
+                    title = { Text("重命名对话") },
+                    text = {
+                        OutlinedTextField(value = renameText, onValueChange = { renameText = it }, singleLine = true)
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
+                            val index = list.indexOfFirst { it.id == target.id }
+                            if (index >= 0 && renameText.isNotBlank()) {
+                                list[index].title = renameText.trim()
+                                com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
+                                sessions = list.sortedByDescending { it.updatedAt }
+                            }
+                            renaming = false
+                            menuSession = null
+                        }) { Text("保存") }
+                    },
+                    dismissButton = { TextButton(onClick = { renaming = false; menuSession = null }) { Text("取消") } },
                 )
             }
         }
