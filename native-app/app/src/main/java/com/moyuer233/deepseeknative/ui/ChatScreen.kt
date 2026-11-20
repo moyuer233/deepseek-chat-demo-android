@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -151,6 +151,8 @@ fun ChatScreen(
     }
     var streaming by remember { mutableStateOf(false) }
     var sendSeq by remember { mutableStateOf(0) }
+    var editingIndex by remember { mutableStateOf(-1) }
+    var editText by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf("") }
@@ -275,10 +277,17 @@ fun ChatScreen(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            items(messages) { message ->
+            itemsIndexed(messages) { index, message ->
                 if (message.role == "user") {
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.End) {
-                        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFEAF0FE), modifier = Modifier.widthIn(max = 300.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFFEAF0FE),
+                            modifier = Modifier.widthIn(max = 300.dp).clickable {
+                                editingIndex = index
+                                editText = message.content
+                            },
+                        ) {
                             Text(message.content, color = TextPrimary, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                         }
                     }
@@ -455,6 +464,30 @@ fun ChatScreen(
                 }) { Text("保存并发送") }
             },
             dismissButton = { TextButton(onClick = { showKeyDialog = false }) { Text("取消") } },
+        )
+    }
+
+    if (editingIndex >= 0) {
+        AlertDialog(
+            onDismissRequest = { editingIndex = -1 },
+            title = { Text("编辑重发") },
+            text = {
+                OutlinedTextField(value = editText, onValueChange = { editText = it }, minLines = 3)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val prompt = editText.trim()
+                    if (prompt.isNotEmpty()) {
+                        while (messages.size > editingIndex) {
+                            messages.removeAt(messages.size - 1)
+                        }
+                        editingIndex = -1
+                        input = prompt
+                        send()
+                    }
+                }) { Text("重发") }
+            },
+            dismissButton = { TextButton(onClick = { editingIndex = -1 }) { Text("取消") } },
         )
     }
 }

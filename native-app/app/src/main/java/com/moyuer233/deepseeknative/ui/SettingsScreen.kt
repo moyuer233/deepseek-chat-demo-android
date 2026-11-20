@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.Storage
@@ -44,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
+import com.moyuer233.deepseeknative.ui.TopUpActivity
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -100,6 +102,10 @@ fun SettingsScreen(
                 SettingsRow("账号管理", Icons.Filled.PersonOutline, onClick = onOpenAccount)
                 Divider()
                 SettingsRow("数据管理", Icons.Filled.Storage, onClick = onOpenData)
+                Divider()
+                SettingsRow("充值", Icons.Filled.Paid, onClick = {
+                    context.startActivity(Intent(context, TopUpActivity::class.java))
+                })
             }
             SectionLabel("应用")
             SettingsCard {
