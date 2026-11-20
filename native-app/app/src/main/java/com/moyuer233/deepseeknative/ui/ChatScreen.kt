@@ -65,6 +65,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.data.ApiClient
 import com.moyuer233.deepseeknative.data.DshAuth
+import com.moyuer233.deepseeknative.data.LocalMessage
+import com.moyuer233.deepseeknative.data.LocalSession
+import com.moyuer233.deepseeknative.data.LocalStore
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
@@ -82,17 +85,41 @@ private data class ChatMessage(
 
 /** 会话页：真实发送 + 流式回复（chat.deepseek.com，含聊天 PoW）。 */
 @Composable
-fun ChatScreen(title: String, sessionId: String? = null, onBack: () -> Unit) {
+fun ChatScreen(
+    title: String,
+    sessionId: String? = null,
+    initial: LocalSession? = null,
+    onBack: () -> Unit,
+) {
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val messages = remember { mutableStateListOf<ChatMessage>() }
+    var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
+    val messages = remember {
+        mutableStateListOf<ChatMessage>().apply {
+            initial?.messages?.forEach { add(ChatMessage(it.role, it.content, it.thinking, true)) }
+        }
+    }
+    fun saveLocals() {
+        val id = currentSessionId ?: return
+        val list = LocalStore.load(context)
+        val msgs = messages.map { LocalMessage(it.role, it.content, it.thinking) }.toMutableList()
+        val index = list.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            list[index].messages.clear()
+            list[index].messages.addAll(msgs)
+            list[index].updatedAt = System.currentTimeMillis()
+            if (list[index].title.isBlank()) list[index].title = title.ifBlank { "新对话" }
+        } else {
+            list.add(LocalSession(id, title.ifBlank { "新对话" }, System.currentTimeMillis(), msgs))
+        }
+        LocalStore.save(context, list)
+    }
     var input by remember { mutableStateOf("") }
     var streaming by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf("") }
-    var currentSessionId by remember { mutableStateOf(sessionId) }
     val listState = rememberLazyListState()
 
     fun send() {
@@ -109,6 +136,7 @@ fun ChatScreen(title: String, sessionId: String? = null, onBack: () -> Unit) {
         error = null
         messages.add(ChatMessage(role = "user", content = text, done = true))
         messages.add(ChatMessage(role = "assistant", content = "", thinking = "", done = false))
+        saveLocals()
         streaming = true
         scope.launch {
             when {
@@ -118,8 +146,8 @@ fun ChatScreen(title: String, sessionId: String? = null, onBack: () -> Unit) {
                         prompt = text,
                         thinking = true,
                         onContent = { content -> scope.launch { messages[messages.size - 1] = messages.last().copy(content = content) } },
-                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true) } },
-                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg } },
+                        onDone = { scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); saveLocals() } },
+                        onError = { msg -> scope.launch { messages[messages.size - 1] = messages.last().copy(done = true); error = msg; saveLocals() } },
                     )
                 }
                 apiKey != null -> withContext(Dispatchers.IO) {

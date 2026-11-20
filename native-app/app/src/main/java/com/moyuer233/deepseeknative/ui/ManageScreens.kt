@@ -32,7 +32,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import com.moyuer233.deepseeknative.data.ArchiveImporter
+import com.moyuer233.deepseeknative.data.LocalStore
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -166,8 +172,21 @@ fun AccountManageScreen(
 
 /** 官方「数据管理」页 1:1 复刻（静态版）。 */
 @Composable
-fun DataManageScreen(onBack: () -> Unit) {
+fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
     var optimize by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val result = ArchiveImporter.import(context, uri)
+            if (result.error != null) {
+                Toast.makeText(context, "导入失败：" + result.error, Toast.LENGTH_LONG).show()
+            } else {
+                LocalStore.save(context, result.sessions)
+                Toast.makeText(context, "已导入 " + result.sessions.size + " 个会话", Toast.LENGTH_SHORT).show()
+                onImported()
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
         ManageTopBar("数据管理", onBack)
         ManageCard {
@@ -197,11 +216,11 @@ fun DataManageScreen(onBack: () -> Unit) {
         }
         Spacer(Modifier.height(16.dp))
         ManageCard {
-            ManageRow("导出所有历史对话")
+            ManageRow("导入历史对话", onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) })
         }
         Spacer(Modifier.height(16.dp))
         ManageCard {
-            ManageRow("删除所有历史对话", danger = true)
+            ManageRow("删除所有历史对话", danger = true, onClick = { LocalStore.clear(context); Toast.makeText(context, "已删除本地会话", Toast.LENGTH_SHORT).show() })
         }
     }
 }

@@ -2,6 +2,7 @@ package com.moyuer233.deepseeknative
 
 import android.os.Bundle
 import com.moyuer233.deepseeknative.data.SessionStore
+import com.moyuer233.deepseeknative.data.LocalSession
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +37,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val debugScreen = intent.getStringExtra("screen")
+        val importLocal = intent.getStringExtra("importLocal")
+        if (importLocal != null) {
+            Thread {
+                try {
+                    val result = com.moyuer233.deepseeknative.data.ArchiveImporter.import(this, android.net.Uri.fromFile(java.io.File(importLocal)))
+                    if (result.error == null) {
+                        com.moyuer233.deepseeknative.data.LocalStore.save(this, result.sessions)
+                    }
+                } catch (_: Exception) {}
+            }.start()
+        }
         val hasToken = SessionStore.token(this) != null
         setContent {
             DeepSeekTheme {
@@ -49,6 +61,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
+                var selectedSession by remember { mutableStateOf<LocalSession?>(null) }
                 val context = LocalContext.current
                 val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                     if (result.resultCode == Activity.RESULT_OK) {
@@ -86,6 +99,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.Chat -> ChatHomeScreen(
                         onOpenSession = {
+                            selectedSession = it
                             sessionTitle = it.title
                             screen = Screen.Session
                         },
@@ -93,6 +107,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.Session -> ChatScreen(
                         title = sessionTitle,
+                        initial = selectedSession,
                         onBack = { screen = Screen.Chat },
                     )
                     Screen.Settings -> SettingsScreen(

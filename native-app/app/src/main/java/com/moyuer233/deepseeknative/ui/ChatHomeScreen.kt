@@ -57,7 +57,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 /** 官方聊天首页（空态）1:1 复刻。 */
 @Composable
 fun ChatHomeScreen(
-    onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {},
+    onOpenSession: (com.moyuer233.deepseeknative.data.LocalSession) -> Unit = {},
     onOpenSettings: () -> Unit = {},
 ) {
     var drawerOpen by remember { mutableStateOf(false) }
@@ -184,29 +184,14 @@ private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.
 @Composable
 private fun DrawerContent(
     modifier: Modifier = Modifier,
-    onOpenSession: (com.moyuer233.deepseeknative.data.ChatSession) -> Unit = {},
+    onOpenSession: (com.moyuer233.deepseeknative.data.LocalSession) -> Unit = {},
     onOpenSettings: () -> Unit = {},
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.ChatSession>>(emptyList()) }
+    var sessions by remember { mutableStateOf<List<com.moyuer233.deepseeknative.data.LocalSession>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        val token = com.moyuer233.deepseeknative.data.SessionStore.token(context)
-        if (token != null) {
-            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                com.moyuer233.deepseeknative.data.ApiClient.fetchSessions(token)
-            }
-            result.getOrNull()?.let { list ->
-                sessions = list.mapNotNull { item ->
-                    val id = item.optString("id", "")
-                    if (id.isEmpty()) null else com.moyuer233.deepseeknative.data.ChatSession(
-                        id = id,
-                        title = item.optString("title", "新对话"),
-                        updatedAt = item.optLong("updated_at", 0L),
-                    )
-                }
-            }
-        }
+        sessions = com.moyuer233.deepseeknative.data.LocalStore.load(context).sortedByDescending { it.updatedAt }
         loading = false
     }
     Surface(modifier = modifier, color = Color.White) {
