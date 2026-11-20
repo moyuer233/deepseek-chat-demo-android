@@ -74,13 +74,23 @@ object ApiClient {
         }
     }
 
-    fun sendSmsCode(mobile: String, areaCode: String = "+86"): Result<String> = try {
+    fun sendSmsCode(
+        mobile: String,
+        areaCode: String = "+86",
+        shumeiRid: String? = null,
+        shumeiRegion: String = "CN",
+    ): Result<String> = try {
         val target = "/api/v0/users/create_sms_verification_code"
         val pow = guestPowHeader(target) ?: return Result.failure(IllegalStateException("PoW 求解失败"))
         val body = JSONObject()
             .put("mobile_number", mobile)
             .put("area_code", areaCode)
             .put("scenario", "login")
+            .put("device_id", deviceId())
+            .put("locale", "zh_CN")
+        if (shumeiRid != null) {
+            body.put("shumei_verification", JSONObject().put("region", shumeiRegion).put("rid", shumeiRid))
+        }
         val json = post(target, body, headers = mapOf("x-ds-guest-pow-response" to pow))
         val biz = json.optJSONObject("data")
         val bizMsg = biz?.optString("biz_msg") ?: ""
