@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DeepSeek Chat Demo</string>
+    <string name="app_name">DeepSeek Chat Demo Android</string>
     <string name="scan_assist_description">拉起微信支付时自动进入扫一扫并打开相册，省去手动点选。仅在付款后 20 秒内生效。</string>
 </resources>

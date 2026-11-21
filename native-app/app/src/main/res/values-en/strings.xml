@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DeepSeek Chat Demo</string>
+    <string name="app_name">DeepSeek Chat Demo Android</string>
     <string name="scan_assist_description">Opens WeChat Scan and the photo picker automatically after top-up. Only active for 20 seconds.</string>
 </resources>
