@@ -4,6 +4,7 @@ import { transcribe } from '../../services/api/speech.js'
 import { startRecording, type Recording } from '../../services/speech/recorder.js'
 import { useSettings } from '../../services/settings.js'
 import { showToast } from '../base/toastState.js'
+import { ensureMicPermission } from '../../services/deepseek/shell.js'
 
 export type VoiceInputStatus = 'idle' | 'recording' | 'transcribing'
 
@@ -111,6 +112,13 @@ export const useVoiceInput = (onText: (text: string) => void) => {
     const operation = ++operationRef.current
     setStatus('recording')
     try {
+      if (!(await ensureMicPermission())) {
+        if (operationRef.current === operation) {
+          setStatus('idle')
+          showToast({ key: 'voiceInputPermissionDenied' })
+        }
+        return
+      }
       const recording = await startRecording(() => {
         if (operationRef.current === operation) {
           showToast({ key: 'voiceInputLimitReached' })

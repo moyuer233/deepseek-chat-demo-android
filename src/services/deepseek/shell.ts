@@ -14,6 +14,7 @@ export type NativeShell = {
   finishExport?(path: string, mime: string, name: string): void
   pickImages?(): void
   makeApiKey?(token: string, name: string): string
+  requestMic?(): void
 }
 
 export const nativeShell = (): NativeShell | null => {
@@ -38,7 +39,31 @@ export const registerShellAuthCallbacks = () => {
     authResolve = null
     authReject = null
   }
+  ;(window as unknown as { __onMicPermission?: (granted: boolean) => void }).__onMicPermission = (granted: boolean) => {
+    micResolve?.(granted)
+    micResolve = null
+  }
 }
+
+let micResolve: ((granted: boolean) => void) | null = null
+
+/** 原生端先申请麦克风权限；没有原生壳时视为已授权（浏览器会自己弹权限）。 */
+export const ensureMicPermission = (): Promise<boolean> =>
+  new Promise((resolve) => {
+    const shell = nativeShell()
+    if (!shell?.requestMic) {
+      resolve(true)
+      return
+    }
+    micResolve = resolve
+    shell.requestMic()
+    setTimeout(() => {
+      if (micResolve === resolve) {
+        micResolve = null
+        resolve(false)
+      }
+    }, 15000)
+  })
 
 /** 走原生 DSH 授权，等 token。 */
 export const shellPlatformAuthLogin = (): Promise<{ token: string; probes: string }> =>

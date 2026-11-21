@@ -86,6 +86,11 @@ class MainActivity : ComponentActivity() {
             cb?.onReceiveValue(if (ok && uri != null) arrayOf(uri) else emptyArray())
         }
         permissionsLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+            val granted = grants[android.Manifest.permission.RECORD_AUDIO] == true
+            webViewRef?.evaluateJavascript(
+                "window.__onMicPermission && window.__onMicPermission(" + granted + ")",
+                null,
+            )
             val request = pendingPermissionRequest
             pendingPermissionRequest = null
             if (request == null) return@registerForActivityResult
@@ -313,6 +318,19 @@ class MainActivity : ComponentActivity() {
     }
 
     inner class Bridge {
+        /** Web 录音前先申请麦克风权限，结果通过 window.__onMicPermission 回传。 */
+        @JavascriptInterface
+        fun requestMic() {
+            runOnUiThread {
+                if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    webViewRef?.evaluateJavascript("window.__onMicPermission && window.__onMicPermission(true)", null)
+                } else {
+                    permissionsLauncher?.launch(arrayOf(android.Manifest.permission.RECORD_AUDIO))
+                        ?: webViewRef?.evaluateJavascript("window.__onMicPermission && window.__onMicPermission(false)", null)
+                }
+            }
+        }
+
         @JavascriptInterface
         fun getToken(): String = DshAuth.token(this@MainActivity) ?: ""
 

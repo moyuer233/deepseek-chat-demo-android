@@ -52,8 +52,15 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
     void context?.close().catch(() => {})
   }
 
+  let contextRate = SAMPLE_RATE
   try {
-    context = new AudioContext({ sampleRate: SAMPLE_RATE })
+    try {
+      context = new AudioContext({ sampleRate: SAMPLE_RATE })
+    } catch {
+      // 部分 WebView 不支持指定采样率，退回默认采样率并在停止时重采样
+      context = new AudioContext()
+    }
+    contextRate = context.sampleRate
     source = context.createMediaStreamSource(stream)
     processor = context.createScriptProcessor(BUFFER_SIZE, 1, 1)
     // 频谱分析用：串在录音链路中间（原样透传），WebKit 不会处理未连到输出的分析节点
@@ -86,7 +93,17 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
     return {
       stop: async () => {
         release()
-        return length === 0 ? null : encodeWav(chunks, length)
+        if (length === 0) {
+          return null
+        }
+        const merged = new Float32Array(length)
+        let offset = 0
+        for (const chunk of chunks) {
+          merged.set(chunk, offset)
+          offset += chunk.length
+        }
+        const pcm = contextRate === SAMPLE_RATE ? merged : resample(merged, contextRate, SAMPLE_RATE)
+        return encodeWav(pcm)
       },
       cancel: release,
       analyser,
@@ -97,9 +114,23 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
   }
 }
 
-const encodeWav = (chunks: Float32Array[], length: number) => {
-  const samples = Math.min(length, MAX_SECONDS * SAMPLE_RATE)
-  const buffer = new ArrayBuffer(44 + samples * 2)
+/** 线性插值重采样（WebView 不支持指定 AudioContext 采样率时的兜底）。 */
+const resample = (input: Float32Array, from: number, to: number): Float32Array => {
+  const ratio = to / from
+  const outLength = Math.max(1, Math.round(input.length * ratio))
+  const out = new Float32Array(outLength)
+  for (let i = 0; i < outLength; i++) {
+    const position = i / ratio
+    const index = Math.floor(position)
+    const fraction = position - index
+    const next = index + 1 < input.length ? input[index + 1] : input[index]
+    out[i] = input[index] * (1 - fraction) + next * fraction
+  }
+  return out
+}
+
+const encodeWav = (samples: Float32Array) => {
+  const buffer = new ArrayBuffer(44 + samples.length * 2)
   const view = new DataView(buffer)
   const writeString = (offset: number, text: string) => {
     for (let i = 0; i < text.length; i++) {
@@ -107,7 +138,7 @@ const encodeWav = (chunks: Float32Array[], length: number) => {
     }
   }
   writeString(0, 'RIFF')
-  view.setUint32(4, 36 + samples * 2, true)
+  view.setUint32(4, 36 + samples.length * 2, true)
   writeString(8, 'WAVE')
   writeString(12, 'fmt ')
   view.setUint32(16, 16, true)
@@ -118,15 +149,12 @@ const encodeWav = (chunks: Float32Array[], length: number) => {
   view.setUint16(32, 2, true)
   view.setUint16(34, 16, true)
   writeString(36, 'data')
-  view.setUint32(40, samples * 2, true)
+  view.setUint32(40, samples.length * 2, true)
   let offset = 44
-  let written = 0
-  for (const chunk of chunks) {
-    for (let i = 0; i < chunk.length && written < samples; i++, written++) {
-      const sample = Math.max(-1, Math.min(1, chunk[i]))
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true)
-      offset += 2
-    }
+  for (let i = 0; i < samples.length; i++) {
+    const sample = Math.max(-1, Math.min(1, samples[i]))
+    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true)
+    offset += 2
   }
   return new Blob([buffer], { type: 'audio/wav' })
 }
