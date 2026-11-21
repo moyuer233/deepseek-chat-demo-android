@@ -21,6 +21,7 @@ import {
 } from '../../services/chat/drafts.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import { IconButton } from '../base/IconButton.js'
+import { AttachCameraIcon, AttachFileIcon, AttachGalleryIcon } from './AttachIcons.js'
 import { ensureApiKey } from '../settings/settingsDialogState.js'
 import { DragMask, useFileDrop } from './DragMask.js'
 import { showToast } from '../base/toastState.js'
@@ -435,9 +436,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           {attachMenu ? (
             <div className={styles.attachSheet}>
               {[
-                { key: 'camera', label: t('attachCamera'), icon: 'M4 7h3l2-3h6l2 3h3v12H4z M12 12.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z' },
-                { key: 'gallery', label: t('attachGallery'), icon: 'M4 5h16v14H4z M4 16l4-4 3 3 3-3 6 6' },
-                { key: 'file', label: t('attachFile'), icon: 'M7 3h7l4 4v14H7z M14 3v5h4' },
+                { key: 'camera', label: t('attachCamera'), icon: <AttachCameraIcon /> },
+                { key: 'gallery', label: t('attachGallery'), icon: <AttachGalleryIcon /> },
+                { key: 'file', label: t('attachFile'), icon: <AttachFileIcon /> },
               ].map((item) => (
                 <button
                   key={item.key}
@@ -454,9 +455,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
                     }
                   }}
                 >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={item.icon} />
-                  </svg>
+                  {item.icon}
                   <span>{item.label}</span>
                 </button>
               ))}
