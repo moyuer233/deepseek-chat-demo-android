@@ -6,7 +6,6 @@ import {
   confirmImportAndCreateKey,
   openRecharge,
   resetAccountFlow,
-  startLoginAndImport,
   useAccount,
   type AccountPhase,
 } from '../../services/deepseek/account.js'
@@ -19,7 +18,8 @@ import { Modal } from '../base/Modal.js'
 import { fetchBalance, currencySymbol, type Balance } from '../../services/deepseek/balance.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { useChatStore } from '../../services/chat/store.js'
-import { nativeShell } from '../../services/deepseek/shell.js'
+import { nativeShell, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
+import { showToast } from '../base/toastState.js'
 import styles from './AccountPane.module.css'
 
 /** 预览清单先渲染的条数，避免几千条一次性插进 DOM。 */
@@ -53,7 +53,6 @@ export const AccountPane = () => {
   const error = useAccount((state) => state.error)
   const preview = useAccount((state) => state.preview)
   const importedCount = useAccount((state) => state.importedCount)
-  const [termsOpen, setTermsOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [balance, setBalance] = useState<Balance | null>(null)
   const [balanceFailed, setBalanceFailed] = useState(false)
@@ -167,9 +166,22 @@ export const AccountPane = () => {
           </Button>
         ) : (
           <>
-            <Button size="m" disabled={busy} onClick={() => setTermsOpen(true)}>
-              {signedIn ? t('accountReimportButton') : t('accountLoginButton')}
-            </Button>
+            {signedIn ? null : (
+              <Button
+                size="m"
+                disabled={busy}
+                onClick={() => {
+                  void shellPlatformAuthLogin()
+                    .then(({ token }) => {
+                      setAccountToken(token)
+                      loadBalance()
+                    })
+                    .catch((error) => showToast(error instanceof Error ? error.message : String(error)))
+                }}
+              >
+                {t('accountLoginButton')}
+              </Button>
+            )}
             <Button size="m" variant="outlined" disabled={busy} onClick={() => void openRecharge()}>
               {t('accountRecharge')}
             </Button>
@@ -230,31 +242,6 @@ export const AccountPane = () => {
           <div className={styles.terms}>
             {streaming ? t('accountLogoutActive') : t('accountLogoutBody')}
           </div>
-        </Modal>
-      ) : null}
-      {termsOpen ? (
-        <Modal
-          title={t('accountTermsTitle')}
-          onClose={() => setTermsOpen(false)}
-          footer={
-            <>
-              <Button variant="outlined" size="m" onClick={() => setTermsOpen(false)}>
-                {t('cancel')}
-              </Button>
-              <Button
-                size="m"
-                autoFocus
-                onClick={() => {
-                  setTermsOpen(false)
-                  void startLoginAndImport()
-                }}
-              >
-                {t('accountTermsAgree')}
-              </Button>
-            </>
-          }
-        >
-          <div className={styles.terms}>{t('accountTermsBody')}</div>
         </Modal>
       ) : null}
     </div>

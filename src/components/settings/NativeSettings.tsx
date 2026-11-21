@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
-import { openRecharge } from '../../services/deepseek/account.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import { clearHistory, exportHistory, importHistory } from '../../services/chat/backup.js'
@@ -261,7 +260,6 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         <div className={styles.card}>
           <Row icon={<IconSettingsOutline16 />} title={t('accountTab')} onClick={() => setPage('account')} />
           <Row icon={<IconDataOutline16 />} title={t('settingDialogAsideDataOptionLabel')} onClick={() => setPage('data')} />
-          <Row icon={<IconLinkOutline16 />} title={t('accountRecharge')} onClick={() => void openRecharge()} />
         </div>
 
         <div className={styles.section}>{t('nativeSettingsApp')}</div>
