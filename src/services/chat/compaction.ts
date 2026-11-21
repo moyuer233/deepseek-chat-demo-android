@@ -1,8 +1,7 @@
-import { getSession, updateCompaction } from './store.js'
 import { useSettings } from '../settings.js'
 import { streamMessage } from '../api/client.js'
 import { estimateTokens, plainText } from './tokens.js'
-import type { Message } from './types.js'
+import type { Message, Session } from './types.js'
 
 /** 官方 /models 声明：deepseek-flash 与 deepseek-v4-pro 均为 1M 上下文 */
 export const CONTEXT_WINDOW = 1_048_576
@@ -86,6 +85,12 @@ const summarize = async (transcript: string): Promise<string> => {
   }
 }
 
+/** 压缩所需的会话读写能力，由 store 注入，避免 store ↔ compaction 循环依赖 */
+export type CompactionStore = {
+  getSession: (id: string) => Session | undefined
+  updateCompaction: (id: string, compaction: { summary: string; throughId: string; updatedAt: number }) => void
+}
+
 /** 从末尾往前保留约 retainRatio 的 token，返回切点下标（保留这段之后的原文） */
 const selectCutoffIndex = (messages: Message[], retainTokens: number): number => {
   let retained = 0
@@ -103,21 +108,25 @@ const selectCutoffIndex = (messages: Message[], retainTokens: number): number =>
  * - 保留最近约 15% token 的原文；
  * - 摘要失败静默，不影响聊天。
  */
-export const compactSession = async (sessionId: string, force = false): Promise<boolean> => {
+export const compactSession = async (store: CompactionStore, sessionId: string, force = false): Promise<boolean> => {
   const settings = useSettings.getState()
   if (!settings.autoCompact && !force) {
     return false
   }
-  const session = getSession(sessionId)
+  const session = store.getSession(sessionId)
   if (!session || session.messages.length <= 2) {
     return false
   }
   const threshold = settings.compactThresholdTokens || Math.floor(CONTEXT_WINDOW * DEFAULT_THRESHOLD_RATIO)
-  if (!force && estimateTokens(session.messages) < threshold) {
+  const total = estimateTokens(session.messages)
+  if (!force && total < threshold) {
     return false
   }
   const retainTokens = Math.floor(CONTEXT_WINDOW * DEFAULT_RETAIN_RATIO)
-  const cutoffIndex = selectCutoffIndex(session.messages, retainTokens)
+  // 手动压缩：保留最近 4 条原文即可，让「立即压缩」在小会话上也能验证效果
+  const cutoffIndex = force
+    ? Math.max(0, session.messages.length - 5)
+    : selectCutoffIndex(session.messages, retainTokens)
   if (cutoffIndex <= 0) {
     return false
   }
@@ -131,11 +140,11 @@ export const compactSession = async (sessionId: string, force = false): Promise<
     if (!summary) {
       return false
     }
-    const latest = getSession(sessionId)
+    const latest = store.getSession(sessionId)
     if (!latest || !latest.messages.some((message) => message.id === cutoff.id)) {
       return false
     }
-    updateCompaction(sessionId, { summary, throughId: cutoff.id, updatedAt: Date.now() })
+    store.updateCompaction(sessionId, { summary, throughId: cutoff.id, updatedAt: Date.now() })
     return true
   } catch {
     return false
@@ -143,6 +152,6 @@ export const compactSession = async (sessionId: string, force = false): Promise<
 }
 
 /** 回合结束后自动触发（不阻塞） */
-export const maybeCompact = async (sessionId: string): Promise<void> => {
-  await compactSession(sessionId)
+export const maybeCompact = async (store: CompactionStore, sessionId: string): Promise<void> => {
+  await compactSession(store, sessionId)
 }

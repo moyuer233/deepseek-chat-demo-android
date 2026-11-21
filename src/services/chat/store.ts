@@ -12,6 +12,7 @@ import {
 } from '../attachments.js'
 import { useSettings } from '../settings.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
+import { compactSession, maybeCompact } from './compaction.js'
 import * as db from './db.js'
 import {
   clearAllDrafts,
@@ -973,6 +974,10 @@ const reuploadInvalidatedFiles = (sessionId: string, request: Request, error: un
   return true
 }
 
+/** 手动压缩入口（头部按钮）；内部注入会话读写能力 */
+export const runManualCompaction = (sessionId: string, force = true) =>
+  compactSession({ getSession, updateCompaction }, sessionId, force)
+
 /** 保存上下文摘要（由 compaction 服务调用；单独导出避免循环依赖） */
 export const updateCompaction = (
   sessionId: string,
@@ -1094,8 +1099,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
             totalMs: Date.now() - startedAt,
           },
         }
-        // 回合结束后按阈值压缩旧上下文（动态导入避免循环依赖）
-        void import('./compaction.js').then((module) => module.maybeCompact(sessionId)).catch(() => {})
+        // 回合结束后按阈值压缩旧上下文
+        void maybeCompact({ getSession, updateCompaction }, sessionId)
         break
       } catch (error) {
         if (controller.signal.aborted) {
@@ -1117,8 +1122,7 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           attempt < 1 &&
           /context|too long|exceed|maximum/i.test(error.message)
         ) {
-          const { compactSession } = await import('./compaction.js')
-          const compacted = await compactSession(sessionId, true)
+          const compacted = await compactSession({ getSession, updateCompaction }, sessionId, true)
           reply = settleReply(reply, 'error', Date.now(), {
             kind: error.kind,
             message: error.message,

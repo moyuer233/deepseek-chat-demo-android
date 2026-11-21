@@ -1,10 +1,9 @@
 import { IconMenuOutline20, IconNewChatOutline20 } from '../base/icons.js'
 import { useTranslate } from '../../i18n/index.js'
-import { newChat, useChatStore } from '../../services/chat/store.js'
+import { newChat, runManualCompaction, useChatStore } from '../../services/chat/store.js'
 import { IconButton } from '../base/IconButton.js'
 import { BalanceBadge } from './BalanceBadge.js'
 import { openMobileSider } from '../sider/mobileSiderState.js'
-import { compactSession } from '../../services/chat/compaction.js'
 import { showToast } from '../base/toastState.js'
 import styles from './MobileHeader.module.css'
 
@@ -20,7 +19,7 @@ export const MobileHeader = ({ title }: { title?: string }) => {
     if (!window.confirm(t('compactConfirm'))) {
       return
     }
-    void compactSession(activeId, true).then((ok) => {
+    void runManualCompaction(activeId).then((ok) => {
       showToast(ok ? t('compactDone') : t('compactFailed'))
     })
   }

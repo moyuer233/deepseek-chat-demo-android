@@ -89,8 +89,22 @@ export const totalUsage = (): UsageStats => {
 }
 
 /** 当前会话上下文占用（按估算 token / 128k） */
+/** 上下文占用按「实际会发给模型的内容」估算：有压缩记录时只算摘要 + 压缩点之后的消息 */
 export const contextPressure = (session: Session | null) => {
-  const tokens = session ? estimateTokens(session.messages) : 0
+  let tokens = 0
+  if (session) {
+    const compaction = session.compaction
+    const cutoffIndex = compaction
+      ? session.messages.findIndex((message) => message.id === compaction.throughId)
+      : -1
+    if (compaction && cutoffIndex >= 0) {
+      tokens =
+        Math.ceil(compaction.summary.length / 2) +
+        estimateTokens(session.messages.slice(cutoffIndex + 1))
+    } else {
+      tokens = estimateTokens(session.messages)
+    }
+  }
   return { tokens, window: CONTEXT_WINDOW, ratio: Math.min(1, tokens / CONTEXT_WINDOW) }
 }
 
