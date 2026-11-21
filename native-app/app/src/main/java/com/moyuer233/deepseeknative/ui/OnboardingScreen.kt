@@ -2,15 +2,13 @@ package com.moyuer233.deepseeknative.ui
 
 import com.moyuer233.deepseeknative.NativeCopy
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.scale
@@ -65,7 +63,9 @@ import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
     val context = LocalContext.current
-    var index by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(pageCount = { 4 })
+    val index = pagerState.currentPage
     var authorized by remember { mutableStateOf(DshAuth.token(context) != null) }
     var chatImportStatus by remember { mutableStateOf("") }
     var chatImporting by remember { mutableStateOf(false) }
@@ -120,6 +120,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
             }
         }.start()
     }
+    // 系统返回键/返回手势：先退回上一页引导，第一页时才交给系统（退出）
+    androidx.activity.compose.BackHandler(enabled = index > 0) {
+        scope.launch { pagerState.animateScrollToPage(index - 1) }
+    }
     val pages = listOf(
         Triple(NativeCopy.onboardingTitle1, NativeCopy.onboardingDesc1, 0),
         Triple(NativeCopy.onboardingTitle2, NativeCopy.onboardingDesc2, 1),
@@ -131,12 +135,11 @@ fun OnboardingScreen(onDone: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(1f))
-        AnimatedContent(
-            targetState = index,
-            transitionSpec = {
-                (slideInHorizontally { it / 6 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 6 } + fadeOut())
-            },
-            label = "onboardingPage",
+        // 用 Pager：支持左右滑动切换，滑到最后一页继续右滑即可完成引导（相当于系统「滑动返回」）
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            pageSpacing = 0.dp,
         ) { page ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (page == 0) {
@@ -165,45 +168,56 @@ fun OnboardingScreen(onDone: () -> Unit) {
         Spacer(Modifier.weight(1.2f))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 20.dp)) {
             pages.indices.forEach { i ->
-                val dotSize by animateDpAsState(if (i == index) 8.dp else 6.dp, label = "dotSize")
+                // 每个点都占固定 14dp 的格子，只让内部圆点变大小/颜色，
+                // 否则「当前页变大」会把整行挤得左右抖动，看起来就是「蓝点位置偏移」
                 val dotColor by animateColorAsState(if (i == index) BrandBlue else Color(0xFFD5D8DE), label = "dotColor")
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(dotSize)
-                        .background(dotColor, CircleShape),
-                )
+                Box(modifier = Modifier.size(14.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (i == index) 8.dp else 6.dp)
+                            .background(dotColor, CircleShape),
+                    )
+                }
             }
         }
-        if (pages[index].third == 1) {
-            OutlinedButton(
-                onClick = {
-                    if (!chatImporting) {
-                        chatImportLauncher.launch(Intent(context, ChatLoginActivity::class.java))
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
-            ) {
-                Text(
-                    when {
-                        chatImporting -> NativeCopy.importingFromChat
-                        chatImportStatus.isNotEmpty() -> chatImportStatus
-                        else -> NativeCopy.importChats
-                    }
-                )
+        // 固定高度的「可选按钮」槽位：没有按钮的页面也占同样空间，
+        // 否则第 2/3 页多出一个按钮会把上面的蓝点整体顶上去，看起来就是「蓝点位置偏移」。
+        Box(modifier = Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.Center) {
+            when (pages[index].third) {
+                1 -> OutlinedButton(
+                    onClick = {
+                        if (!chatImporting) {
+                            chatImportLauncher.launch(Intent(context, ChatLoginActivity::class.java))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        when {
+                            chatImporting -> NativeCopy.importingFromChat
+                            chatImportStatus.isNotEmpty() -> chatImportStatus
+                            else -> NativeCopy.importChats
+                        }
+                    )
+                }
+
+                2 -> OutlinedButton(
+                    onClick = { startOauth() },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+                ) { Text(if (authorized) NativeCopy.authorized else NativeCopy.authorize) }
             }
-        }
-        if (pages[index].third == 2) {
-            OutlinedButton(
-                onClick = { startOauth() },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
-            ) { Text(if (authorized) NativeCopy.authorized else NativeCopy.authorize) }
         }
         val primaryInteraction = remember { MutableInteractionSource() }
         val primaryPressed by primaryInteraction.collectIsPressedAsState()
         val primaryScale by animateFloatAsState(if (primaryPressed) 0.97f else 1f, label = "primaryScale")
         Button(
-            onClick = { if (index < pages.lastIndex) index++ else onDone() },
+            onClick = {
+                if (index < pages.lastIndex) {
+                    scope.launch { pagerState.animateScrollToPage(index + 1) }
+                } else {
+                    onDone()
+                }
+            },
             interactionSource = primaryInteraction,
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
