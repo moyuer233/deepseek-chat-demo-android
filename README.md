@@ -23,7 +23,7 @@ Sign in to chat.deepseek.com once, import every conversation, then chat through 
 ## Two builds
 
 - **0.2.x (current release)** — the Capacitor build: chat-demo's web client wrapped in an Android shell.
-- **1.0.0 (native)** — a Jetpack Compose shell that runs the chat-demo web bundle in a WebView, with native bridges for DSH account grant (API key fallback), chat archive import/export, camera/file picking and the chat.deepseek.com importer. Build it from `native-app/` (see below).
+- **1.0.1 (native)** — a Jetpack Compose shell that runs the chat-demo web bundle in a WebView, with native bridges for DSH account grant (API key fallback), chat archive import/export, camera/file picking and the chat.deepseek.com importer. Build it from `native-app/` (see below).
 
 ## Features
 
@@ -55,7 +55,7 @@ cd android && ./gradlew assembleDebug
 
 The debug APK is at `android/app/build/outputs/apk/debug/app-debug.apk`. Release builds need your own keystore.
 
-Native build (`1.0.0`):
+Native build (`1.0.1`):
 
 ```bash
 cd native-app
@@ -69,7 +69,7 @@ The native APK ends up in `native-app/app/build/outputs/apk/debug/app-debug.apk`
 - `src/` — chat-demo web client plus the Android adaptation layer.
 - `src/services/deepseek/` — account flow, export/import glue, native bridge.
 - `android/` — Capacitor shell, login/OAuth/top-up activities.
-- `native-app/` — the 1.0.0 native shell: chat-demo web bundle in a WebView plus native bridges (auth/import/export/camera).
+- `native-app/` — the 1.0.1 native shell: chat-demo web bundle in a WebView plus native bridges (auth/import/export/camera).
 - `docs/research/` — API and UX notes.
 
 ## Licence

@@ -197,7 +197,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
         <div className={styles.section}>{t('nativeSettingsAbout')}</div>
         <div className={styles.card}>
-          <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value="1.0.0" />
+          <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value="1.0.1" />
           <Row
             icon={(
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
