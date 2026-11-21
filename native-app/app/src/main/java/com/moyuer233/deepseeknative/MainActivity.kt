@@ -115,13 +115,15 @@ class MainActivity : ComponentActivity() {
                     val r = ChatExport.exportAndDownload(token, cacheDir)
                     val js = "window.__onChatArchiveReady && window.__onChatArchiveReady(" +
                         JSONObject.quote(r.file.absolutePath) + "," + JSONObject.quote(r.fileName) + "," + r.bytes + ")"
-                    webViewRef?.evaluateJavascript(js, null)
+                    runOnUiThread { webViewRef?.evaluateJavascript(js, null) }
                 } catch (e: Exception) {
-                    webViewRef?.evaluateJavascript(
-                        "window.__onChatArchiveError && window.__onChatArchiveError(" +
-                            JSONObject.quote(e.message ?: "导出失败") + ")",
-                        null,
-                    )
+                    runOnUiThread {
+                        webViewRef?.evaluateJavascript(
+                            "window.__onChatArchiveError && window.__onChatArchiveError(" +
+                                JSONObject.quote(e.message ?: "导出失败") + ")",
+                            null,
+                        )
+                    }
                 }
             }.start()
         }
