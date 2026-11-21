@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setLocale, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { openRecharge } from '../../services/deepseek/account.js'
-import { nativeShell } from '../../services/deepseek/shell.js'
+import { nativeShell, readArchiveBytes, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import { clearHistory, exportHistory, importHistory } from '../../services/chat/backup.js'
 import { shareBlob } from '../../services/deepseek/share.js'
@@ -52,6 +52,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const voice = useSettings((s) => s.ttsVoice)
   const [page, setPage] = useState<'main' | 'account' | 'data'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [chatImportBusy, setChatImportBusy] = useState(false)
 
   const cycleLocale = () => setLocale(locale === 'zh' ? 'en' : 'zh')
   const cycleTheme = () => setThemePreference(theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system')
@@ -64,7 +65,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         : t('avatarMenuSettingsDialogThemeSelectDarkOption')
 
   const onImport = async (file: File) => {
-    if (!window.confirm(t('historyImportConfirm'))) {
+    if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
       return
     }
     try {
@@ -81,6 +82,25 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       await shareBlob(name, blob)
     } catch {
       showToast({ key: 'historyExportFailed', type: 'error' })
+    }
+  }
+
+  const onChatImport = async () => {
+    if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
+      return
+    }
+    setChatImportBusy(true)
+    try {
+      const archive = await requestChatArchive()
+      const bytes = readArchiveBytes(archive.path, archive.bytes)
+      const file = new File([bytes], archive.name, { type: 'application/zip' })
+      const count = await importHistory(file)
+      nativeShell()?.deleteArchive?.(archive.path)
+      showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error))
+    } finally {
+      setChatImportBusy(false)
     }
   }
 
@@ -121,6 +141,13 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         <div className={styles.body}>
           <div className={styles.card}>
             <Row icon={<IconUploadOutline14 />} title={t('upload')} onClick={() => fileRef.current?.click()} />
+            <Row
+              icon={<IconLinkOutline16 />}
+              title={(locale === 'zh' ? '从 chat.deepseek.com 导入会话' : 'Import chats from chat.deepseek.com') + (chatImportBusy ? '…' : '')}
+              onClick={() => {
+                if (!chatImportBusy) void onChatImport()
+              }}
+            />
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>

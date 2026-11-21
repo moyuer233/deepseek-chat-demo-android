@@ -42,10 +42,36 @@ class MainActivity : ComponentActivity() {
     private var authLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
     private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
     private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
+    private var chatImportLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        chatImportLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+            val token = if (result.resultCode == android.app.Activity.RESULT_OK) {
+                result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.ChatLoginActivity.EXTRA_TOKEN)
+            } else null
+            if (token.isNullOrEmpty()) {
+                webViewRef?.evaluateJavascript(
+                    "window.__onChatArchiveError && window.__onChatArchiveError('已取消登录')", null,
+                )
+                return@registerForActivityResult
+            }
+            Thread {
+                try {
+                    val r = com.moyuer233.deepseeknative.data.ChatExport.exportAndDownload(token, cacheDir)
+                    val js = "window.__onChatArchiveReady && window.__onChatArchiveReady(" +
+                        org.json.JSONObject.quote(r.file.absolutePath) + "," +
+                        org.json.JSONObject.quote(r.fileName) + "," + r.bytes + ")"
+                    webViewRef?.evaluateJavascript(js, null)
+                } catch (e: Exception) {
+                    webViewRef?.evaluateJavascript(
+                        "window.__onChatArchiveError && window.__onChatArchiveError(" +
+                            org.json.JSONObject.quote(e.message ?: "导出失败") + ")", null,
+                    )
+                }
+            }.start()
+        }
         fileChooserLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
             fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
             fileChooserCallback = null
@@ -123,6 +149,42 @@ class MainActivity : ComponentActivity() {
                 fun openExternal(url: String) {
                     runCatching {
                         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                fun startChatImport() {
+                    runOnUiThread {
+                        chatImportLauncher?.launch(
+                            Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.ChatLoginActivity::class.java)
+                        )
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                fun readArchiveChunk(path: String, offset: Int, size: Int): String {
+                    return try {
+                        val expected = java.io.File(cacheDir, "export").canonicalPath
+                        val file = java.io.File(path)
+                        if (!file.canonicalPath.startsWith(expected)) return ""
+                        java.io.RandomAccessFile(file, "r").use { raf ->
+                            raf.seek(offset.toLong())
+                            val len = minOf(size, (file.length() - offset).toInt().coerceAtLeast(0))
+                            val buf = ByteArray(len)
+                            raf.readFully(buf, 0, len)
+                            android.util.Base64.encodeToString(buf, android.util.Base64.NO_WRAP)
+                        }
+                    } catch (e: Exception) {
+                        ""
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                fun deleteArchive(path: String) {
+                    runCatching {
+                        val expected = java.io.File(cacheDir, "export").canonicalPath
+                        val file = java.io.File(path)
+                        if (file.canonicalPath.startsWith(expected)) file.delete()
                     }
                 }
 

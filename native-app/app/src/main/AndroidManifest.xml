@@ -10,6 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DeepSeekNative">
         <activity
+            android:name=".ui.ChatLoginActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

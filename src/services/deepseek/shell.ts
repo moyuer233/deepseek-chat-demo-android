@@ -4,6 +4,9 @@ export type NativeShell = {
   startAuth(): void
   openExternal(url: string): void
   openTopUp(): void
+  startChatImport?(): void
+  readArchiveChunk?(path: string, offset: number, size: number): string
+  deleteArchive?(path: string): void
   beginExport?(name: string): string
   appendExport?(path: string, base64: string): number
   finishExport?(path: string, mime: string, name: string): void
@@ -48,3 +51,53 @@ export const shellPlatformAuthLogin = (): Promise<{ token: string; probes: strin
     authReject = reject
     shell.startAuth()
   })
+
+let archiveResolve: ((value: { path: string; name: string; bytes: number }) => void) | null = null
+let archiveReject: ((message: string) => void) | null = null
+
+/** 走原生 chat.deepseek.com 登录 + 官方导出，返回下载好的 ZIP 路径。 */
+export const requestChatArchive = (): Promise<{ path: string; name: string; bytes: number }> =>
+  new Promise((resolve, reject) => {
+    const shell = nativeShell()
+    if (!shell?.startChatImport) {
+      reject(new Error('当前版本不支持从 chat.deepseek.com 导入'))
+      return
+    }
+    ;(window as unknown as { __onChatArchiveReady?: (path: string, name: string, bytes: number) => void }).__onChatArchiveReady =
+      (path, name, bytes) => {
+        archiveResolve?.({ path, name, bytes })
+        archiveResolve = null
+        archiveReject = null
+      }
+    ;(window as unknown as { __onChatArchiveError?: (message: string) => void }).__onChatArchiveError = (message) => {
+      archiveReject?.(message)
+      archiveResolve = null
+      archiveReject = null
+    }
+    archiveResolve = resolve
+    archiveReject = reject
+    shell.startChatImport()
+  })
+
+/** 分块读取原生下载好的归档（base64）。 */
+export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 1024): Uint8Array => {
+  const shell = nativeShell()
+  if (!shell?.readArchiveChunk) {
+    throw new Error('读取归档失败')
+  }
+  const out = new Uint8Array(bytes)
+  let offset = 0
+  while (offset < bytes) {
+    const size = Math.min(chunkSize, bytes - offset)
+    const b64 = shell.readArchiveChunk(path, offset, size)
+    if (!b64) {
+      throw new Error('读取归档失败')
+    }
+    const binary = atob(b64)
+    for (let i = 0; i < binary.length; i += 1) {
+      out[offset + i] = binary.charCodeAt(i)
+    }
+    offset += binary.length
+  }
+  return out
+}
