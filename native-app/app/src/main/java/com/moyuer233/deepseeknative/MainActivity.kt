@@ -437,8 +437,11 @@ class MainActivity : ComponentActivity() {
 
         /** 返回 false 表示没打开（供 Web 侧提示，避免静默失败）。 */
         @JavascriptInterface
-        fun openTopUp(): Boolean = runCatching {
-            startActivity(Intent(this@MainActivity, TopUpActivity::class.java))
+        fun openTopUp(assist: Boolean): Boolean = runCatching {
+            startActivity(
+                Intent(this@MainActivity, TopUpActivity::class.java)
+                    .putExtra(TopUpActivity.EXTRA_ASSIST, assist),
+            )
             true
         }.getOrDefault(false)
 

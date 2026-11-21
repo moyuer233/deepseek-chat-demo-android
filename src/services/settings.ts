@@ -23,6 +23,8 @@ type Settings = {
   model: 'deepseek-flash' | 'deepseek-v4-pro'
   autoCompact: boolean
   compactThresholdTokens: number
+  /** 充值辅助：出码后自动存相册并拉起支付 App（默认开启） */
+  topupAssist: boolean
 }
 
 const KEYS = {
@@ -37,6 +39,7 @@ const KEYS = {
   model: 'chat-demo:model',
   autoCompact: 'chat-demo:auto-compact',
   compactThreshold: 'chat-demo:compact-threshold',
+  topupAssist: 'chat-demo:topup-assist',
 } as const
 
 const read = (key: string) => {
@@ -109,6 +112,7 @@ export const useSettings = create<Settings>(() => ({
   model: read(KEYS.model) === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash',
   autoCompact: read(KEYS.autoCompact) !== 'false',
   compactThresholdTokens: Number(read(KEYS.compactThreshold)) || 838_861,
+  topupAssist: read(KEYS.topupAssist) !== 'false',
 }))
 
 export const setLocale = (locale: Locale) => {
@@ -164,6 +168,11 @@ export const setAutoCompact = (autoCompact: boolean) => {
 export const setCompactThresholdTokens = (compactThresholdTokens: number) => {
   write(KEYS.compactThreshold, String(compactThresholdTokens))
   useSettings.setState({ compactThresholdTokens })
+}
+
+export const setTopupAssist = (topupAssist: boolean) => {
+  write(KEYS.topupAssist, String(topupAssist))
+  useSettings.setState({ topupAssist })
 }
 
 export const setModel = (model: 'deepseek-flash' | 'deepseek-v4-pro') => {

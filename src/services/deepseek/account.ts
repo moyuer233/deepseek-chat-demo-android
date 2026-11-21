@@ -23,13 +23,13 @@ export const startPlatformOAuth = async (): Promise<{ token: string; probes: str
 const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
 
 /** 充值入口：原生内置页（桌面 UA + 二维码）；Web 端直接开官方页；失败只提示，不污染账户状态机。 */
-export const openRecharge = async () => {
+export const openRecharge = async (assist = true) => {
   if (!isNativeShell()) {
     openExternalUrl(TOP_UP_URL)
     return
   }
   // 原生充值页打不开时只提示，不再偷偷跳系统浏览器（浏览器里没有扫码辅助）
-  const opened = await DeepSeekAccount.openTopUp()
+  const opened = await DeepSeekAccount.openTopUp({ assist })
   if (!opened) {
     showToast(translate('errorTopUpUnavailable'))
   }

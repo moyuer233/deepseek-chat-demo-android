@@ -1,4 +1,22 @@
+/* 弹窗：遮罩淡入 + 卡片上浮 8px（只动 opacity/transform） */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .overlay {
+  animation: overlay-in var(--ds-transition-duration) var(--ds-ease-in-out);
   --overlay-opacity: 0.36;
   position: fixed;
   inset: 0;
@@ -18,6 +36,7 @@
   flex-direction: column;
   box-sizing: border-box;
   width: 380px;
+  animation: dialog-in var(--ds-transition-duration) var(--ds-ease-in-out);
   max-width: calc(100vw - 32px);
   padding: 20px 22px;
   border-radius: var(--dsh-radius-24);
@@ -65,4 +84,11 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content {
+    animation: none;
+  }
 }

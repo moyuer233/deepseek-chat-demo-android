@@ -5,7 +5,7 @@ export type NativeShell = {
   getToken(): string
   startAuth(): void
   openExternal(url: string): void
-  openTopUp(): boolean
+  openTopUp?(assist: boolean): boolean
   startChatImport?(): void
   peekPendingArchive?(): string
   clearPendingArchive?(): void

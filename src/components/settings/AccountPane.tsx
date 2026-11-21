@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { openRecharge } from '../../services/deepseek/account.js'
 import { DeepSeekAccount } from '../../services/deepseek/plugin.js'
-import { setAccountToken, setApiKey, useSettings } from '../../services/settings.js'
+import { setAccountToken, setApiKey, setTopupAssist, useSettings } from '../../services/settings.js'
 import { useTranslate } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
 import { Dialog } from '../base/Dialog.js'
@@ -34,6 +34,7 @@ const LogoutIcon = () => (
 export const AccountPane = () => {
   const t = useTranslate()
   const apiKey = useSettings((state) => state.apiKey)
+  const topupAssist = useSettings((state) => state.topupAssist)
   const accountToken = useSettings((state) => state.accountToken)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [apiKeyOpen, setApiKeyOpen] = useState(false)
@@ -157,8 +158,29 @@ export const AccountPane = () => {
         <SettingsRow
           icon={<DshIcon name="layers-outline" size={16} />}
           title={t('accountRecharge')}
-          onClick={() => void openRecharge()}
+          onClick={() => void openRecharge(topupAssist)}
         />
+        {isNativeShell() ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={topupAssist}
+            className={nsStyles.row}
+            onClick={() => {
+              const next = !topupAssist
+              setTopupAssist(next)
+              showToast(t(next ? 'accountTopupAssistOn' : 'accountTopupAssistOff'))
+            }}
+          >
+            <span className={nsStyles.rowIcon} aria-hidden>
+              <DshIcon name="settings-outline" size={16} />
+            </span>
+            <span className={nsStyles.rowTitle}>{t('accountTopupAssist')}</span>
+            <span className={topupAssist ? styles.toggle + ' ' + styles.toggleOn : styles.toggle} aria-hidden>
+              <span className={styles.toggleKnob} />
+            </span>
+          </button>
+        ) : null}
         <SettingsRow
           icon={<DshIcon name="link-outline" size={16} />}
           title={t('accountMoreInfo')}

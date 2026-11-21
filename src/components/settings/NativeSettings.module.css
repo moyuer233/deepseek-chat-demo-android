@@ -103,18 +103,35 @@
 }
 
 
-/* 设置页从右侧滑入，子页同样过渡 */
+/* 设置页从右侧滑入，子页切换时内容淡入上浮 */
 @keyframes settings-in {
   from {
     opacity: 0;
+    transform: translateX(16px);
   }
   to {
     opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .overlay {
   animation: settings-in var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.body {
+  animation: page-in var(--ds-transition-duration) var(--ds-ease-in-out);
 }
 
 .row {
@@ -126,7 +143,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay {
+  .overlay,
+  .body {
     animation: none;
   }
 }

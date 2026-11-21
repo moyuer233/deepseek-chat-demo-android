@@ -26,6 +26,8 @@ import java.io.FileOutputStream
 class TopUpActivity : ComponentActivity() {
     private var webView: WebView? = null
     private var signInHinted = false
+    /** 充值辅助：出码后自动存相册并拉起支付 App；关闭时只展示二维码与复制链接 */
+    private var assistEnabled = true
     /** 当前页面是否 DeepSeek 域；在 onPageFinished 里更新，避免桥线程直接读 WebView */
     @Volatile
     private var trustedPage = false
@@ -40,6 +42,7 @@ class TopUpActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        assistEnabled = intent?.getBooleanExtra(EXTRA_ASSIST, true) ?: true
         val view = WebView(this)
         webView = view
         view.settings.javaScriptEnabled = true
@@ -167,6 +170,10 @@ class TopUpActivity : ComponentActivity() {
         }
     }
 
+    companion object {
+        const val EXTRA_ASSIST = "assist"
+    }
+
     private fun copyText(text: String) {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("pay", text))
@@ -186,6 +193,11 @@ class TopUpActivity : ComponentActivity() {
                 return
             }
             runOnUiThread {
+                // 充值辅助关闭时：只展示/复制码，不自动存图也不拉起支付 App
+                if (!assistEnabled) {
+                    copyText(text)
+                    return@runOnUiThread
+                }
                 // 优先按二维码内容判断，其次按页面上选中的支付方式
                 val channel = when {
                     text.startsWith("weixin://", true) -> "wechat"

@@ -230,13 +230,18 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  gap: 6px;
-  margin: 0 12px 8px;
-  padding: 0 10px;
-  height: 36px;
+  gap: 8px;
+  margin: 8px 12px 10px;
+  padding: 0 12px;
+  height: 44px;
   border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--dsw-alias-bg-layer-2);
+  transition: border-color var(--dsh-motion, 180ms ease);
+
+  &:focus-within {
+    border-color: var(--dsw-alias-brand-primary);
+  }
 }
 
 .searchIcon,
@@ -263,6 +268,7 @@
   border-radius: 0;
   background: transparent;
   height: 100%;
+  font-size: 14px;
 }
 
 .resultRow {

@@ -31,7 +31,7 @@ Chat with your own API key or DeepSeek account grant — the quota is yours, so 
 
 ## Download
 
-[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (current 1.1.0) · [Website](https://moyuer233.github.io/deepseek-chat-demo-android/)
+[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (current 1.1.1) · [Website](https://moyuer233.github.io/deepseek-chat-demo-android/)
 
 ## Build
 
