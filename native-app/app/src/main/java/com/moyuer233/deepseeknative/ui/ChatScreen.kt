@@ -132,6 +132,7 @@ fun ChatScreen(
     title: String,
     sessionId: String? = null,
     initial: LocalSession? = null,
+    initialPrompt: String? = null,
     onBack: () -> Unit,
 ) {
     val clipboard = LocalClipboardManager.current
@@ -189,6 +190,7 @@ fun ChatScreen(
         }
     }
     androidx.compose.runtime.LaunchedEffect(Unit) { rebuildFromTree() }
+
     fun ensureSession(): LocalSession {
         session?.let { return it }
         val created = LocalSession(
@@ -444,6 +446,15 @@ fun ChatScreen(
                 }
             }
             streaming = false
+        }
+    }
+
+    var autoSent by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(initialPrompt) {
+        if (!autoSent && !initialPrompt.isNullOrBlank()) {
+            autoSent = true
+            input = initialPrompt
+            send()
         }
     }
 

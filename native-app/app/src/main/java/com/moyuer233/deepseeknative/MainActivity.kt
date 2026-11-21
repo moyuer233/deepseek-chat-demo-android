@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 }
                 var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
                 var selectedSession by remember { mutableStateOf<LocalSession?>(null) }
+                var pendingPrompt by remember { mutableStateOf<String?>(null) }
                 val context = LocalContext.current
                 val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                     if (result.resultCode == Activity.RESULT_OK) {
@@ -149,11 +150,26 @@ class MainActivity : ComponentActivity() {
                             screen = Screen.Session
                         },
                         onOpenSettings = { screen = Screen.Settings },
+                        onStartNewChat = { prompt ->
+                            val session = LocalSession(
+                                id = java.util.UUID.randomUUID().toString(),
+                                title = "新对话",
+                                updatedAt = System.currentTimeMillis(),
+                            )
+                            val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
+                            list.add(session)
+                            com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
+                            selectedSession = session
+                            sessionTitle = session.title
+                            pendingPrompt = prompt.ifBlank { null }
+                            screen = Screen.Session
+                        },
                     )
                     Screen.Session -> ChatScreen(
                         title = sessionTitle,
                         initial = selectedSession,
-                        onBack = { screen = Screen.Chat },
+                        initialPrompt = pendingPrompt,
+                        onBack = { pendingPrompt = null; screen = Screen.Chat },
                     )
                     Screen.Settings -> SettingsScreen(
                         onBack = { screen = Screen.Chat },

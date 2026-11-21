@@ -6,6 +6,10 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
@@ -32,6 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Menu
@@ -66,6 +71,7 @@ import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 fun ChatHomeScreen(
     onOpenSession: (com.moyuer233.deepseeknative.data.LocalSession) -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onStartNewChat: (String) -> Unit = {},
 ) {
     var drawerOpen by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
@@ -115,7 +121,10 @@ fun ChatHomeScreen(
                 Text(greeting, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1.2f))
             }
-            InputCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+            InputCard(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    onSend = onStartNewChat,
+                )
             Spacer(Modifier.height(8.dp))
             Spacer(Modifier.navigationBarsPadding())
         }
@@ -142,23 +151,58 @@ fun ChatHomeScreen(
 }
 
 @Composable
-private fun InputCard(modifier: Modifier = Modifier) {
+private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = {}) {
     var think by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf("") }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         color = Color(0xFFF7F8FA),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Text("发消息或按住说话", color = Color(0xFF9AA0A9), fontSize = 16.sp)
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                singleLine = false,
+                textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 16.sp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = {
+                    if (text.isNotBlank()) {
+                        onSend(text.trim())
+                        text = ""
+                    }
+                }),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    if (text.isEmpty()) {
+                        Text("发消息或按住说话", color = Color(0xFF9AA0A9), fontSize = 16.sp)
+                    }
+                    inner()
+                },
+            )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ToggleChip("深度思考", think, Icons.Filled.GraphicEq) { think = !think }
                 Spacer(Modifier.width(8.dp))
                 ToggleChip("智能搜索", search, Icons.Filled.Public) { search = !search }
                 Spacer(Modifier.weight(1f))
-                Icon(Icons.Filled.Add, contentDescription = "上传", tint = TextPrimary, modifier = Modifier.size(26.dp))
+                if (text.isNotEmpty()) {
+                    Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = BrandBlue,
+                        modifier = Modifier.size(32.dp).clickable {
+                            onSend(text.trim())
+                            text = ""
+                        },
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "发送", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                } else {
+                    Icon(Icons.Filled.Add, contentDescription = "上传", tint = TextPrimary, modifier = Modifier.size(26.dp))
+                }
                 Spacer(Modifier.width(14.dp))
                 Icon(Icons.Filled.GraphicEq, contentDescription = "语音", tint = TextPrimary, modifier = Modifier.size(26.dp))
             }
