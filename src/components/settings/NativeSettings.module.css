@@ -110,7 +110,12 @@
 }
 
 .row {
-  transition: background-color 0.14s ease;
+  transition: background-color 0.14s ease, transform 0.12s ease;
+}
+
+.row:active {
+  background-color: var(--dsw-alias-interactive-bg-hover);
+  transform: scale(0.995);
 }
 
 @media (prefers-reduced-motion: reduce) {

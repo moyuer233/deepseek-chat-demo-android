@@ -17,7 +17,12 @@
   outline: none;
   transition:
     background-color var(--ds-transition-duration) var(--ds-ease-in-out),
-    opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform 0.12s var(--ds-ease-in-out);
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
 
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill);
@@ -93,5 +98,16 @@
 
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--dsw-alias-state-error-primary);
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:active:not(:disabled) {
+    transform: none;
   }
 }
