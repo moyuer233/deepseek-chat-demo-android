@@ -182,6 +182,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     if (page === 'main' && !pendingPreflight && !deleteOpen) {
       return
     }
+    // 优先级 10：设置自己的弹窗与子页切换；账户页内弹窗用更高优先级（20）先处理
     return pushBackHandler(() => {
       if (deleteOpen) {
         setDeleteOpen(false)
@@ -197,7 +198,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         return true
       }
       return false
-    })
+    }, 10)
   }, [page, pendingPreflight, deleteOpen])
 
   const header = (title: string, onBack: () => void) => (

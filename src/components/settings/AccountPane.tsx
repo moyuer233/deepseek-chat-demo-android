@@ -59,6 +59,7 @@ export const AccountPane = () => {
     if (!apiKeyOpen && !logoutOpen) {
       return
     }
+    // 优先级 20：账户页的弹窗比设置主页的子页切换更靠上
     return pushBackHandler(() => {
       if (logoutOpen) {
         setLogoutOpen(false)
@@ -66,7 +67,7 @@ export const AccountPane = () => {
       }
       setApiKeyOpen(false)
       return true
-    })
+    }, 20)
   }, [apiKeyOpen, logoutOpen])
 
   const refreshScanAssist = () => {

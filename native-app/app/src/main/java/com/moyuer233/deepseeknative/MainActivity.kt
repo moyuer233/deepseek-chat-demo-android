@@ -47,9 +47,7 @@ class MainActivity : ComponentActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     /** 这次录音权限请求是否由 JS 的 NativeShell.requestMic 发起（决定是否回写 __onMicPermission）。 */
     private var micRequestFromBridge = false
-    private var siderBackCallback: Any? = null
     private var backPending = false
-    private var legacyBackCallback: OnBackPressedCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,8 +148,9 @@ class MainActivity : ComponentActivity() {
         val legacy = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val web = webViewRef
-                // 侧边栏打开时先收抽屉（原生直接处理，不等网页回包）
+                // 侧边栏打开时先收抽屉：原生先自清标记，避免网页没回包时把返回键永久吞掉
                 if (web != null && web.siderOpen) {
+                    web.siderOpen = false
                     web.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
                     return
                 }
@@ -161,19 +160,23 @@ class MainActivity : ComponentActivity() {
                     return
                 }
                 backPending = true
-                // 防抖：网页回包慢时避免连按触发两次后退
-                android.os.Handler(mainLooper).postDelayed({ backPending = false }, 400)
+                // 防抖：网页回包慢时避免连按触发两次后退；回包后立刻取消这个兜底定时器
+                val resetPending = Runnable { backPending = false }
+                // 150ms 足够挡住连点抖动，又不至于让快速连按（想连退两级）被吞掉
+                android.os.Handler(mainLooper).postDelayed(resetPending, 150)
                 web.evaluateJavascript("window.__onBack ? window.__onBack() : false") { value ->
+                    android.os.Handler(mainLooper).removeCallbacks(resetPending)
                     backPending = false
-                    // 只有网页明确表示「已到最底层」才退出；不再用 isEnabled=false 关掉回调，
-                    // 否则一次异常回包会让返回键永久失效，只能靠系统把 Activity 杀掉。
-                    if (value?.trim('"') != "true" && !isFinishing) {
+                    // 只有网页明确回 false（= 已经到最底层）才退出 App。
+                    // null / 未挂载 / 脚本异常都保持不动，让用户再按一次——
+                    // 否则一次异常回包就会把用户踢出 App。
+                    val consumed = value?.trim('"')
+                    if (consumed == "false" && !isFinishing) {
                         finish()
                     }
                 }
             }
         }
-        legacyBackCallback = legacy
         onBackPressedDispatcher.addCallback(this, legacy)
     }
 
@@ -304,43 +307,6 @@ class MainActivity : ComponentActivity() {
         }
         webViewRef = null
         super.onDestroy()
-    }
-
-    @Suppress("unused")
-    private fun registerSiderBack() {
-        // 已停用：见 setSiderOpen 的注释（与 OnBackPressedDispatcher 冲突）。
-        if (true) return
-        if (android.os.Build.VERSION.SDK_INT < 34 || siderBackCallback != null) return
-        val cb = object : android.window.OnBackAnimationCallback {
-            override fun onBackStarted(backEvent: android.window.BackEvent) {
-                webViewRef?.evaluateJavascript("window.__siderDrag && window.__siderDrag(1)", null)
-            }
-
-            override fun onBackProgressed(backEvent: android.window.BackEvent) {
-                val fraction = (1f - backEvent.progress).coerceIn(0f, 1f)
-                webViewRef?.evaluateJavascript("window.__siderDrag && window.__siderDrag($fraction)", null)
-            }
-
-            override fun onBackInvoked() {
-                webViewRef?.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
-                unregisterSiderBack()
-            }
-
-            override fun onBackCancelled() {
-                webViewRef?.evaluateJavascript("window.__siderSwipeEnd && window.__siderSwipeEnd(1, 0)", null)
-                unregisterSiderBack()
-            }
-        }
-        onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb)
-        siderBackCallback = cb
-    }
-
-    private fun unregisterSiderBack() {
-        val cb = siderBackCallback
-        if (cb != null && android.os.Build.VERSION.SDK_INT >= 34) {
-            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(cb as android.window.OnBackAnimationCallback)
-        }
-        siderBackCallback = null
     }
 
     /** 导出/分享共用的临时目录。 */
