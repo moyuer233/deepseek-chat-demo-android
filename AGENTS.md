@@ -115,6 +115,7 @@ cd android && ./gradlew assembleDebug    # Windows: gradlew.bat assembleDebug
 
 ## 红线
 
+- 所有图标统一**空心（outline/stroke）风格**，不使用实心填充图标；新增图标先确认符合该风格。
 - 不改上游聊天/设置界面的结构与文案口径；新增入口要先问，不加"暂未开放"这类假控件。
 - 不提交 `.dsh-meow/`、`.scratch/`、`dist/`、`node_modules/`、keystore、`local.properties`。
 - 保留上游 LICENSE 与出处；README 首段写明非官方、与 DeepSeek 无隶属关系。
