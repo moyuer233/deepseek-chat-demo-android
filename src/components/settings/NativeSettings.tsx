@@ -11,6 +11,7 @@ import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
 import { SettingsRow as Row } from './SettingsRow.js'
 import { Modal } from '../base/Modal.js'
+import { ConfirmDialog } from '../base/ConfirmDialog.js'
 import { Button } from '../base/Button.js'
 import styles from './NativeSettings.module.css'
 import {
@@ -144,11 +145,10 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     }
   }
 
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
   const onDelete = async () => {
-    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
-    if (!window.confirm(t('deleteAllSessionsModalDescription'))) {
-      return
-    }
+    setDeleteOpen(false)
     try {
       await clearHistory()
       showToast({ key: 'historyDeleted' })
@@ -243,8 +243,20 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               }}
             />
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllLabel')} onClick={() => void onExport()} />
-            <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
+            <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => setDeleteOpen(true)} />
           </div>
+          {deleteOpen ? (
+            <ConfirmDialog
+              title={t('deleteAllSessionsModalTitle')}
+              lead={t('deleteAllSessionsModalDescription')}
+              icon={<IconTrashOutline16 />}
+              tone="danger"
+              confirmText={t('delete')}
+              confirmVariant="danger"
+              onConfirm={() => void onDelete()}
+              onClose={() => setDeleteOpen(false)}
+            />
+          ) : null}
           {pendingPreflight ? (
             <Modal
               title={t('importModeTitle')}
