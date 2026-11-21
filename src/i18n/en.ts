@@ -81,7 +81,12 @@ export const en = {
   mermaidSwitchLabel: "Toggle between Mermaid diagram and code",
   // ===== 会话页 =====
   compactNow: "Compact context",
-  compactConfirm: "Compact this conversation into a summary? Older messages will be replaced by the summary.",
+  compactTitle: "Compact context",
+  compactLead: "Older messages are summarized so replies use less context.",
+  compactPointSummary: "A summary replaces the older messages",
+  compactPointRecent: "The most recent messages stay as they are",
+  compactPointLocal: "Your local chat history is kept — scroll back anytime",
+  compactAction: "Compact",
   compactDone: "Context compacted",
   compactFailed: "Compaction failed, please retry",
   balanceLabel: "Balance",

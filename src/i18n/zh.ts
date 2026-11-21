@@ -81,7 +81,12 @@ export const zh = {
   mermaidSwitchLabel: "Mermaid 图表与代码切换",
   // ===== 会话页 =====
   compactNow: "压缩上下文",
-  compactConfirm: "把当前会话压缩成摘要？之后模型只看到摘要和最近几条消息，本机聊天记录仍完整保留，可以继续向上翻看。",
+  compactTitle: "压缩上下文",
+  compactLead: "把较早的对话整理成摘要，之后的回复会更省上下文。",
+  compactPointSummary: "摘要会替代较早的消息",
+  compactPointRecent: "最近几条消息保持原样",
+  compactPointLocal: "本机聊天记录不会删除，可继续向上翻看",
+  compactAction: "压缩",
   compactDone: "上下文已压缩",
   compactFailed: "压缩失败，请稍后重试",
   balanceLabel: "余额",
