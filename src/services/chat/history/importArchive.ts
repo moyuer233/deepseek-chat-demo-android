@@ -92,6 +92,20 @@ export const importArchive = async (
     fail('backupUnrecognized')
   }
   let done = 0
+  let lastReport = 0
+  /** 进度上报节流：每 50ms 一次，避免几千条目触发几千次 setState；回调异常不影响导入。 */
+  const report = (force = false) => {
+    const now = Date.now()
+    if (!force && now - lastReport < 50) {
+      return
+    }
+    lastReport = now
+    try {
+      onProgress?.({ done, total: null })
+    } catch {
+      // 进度回调出错不应该让导入失败
+    }
+  }
   const imported = new Set<string>()
   const images = new Map<string, string>()
   /** 已保存的原件：文件 ID → MIME。同一图片出现在多个会话目录时只保存一次。 */
@@ -115,7 +129,7 @@ export const importArchive = async (
     for await (const entry of readArchive(file)) {
       const { path } = entry
       done += 1
-      onProgress?.({ done, total: null })
+      report()
       const sessionId = parseSessionPath(path)
       if (!manifest) {
         if (path === MANIFEST_PATH) {
@@ -170,4 +184,6 @@ export const importArchive = async (
     fail('backupIncomplete')
   }
   await db.updateStagingFileTypes(stored)
+  // 收尾再报一次，保证界面上的计数停在最终值（节流可能吞掉最后几次）
+  report(true)
 }

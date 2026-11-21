@@ -1,7 +1,8 @@
 /* 导入进度岛：顶部居中的胶囊，带呼吸光点与流动进度条 */
 .island {
   position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
+  /* 比 Toast 更靠上且更高优先级：Toast 在 40px，岛在 6px，两者错开不重叠 */
+  top: calc(6px + env(safe-area-inset-top));
   left: 50%;
   z-index: 2100;
   display: inline-flex;

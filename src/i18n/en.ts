@@ -172,6 +172,7 @@ export const en = {
   historyImportDescription: "Importing chat history replaces all local chats and attachments. Supports exported ZIP files.",
   importIslandPrepare: "Reading archive",
   importIslandApply: "Writing chats",
+  loadEarlierMessages: "Show {count} earlier messages",
   historyImportedOne: "Imported 1 chat",
   historyImported: "Imported {count} chats",
   historyImportFailed: "File import failed. The file format may be invalid, or the ZIP file may use an older chat export format. Please export your chat history from DeepSeek again and retry the import.",

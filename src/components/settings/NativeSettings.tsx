@@ -3,7 +3,12 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
-import { hideImportIsland, showImportIsland } from '../base/importIslandState.js'
+import {
+  acquireImportIsland,
+  hideImportIsland,
+  showImportIsland,
+  showImportIslandIndeterminate,
+} from '../base/importIslandState.js'
 import { applyImport, BackupError, clearHistory, discardImport, exportHistory, exportHistoryToFile, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
@@ -38,6 +43,9 @@ const UploadIcon = () => (
   </svg>
 )
 
+/** 设置页导入流程持有进度岛的标识（并发导入时互不干扰） */
+const ISLAND_ID = 'settings-import'
+
 /** 移动端原生风格设置页：账户 / 应用 / 语音 / 关于。 */
 export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const t = useTranslate()
@@ -68,10 +76,11 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       return
     }
     setImportBusy(true)
-    showImportIsland({ done: 0, total: null, phase: 'prepare' })
+    acquireImportIsland(ISLAND_ID)
+    showImportIslandIndeterminate('prepare', ISLAND_ID)
     try {
       const diff = await prepareImport(file, (progress) =>
-        showImportIsland({ done: progress.done, total: progress.total, phase: 'prepare' })
+        showImportIsland({ done: progress.done, phase: 'prepare' }, ISLAND_ID)
       )
       if (diff.added === 0 && diff.updated === 0) {
         await discardImport()
@@ -83,7 +92,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
-      hideImportIsland()
+      hideImportIsland(ISLAND_ID)
     }
   }
 
@@ -92,7 +101,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       return
     }
     setImportBusy(true)
-    showImportIsland({ done: 0, total: null, phase: 'apply' })
+    acquireImportIsland(ISLAND_ID)
+    showImportIslandIndeterminate('apply', ISLAND_ID)
     try {
       const count = await applyImport(mode)
       showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
@@ -101,7 +111,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
-      hideImportIsland()
+      hideImportIsland(ISLAND_ID)
     }
   }
 

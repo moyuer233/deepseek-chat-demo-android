@@ -172,6 +172,7 @@ export const zh = {
   historyImportDescription: "导入历史对话会覆盖全部本地对话和附件，支持 ZIP 文件。",
   importIslandPrepare: "正在解析归档",
   importIslandApply: "正在写入会话",
+  loadEarlierMessages: "显示更早的 {count} 条消息",
   historyImportedOne: "已导入 1 个对话",
   historyImported: "已导入 {count} 个对话",
   historyImportFailed: "文件导入失败，可能是文件格式错误或使用了旧版的对话导出 ZIP 文件，请重新导出历史对话文件后再次导入。",

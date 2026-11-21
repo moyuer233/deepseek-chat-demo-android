@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useIsMobile } from '../../app/viewport.js'
+import { useTranslate } from '../../i18n/index.js'
 import {
   buildMessageVersions,
   getVisibleMessages,
@@ -45,6 +46,7 @@ export const MessageList = ({
   footer: React.ReactNode
 }) => {
   const isMobile = useIsMobile()
+  const t = useTranslate()
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const stickyRef = useRef(true)
@@ -54,11 +56,16 @@ export const MessageList = ({
   const [previousVersions, setPreviousVersions] = useState(() =>
     buildMessageVersions(session, new Map())
   )
-  // 首屏渲染的可见窗口大小；切会话时重置回最近一页
-  const [windowCount, setWindowCount] = useState(PAGE_SIZE)
-  useEffect(() => {
-    setWindowCount(PAGE_SIZE)
-  }, [session.id])
+  // 首屏渲染的可见窗口大小。用「会话 id 参与的状态」而不是 effect 重置：
+  // effect 在 render 之后执行，切会话第一帧会拿上一个会话展开后的旧窗口去渲染，
+  // 正好是本要避免的全量解析，随后又缩回一页（双倍解析 + 闪烁）。
+  const [windowState, setWindowState] = useState({ sessionId: session.id, count: PAGE_SIZE })
+  const windowCount = windowState.sessionId === session.id ? windowState.count : PAGE_SIZE
+  const setWindowCount = (next: number | ((count: number) => number)) =>
+    setWindowState((state) => {
+      const base = state.sessionId === session.id ? state.count : PAGE_SIZE
+      return { sessionId: session.id, count: typeof next === 'function' ? next(base) : next }
+    })
   const versions = useMemo(
     () => buildMessageVersions(session, previousVersions),
     [session, previousVersions]
@@ -168,15 +175,21 @@ export const MessageList = ({
                   const before = el?.scrollHeight ?? 0
                   const beforeTop = el?.scrollTop ?? 0
                   setWindowCount((count) => count + PAGE_SIZE)
-                  requestAnimationFrame(() => {
+                  const restore = () => {
                     if (!el) {
                       return
                     }
                     el.scrollTop = beforeTop + (el.scrollHeight - before)
+                  }
+                  // 同步渲染的高度能立刻算准；图片/图表是异步增高的，
+                  // 再等一帧补一次，避免视口漂移
+                  requestAnimationFrame(() => {
+                    restore()
+                    requestAnimationFrame(restore)
                   })
                 }}
               >
-                显示更早的 {Math.min(hiddenCount, PAGE_SIZE)} 条消息
+                {t('loadEarlierMessages', { count: Math.min(hiddenCount, PAGE_SIZE) })}
               </button>
             ) : null}
             {shown.map((message, offset) => {
