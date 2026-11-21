@@ -108,7 +108,7 @@ export const useSettings = create<Settings>(() => ({
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
   model: read(KEYS.model) === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash',
   autoCompact: read(KEYS.autoCompact) !== 'false',
-  compactThresholdTokens: Number(read(KEYS.compactThreshold)) || 102_400,
+  compactThresholdTokens: Number(read(KEYS.compactThreshold)) || 838_861,
 }))
 
 export const setLocale = (locale: Locale) => {

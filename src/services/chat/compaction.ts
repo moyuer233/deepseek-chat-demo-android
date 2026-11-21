@@ -4,12 +4,12 @@ import { streamMessage } from '../api/client.js'
 import { estimateTokens, plainText } from './tokens.js'
 import type { Message } from './types.js'
 
-/** 上下文窗口（deepseek-flash 128k） */
-export const CONTEXT_WINDOW = 128_000
+/** 官方 /models 声明：deepseek-flash 与 deepseek-v4-pro 均为 1M 上下文 */
+export const CONTEXT_WINDOW = 1_048_576
 /** 阈值比例：DSH 默认 0.8，即 102.4k 触发 */
 const DEFAULT_THRESHOLD_RATIO = 0.8
-/** 最近内容保留比例：DSH 默认 0.15 */
-const DEFAULT_RETAIN_RATIO = 0.15
+/** 最近内容保留比例：DSH 默认 0.16 */
+const DEFAULT_RETAIN_RATIO = 0.16
 /** 单次摘要请求最多送入字符数 */
 const MAX_TRANSCRIPT_CHARS = 400_000
 
