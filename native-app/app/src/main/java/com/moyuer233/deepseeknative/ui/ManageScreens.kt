@@ -231,7 +231,25 @@ fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
         }
         Spacer(Modifier.height(16.dp))
         ManageCard {
-            ManageRow("删除所有历史对话", danger = true, onClick = { LocalStore.clear(context); Toast.makeText(context, "已删除本地会话", Toast.LENGTH_SHORT).show() })
+            var showDeleteConfirm by remember { mutableStateOf(false) }
+            ManageRow("删除所有历史对话", danger = true, onClick = { showDeleteConfirm = true })
+            if (showDeleteConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text("删除所有历史对话？") },
+                    text = { Text("本机保存的全部会话都会被删除，且无法恢复。") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            LocalStore.clear(context)
+                            showDeleteConfirm = false
+                            Toast.makeText(context, "已删除本地会话", Toast.LENGTH_SHORT).show()
+                        }) { Text("删除", color = Color(0xFFD93025)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirm = false }) { Text("取消") }
+                    },
+                )
+            }
         }
     }
 }

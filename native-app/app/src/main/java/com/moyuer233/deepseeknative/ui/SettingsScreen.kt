@@ -301,7 +301,7 @@ fun SettingsScreen(
     }
 
     updateResult?.let { result ->
-        val hasNew = result.latestVersion != null && result.latestVersion != result.currentVersion
+        val hasNew = result.latestVersion != null && isNewerVersion(result.latestVersion, result.currentVersion)
         AlertDialog(
             onDismissRequest = { updateResult = null },
             title = { Text(tr("检查更新", "Check for updates")) },
@@ -381,4 +381,21 @@ private fun Divider() {
         color = LocalAppColors.current.border,
         modifier = Modifier.fillMaxWidth().padding(start = 54.dp),
     )
+}
+
+
+private fun versionParts(v: String): List<Int> =
+    v.trim().removePrefix("v").removePrefix("V").split(".", "-", "+")
+        .mapNotNull { Regex("\\d+").find(it)?.value?.toIntOrNull() }
+
+/** remote 是否比 current 新（按数字段比较，避免 0.2.0 > 0.3.0 的字符串误判）。 */
+private fun isNewerVersion(remote: String, current: String): Boolean {
+    val a = versionParts(remote)
+    val b = versionParts(current)
+    for (i in 0 until maxOf(a.size, b.size)) {
+        val x = a.getOrElse(i) { 0 }
+        val y = b.getOrElse(i) { 0 }
+        if (x != y) return x > y
+    }
+    return false
 }

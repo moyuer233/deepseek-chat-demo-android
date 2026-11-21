@@ -95,11 +95,24 @@ class MainActivity : ComponentActivity() {
             DeepSeekTheme {
                 var screen by remember {
                     mutableStateOf(
-                        when {
-                            !onboarded -> Screen.Onboarding
-                            debugScreen == "session" -> Screen.Session
-                            debugScreen == "chat" || hasToken -> Screen.Chat
-                            else -> Screen.Welcome
+                        when (debugScreen) {
+                            "settings" -> Screen.Settings
+                            "account" -> Screen.AccountManage
+                            "data" -> Screen.DataManage
+                            "agreement" -> Screen.Agreement
+                            "devices" -> Screen.Devices
+                            "minor" -> Screen.MinorMode
+                            "onboarding" -> Screen.Onboarding
+                            "welcome" -> Screen.Welcome
+                            "phone" -> Screen.PhoneLogin
+                            "password" -> Screen.PasswordLogin
+                            "session" -> Screen.Session
+                            "chat" -> Screen.Chat
+                            else -> when {
+                                !onboarded -> Screen.Onboarding
+                                hasToken -> Screen.Chat
+                                else -> Screen.Welcome
+                            }
                         }
                     )
                 }
