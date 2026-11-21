@@ -18,8 +18,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 44px 触控热区；margin-left 8 让 16px 图标中心落在 x=46，
+     与下方各行图标（16 页边距 + 16 行内距 + 28 宽容器中心 14 = 46）对齐成一条竖线 */
   width: 44px;
   height: 44px;
+  margin-left: 8px;
+  flex: none;
   border: none;
   border-radius: 22px;
   background: transparent;
