@@ -25,6 +25,8 @@ export const zh = {
   accountAuthAccountLabel: '账号授权（DSH grant）',
   accountAuthApiKeyLabel: 'API Key（本机保存）',
   accountNotLoggedIn: '未登录',
+  importStats: '新增 {added} · 有更新 {updated} · 本地独有 {localOnly}',
+  importUpToDate: '已是最新，无需导入',
   importModeTitle: '选择导入方式',
   importModeHint: '同一个归档可能有官方更新、也可能是重复导入，请选择处理方式：',
   importModeMerge: '合并（推荐）',

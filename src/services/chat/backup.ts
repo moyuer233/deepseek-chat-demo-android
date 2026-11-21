@@ -1,6 +1,6 @@
 import { formatDate } from '../../utils/format.js'
 import * as db from './db.js'
-import { importIntoHistory, replaceHistory, useChatStore } from './store.js'
+import { applyPreparedImport, importIntoHistory, replaceHistory, useChatStore } from './store.js'
 import type { Session } from './types.js'
 
 export { BackupError } from './history/errors.js'
@@ -44,6 +44,29 @@ export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
  * 通过后从 ZIP 流式写入暂存，成功才替换原有会话与图片原件。返回导入的会话数。
  */
 export type ImportMode = 'overwrite' | 'merge' | 'add'
+
+export type ImportPreflight = {
+  added: number
+  updated: number
+  identical: number
+  localOnly: number
+}
+
+/** 解析归档到暂存并对比本地差异（不写入正式数据）；随后用 applyImport 提交。 */
+export const prepareImport = (file: File): Promise<ImportPreflight> =>
+  enqueueBackup(async () => {
+    const { checkArchiveFormat, importArchive } = await import('./history/importArchive.js')
+    await checkArchiveFormat(file)
+    await db.clearStaging()
+    await importArchive(file)
+    return db.diffStaging()
+  })
+
+/** 提交已准备的导入；overwrite 整库替换，merge/add 合并。 */
+export const applyImport = (mode: ImportMode): Promise<number> => enqueueBackup(() => applyPreparedImport(mode))
+
+/** 取消导入时清掉暂存，正式数据保持不变。 */
+export const discardImport = (): Promise<void> => enqueueBackup(() => db.clearStaging())
 
 /**
  * 导入历史：overwrite 整库替换；merge 合并同 id 会话并保留本机内容；add 只新增本机没有的会话。

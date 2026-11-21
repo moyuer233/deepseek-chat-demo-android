@@ -590,6 +590,42 @@ export const importIntoHistory = async (file: File, mode: 'merge' | 'add'): Prom
   }
 }
 
+/** 应用已暂存的导入（prepareImport 写入 staging 后调用）：overwrite 整库替换，merge/add 合并。 */
+export const applyPreparedImport = async (mode: 'overwrite' | 'merge' | 'add'): Promise<number> => {
+  if (get().importingHistory) {
+    throw new Error('History import is already in progress')
+  }
+  set({ importingHistory: true })
+  try {
+    for (const controller of Object.values(get().streaming)) {
+      controller.abort()
+    }
+    await Promise.all(deletionTasks)
+    historyEpoch += 1
+    initTask = undefined
+    sessionLoads.clear()
+    await waitForIdle()
+    const summaries = mode === 'overwrite' ? await db.commitStaging() : await db.mergeStaging(mode)
+    sessionAccess.clear()
+    unsavedSessions.clear()
+    pendingFiles.clear()
+    clearAllDrafts()
+    set({
+      ready: true,
+      initError: false,
+      sessions: sortSessions(summaries),
+      sessionCache: {},
+      sessionLoadErrors: {},
+      sessionSaveErrors: {},
+      activeId: null,
+    })
+    return summaries.length
+  } finally {
+    set({ importingHistory: false })
+    retrySaveSessions()
+  }
+}
+
 export const stopReply = (sessionId: string) => getStreamController(sessionId)?.abort()
 
 /**

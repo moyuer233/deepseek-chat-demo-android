@@ -3,7 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
-import { clearHistory, exportHistory, importHistory, type ImportMode } from '../../services/chat/backup.js'
+import { applyImport, clearHistory, discardImport, exportHistory, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
@@ -40,7 +40,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const [page, setPage] = useState<'main' | 'account' | 'data' | 'chat'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
-  const [pendingImport, setPendingImport] = useState<File | null>(null)
+  const [pendingPreflight, setPendingPreflight] = useState<ImportPreflight | null>(null)
   const [importBusy, setImportBusy] = useState(false)
 
   const cycleLocale = () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')
@@ -53,25 +53,45 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         ? t('avatarMenuSettingsDialogThemeSelectLightOption')
         : t('avatarMenuSettingsDialogThemeSelectDarkOption')
 
-  const onImport = (file: File) => {
-    setPendingImport(file)
-  }
-
-  const runImport = async (mode: ImportMode) => {
-    const file = pendingImport
-    if (!file || importBusy) {
+  const startPrepare = async (file: File) => {
+    if (importBusy) {
       return
     }
     setImportBusy(true)
     try {
-      const count = await importHistory(file, mode)
-      showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
-      setPendingImport(null)
+      const diff = await prepareImport(file)
+      if (diff.added === 0 && diff.updated === 0) {
+        await discardImport()
+        showToast({ key: 'importUpToDate' })
+        return
+      }
+      setPendingPreflight(diff)
     } catch {
       showToast({ key: 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
     }
+  }
+
+  const runImport = async (mode: ImportMode) => {
+    if (!pendingPreflight || importBusy) {
+      return
+    }
+    setImportBusy(true)
+    try {
+      const count = await applyImport(mode)
+      showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
+      setPendingPreflight(null)
+    } catch {
+      showToast({ key: 'historyImportFailed', type: 'error' })
+    } finally {
+      setImportBusy(false)
+    }
+  }
+
+  const cancelImport = () => {
+    setPendingPreflight(null)
+    void discardImport()
   }
 
   const onExport = async () => {
@@ -88,9 +108,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     try {
       const archive = await requestChatArchive()
       const file = readArchiveFile(archive.path, archive.bytes, archive.name)
-      const count = await importHistory(file)
       nativeShell()?.deleteArchive?.(archive.path)
-      showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
+      await startPrepare(file)
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error))
     } finally {
@@ -222,17 +241,18 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>
-          {pendingImport ? (
+          {pendingPreflight ? (
             <Modal
               title={t('importModeTitle')}
-              onClose={() => setPendingImport(null)}
+              onClose={cancelImport}
               footer={
-                <Button variant="outlined" size="m" onClick={() => setPendingImport(null)}>
+                <Button variant="outlined" size="m" onClick={cancelImport}>
                   {t('cancel')}
                 </Button>
               }
             >
               <div className={styles.importModes}>
+                <p className={styles.importStats}>{t('importStats', { added: pendingPreflight.added, updated: pendingPreflight.updated, localOnly: pendingPreflight.localOnly })}</p>
                 <p className={styles.importHint}>{t('importModeHint')}</p>
                 <button type="button" className={styles.importMode} onClick={() => void runImport('merge')}>
                   <span className={styles.importModeTitle}>{t('importModeMerge')}</span>
@@ -258,7 +278,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               const file = event.target.files?.[0]
               event.target.value = ''
               if (file) {
-                void onImport(file)
+                void startPrepare(file)
               }
             }}
           />

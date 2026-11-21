@@ -27,6 +27,8 @@ export const en = {
   accountAuthAccountLabel: 'Account grant (DSH)',
   accountAuthApiKeyLabel: 'API key (stored locally)',
   accountNotLoggedIn: 'Not signed in',
+  importStats: '{added} new · {updated} updated · {localOnly} local only',
+  importUpToDate: 'Already up to date, nothing to import',
   importModeTitle: 'Choose import mode',
   importModeHint: 'The same archive may have newer content or be a duplicate. Choose how to apply it:',
   importModeMerge: 'Merge (recommended)',

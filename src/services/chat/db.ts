@@ -320,6 +320,53 @@ export const mergeStaging = async (mode: 'merge' | 'add'): Promise<SessionSummar
   }
 }
 
+export type ImportDiff = {
+  added: number
+  updated: number
+  identical: number
+  localOnly: number
+}
+
+/** 对比暂存归档与本地会话：新增 / 有更新 / 完全一致 / 本地独有（不写入正式数据）。 */
+export const diffStaging = async (): Promise<ImportDiff> => {
+  const tx = (await getDB()).transaction(['sessions', 'sessionsStaging'], 'readonly')
+  const sessionsStore = tx.objectStore('sessions')
+  const stagedIds = new Set<string>()
+  let added = 0
+  let updated = 0
+  let identical = 0
+  for (
+    let cursor = await tx.objectStore('sessionsStaging').openCursor();
+    cursor;
+    cursor = await cursor.continue()
+  ) {
+    const staged = cursor.value as Session
+    stagedIds.add(staged.id)
+    const existing = (await sessionsStore.get(staged.id)) as Session | undefined
+    if (!existing) {
+      added += 1
+      continue
+    }
+    const existingIds = new Set(existing.messages.map((message) => message.id))
+    const sameMessages =
+      existing.messages.length === staged.messages.length &&
+      staged.messages.every((message) => existingIds.has(message.id))
+    if (sameMessages && existing.updatedAt === staged.updatedAt && existing.title === staged.title) {
+      identical += 1
+    } else {
+      updated += 1
+    }
+  }
+  let localOnly = 0
+  for (let cursor = await sessionsStore.openCursor(); cursor; cursor = await cursor.continue()) {
+    if (!stagedIds.has(cursor.value.id)) {
+      localOnly += 1
+    }
+  }
+  await tx.done
+  return { added, updated, identical, localOnly }
+}
+
 /** 本地存储失败不打断对话，只在控制台留痕 */
 export const reportStorageError = (action: string) => (error: unknown) => {
   // eslint-disable-next-line no-console

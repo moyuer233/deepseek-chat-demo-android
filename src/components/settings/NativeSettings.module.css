@@ -133,6 +133,13 @@
   gap: 8px;
 }
 
+.importStats {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
 .importHint {
   margin: 0 0 4px;
   font-size: 13px;
