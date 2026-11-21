@@ -80,6 +80,9 @@
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
                 </div>
               </div>
+              <p class="sources">已搜索 3 个网页 · 查看来源</p>
+              <p class="bubble second">那再压缩成三条。</p>
+              <p class="answer short">1. 一次读完《三体》；2. 或 3000 页文档；3. 对话不用重开。</p>
             </div>
             <div class="composer">
               <div class="composer-box">
@@ -129,6 +132,11 @@
           <p>请求直连 api.deepseek.com，按你账号的 API 用量计费；本项目不加价、不代收、不做中转。</p>
         </li>
       </ol>
+      <div class="trust-strip">
+        <div><b>直连</b><span>请求直接到 api.deepseek.com，不经过本项目中转</span></div>
+        <div><b>本机</b><span>授权 token 由 Android Keystore 加密保存</span></div>
+        <div><b>开源</b><span>MIT 许可，可自行构建与核对</span></div>
+      </div>
     </div>
   </section>
 
@@ -143,6 +151,7 @@
           <li><span>02</span>App 拉取官方导出包</li>
           <li><span>03</span>看差异，确认导入</li>
         </ol>
+        <p class="section-note">导入前不改动本机数据；差异确认后才写入。</p>
       </div>
       <div class="split-visual">
         <div class="dialog">
@@ -171,6 +180,7 @@
           <li><span></span>旧对话 → 摘要，本机原文保留</li>
           <li><span></span>随时导出历史带走</li>
         </ul>
+        <p class="section-note">上下文占用优先采用最近一次 API usage，含图片与思考；没有请求记录时按本地字数估算。</p>
       </div>
       <div class="split-visual">
         <div class="status-card">
@@ -200,6 +210,7 @@
           <li><span></span>接近上限自动压缩，不用管</li>
           <li><span></span>压缩只改发出去的内容，本机原文保留</li>
         </ul>
+        <p class="section-note">压缩只替换发给模型的旧区间，本机完整记录仍可查看与导出。</p>
       </div>
       <div class="split-visual">
         <div class="compact-card">
