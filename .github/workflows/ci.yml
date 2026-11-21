@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Self-check archive writer
+        run: pnpm check:zip
+
       - name: Build
         run: pnpm build
 

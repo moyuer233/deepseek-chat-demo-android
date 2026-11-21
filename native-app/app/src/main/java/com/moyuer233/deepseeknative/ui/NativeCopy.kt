@@ -1,122 +1,139 @@
 package com.moyuer233.deepseeknative.ui
 
+import java.util.Locale
+
 /** 自动生成：改 copy/文案.mjs 后运行 node scripts/gen-copy.mjs；不要直接改本文件。 */
 object NativeCopy {
+    /** 跟随系统语言：英文环境显示英文，其余显示中文。 */
+    private val en = Locale.getDefault().language == "en"
+
     // 界面：引导页 · 第 1 页标题
-    const val onboardingTitle1 = "欢迎使用Chat Demo Android"
+    val onboardingTitle1 = if (en) "Welcome to Chat Demo Android" else "欢迎使用Chat Demo Android"
 
     // 界面：引导页 · 第 1 页说明
-    const val onboardingDesc1 = "突破 DeepSeek 免费版上下文长度/使用额度限制"
+    val onboardingDesc1 = if (en) "Go beyond the free DeepSeek context window and usage limits" else "突破 DeepSeek 免费版上下文长度/使用额度限制"
 
     // 界面：引导页 · 第 2 页标题
-    const val onboardingTitle2 = "导入历史会话"
+    val onboardingTitle2 = if (en) "Import chat history" else "导入历史会话"
 
     // 界面：引导页 · 第 2 页说明
-    const val onboardingDesc2 = "从 chat.deepseek.com 登录并导出全部会话并自动导入。"
+    val onboardingDesc2 = if (en) "Sign in to chat.deepseek.com, export all chats and import them automatically." else "从 chat.deepseek.com 登录并导出全部会话并自动导入。"
 
     // 界面：引导页 · 第 3 页标题
-    const val onboardingTitle3 = "配置API Key"
+    val onboardingTitle3 = if (en) "Set up API Key" else "配置API Key"
 
     // 界面：引导页 · 第 3 页说明
-    const val onboardingDesc3 = "用 DeepSeek开放平台 账号授权即可聊天，无须新建API Key"
+    val onboardingDesc3 = if (en) "Authorize with a DeepSeek Platform account to chat, no new API Key needed" else "用 DeepSeek开放平台 账号授权即可聊天，无须新建API Key"
 
     // 界面：引导页 · 第 4 页标题
-    const val onboardingTitle4 = "准备就绪"
+    val onboardingTitle4 = if (en) "You're all set" else "准备就绪"
 
     // 界面：引导页 · 第 4 页说明
-    const val onboardingDesc4 = "随时可以在设置里重新导入以及切换账号"
+    val onboardingDesc4 = if (en) "You can re-import chats and switch accounts in Settings anytime" else "随时可以在设置里重新导入以及切换账号"
 
     // 界面：引导页 · 主按钮（前三页）
-    const val next = "下一步"
+    val next = if (en) "Next" else "下一步"
 
     // 界面：引导页 · 主按钮（最后一页）
-    const val start = "开始使用"
+    val start = if (en) "Get started" else "开始使用"
 
     // 界面：引导页 · 底部跳过
-    const val skip = "跳过"
+    val skip = if (en) "Skip" else "跳过"
 
     // 界面：引导页 · 第 2 页「导入会话」按钮
-    const val importChats = "从 chat.deepseek.com 导入会话"
+    val importChats = if (en) "Import chats from chat.deepseek.com" else "从 chat.deepseek.com 导入会话"
 
     // 界面：引导页 · 第 2 页 导出中按钮文案
-    const val importingFromChat = "正在从 chat.deepseek.com 导出…"
+    val importingFromChat = if (en) "Exporting from chat.deepseek.com…" else "正在从 chat.deepseek.com 导出…"
 
     // 界面：引导页 · 第 2 页 取消提示
-    const val importCancelled = "已取消导入"
+    val importCancelled = if (en) "Import cancelled" else "已取消导入"
 
     // 界面：引导页 · 第 2 页 状态提示
-    const val importReady = "已获取归档，进入 Chat Demo 后自动导入"
+    val importReady = if (en) "Archive ready. It will be imported automatically after entering Chat Demo." else "已获取归档，进入 Chat Demo 后自动导入"
 
     // 界面：引导页 · 第 2 页 导出完成 Toast
-    const val importDoneToast = "导出完成，完成后会自动导入"
+    val importDoneToast = if (en) "Export complete. It will be imported automatically." else "导出完成，完成后会自动导入"
 
     // 界面：引导页 · 第 2 页 导出失败提示前缀
-    const val importFailedPrefix = "导出失败："
+    val importFailedPrefix = if (en) "Export failed: " else "导出失败："
 
     // 界面：引导页 · 第 3 页 授权按钮
-    const val authorize = "使用 DeepSeek 账号授权"
+    val authorize = if (en) "Authorize with DeepSeek account" else "使用 DeepSeek 账号授权"
 
     // 界面：引导页 · 第 3 页 已授权状态
-    const val authorized = "已授权"
+    val authorized = if (en) "Authorized" else "已授权"
 
     // 界面：引导页 · 第 3 页 授权成功 Toast
-    const val authSuccessToast = "授权成功"
+    val authSuccessToast = if (en) "Authorization successful" else "授权成功"
 
     // 界面：引导页 · 第 3 页 授权失败 Toast 前缀
-    const val authFailedPrefix = "授权失败："
+    val authFailedPrefix = if (en) "Authorization failed: " else "授权失败："
 
     // 界面：引导页 · 第 3 页 授权初始化失败 Toast 前缀
-    const val authInitFailedPrefix = "授权初始化失败："
+    val authInitFailedPrefix = if (en) "Failed to start authorization: " else "授权初始化失败："
 
     // 界面：引导页 · 第 3 页 取消兜底
-    const val authCancel = "已取消"
+    val authCancel = if (en) "Cancelled" else "已取消"
 
     // 界面：登录页 · 顶部标题
-    const val chatLoginTitle = "登录 DeepSeek（完成登录后自动返回）"
+    val chatLoginTitle = if (en) "Sign in to DeepSeek (returns automatically when done)" else "登录 DeepSeek（完成登录后自动返回）"
 
     // 界面：主界面 · 授权取消提示
-    const val authCancelled = "已取消授权"
+    val authCancelled = if (en) "Authorization cancelled" else "已取消授权"
 
     // 界面：主界面 · 导入取消提示
-    const val importLoginCancelled = "已取消登录"
+    val importLoginCancelled = if (en) "Sign-in cancelled" else "已取消登录"
 
     // 界面：主界面 · 导出失败兜底
-    const val exportFailed = "导出失败"
+    val exportFailed = if (en) "Export failed" else "导出失败"
 
     // 界面：通用确认框 · 确认按钮
-    const val confirm = "确定"
+    val confirm = if (en) "OK" else "确定"
 
     // 界面：通用确认框 · 取消按钮
-    const val cancel = "取消"
+    val cancel = if (en) "Cancel" else "取消"
 
     // 界面：主界面 · 相机不可用 Toast
-    const val cameraFallback = "无法打开相机，改用文件选择"
+    val cameraFallback = if (en) "Can't open the camera, using the file picker instead" else "无法打开相机，改用文件选择"
 
     // 界面：主界面 · 授权初始化失败
-    const val authInitFailed = "授权初始化失败"
+    val authInitFailed = if (en) "Authorization init failed" else "授权初始化失败"
 
     // 界面：主界面 · 导出成功提示前缀
-    const val exportedToPrefix = "已导出到 "
+    val exportedToPrefix = if (en) "Exported to " else "已导出到 "
 
     // 界面：主界面 · 导出到下载目录提示
-    const val exportedToDownloads = "已导出到 下载/DeepSeekNative"
+    val exportedToDownloads = if (en) "Exported to Downloads/DeepSeekNative" else "已导出到 下载/DeepSeekNative"
 
     // 界面：主界面 · 导出失败提示前缀
-    const val exportFailedPrefix = "导出失败："
+    val exportFailedPrefix = if (en) "Export failed: " else "导出失败："
 
     // 界面：主界面 · 未知错误兜底
-    const val unknownError = "未知错误"
+    val unknownError = if (en) "Unknown error" else "未知错误"
 
     // 界面：主界面 · 无法创建下载文件
-    const val cannotCreateDownload = "无法创建下载文件"
+    val cannotCreateDownload = if (en) "Can't create the download file" else "无法创建下载文件"
 
     // 界面：主界面 · 无法写入下载文件
-    const val cannotWriteDownload = "无法写入下载文件"
+    val cannotWriteDownload = if (en) "Can't write the download file" else "无法写入下载文件"
 
     // 界面：授权页 · 用户取消
-    const val oauthCancelled = "授权被取消"
+    val oauthCancelled = if (en) "Authorization cancelled" else "授权被取消"
 
     // 界面：授权页 · 失败兜底
-    const val oauthFailed = "授权失败"
+    val oauthFailed = if (en) "Authorization failed" else "授权失败"
+
+    // 界面：导出 · 账号没有可导出的会话
+    val chatExportEmpty = if (en) "This account has no chats to export" else "账号内没有可导出的会话"
+
+    // 界面：导出 · 导出任务失败
+    val chatExportFailed = if (en) "Export failed. Please try again later." else "导出失败，请稍后重试"
+
+    // 界面：导出 · 等待导出超时
+    val chatExportTimeout = if (en) "Export timed out. Please try again later." else "导出超时，请稍后重试"
+
+    // 界面：导出 · 下载失败（后接状态码）
+    val downloadFailedHttp = if (en) "Download failed. HTTP " else "下载失败 HTTP "
 
 }

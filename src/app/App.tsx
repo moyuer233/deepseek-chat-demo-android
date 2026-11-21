@@ -12,7 +12,6 @@ import {
   selectSession,
   useChatStore,
 } from '../services/chat/store.js'
-import { cancelPreview, useAccount } from '../services/deepseek/account.js'
 import { loadAccountToken } from '../services/deepseek/auth.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
@@ -88,10 +87,6 @@ export const App = () => {
     let listener: { remove: () => void } | null = null
     let cancelled = false
     void NativeApp.addListener('backButton', () => {
-      if (useAccount.getState().phase === 'preview') {
-        cancelPreview()
-        return
-      }
       if (useSettingsDialog.getState().open) {
         closeSettings()
         return
@@ -129,10 +124,6 @@ export const App = () => {
   useEffect(() => {
     // 原生壳返回键：网页按「预览 → 设置 → 抽屉 → 搜索面板 → 会话」逐级后退，返回 false 才退出 App
     const handler = () => {
-      if (useAccount.getState().phase === 'preview') {
-        cancelPreview()
-        return true
-      }
       if (useSettingsDialog.getState().open) {
         closeSettings()
         return true

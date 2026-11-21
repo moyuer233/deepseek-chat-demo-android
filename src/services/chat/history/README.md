@@ -4,16 +4,17 @@ chat-demo 使用 `export_format_version: 3` 的历史会话 ZIP，导出文件�
 
 ## 归档结构
 
-导出按以下顺序写入：
+导出按以下顺序流式写入（逐条生成、写完即释放内存）：
 
 ```text
 manifest.json                                      格式版本，必须是首个条目
-chat_sessions/{session_id}.json                    全部会话 JSON（含消息树）
-chat_session_index.json                            会话索引
-chat_sessions/{session_id}_files/{file_id}_{file_name}  全部图片原件
+chat_sessions/{session_id}.json                    会话 JSON（含消息树）
+chat_sessions/{session_id}_files/{file_id}_{file_name}  该会话的图片原件
+…                                                  按会话重复以上两条
+chat_session_index.json                            会话索引（最后写入）
 ```
 
-导入也支持“会话 JSON → 该会话图片”交错排列、索引在末尾的顺序。`user.json` 可位于 manifest 与会话之间，导入时跳过；本项目不导出账号信息。图片按 `FILE.export_path` 匹配。
+导入支持“会话 JSON → 该会话图片”交错排列、索引在末尾的顺序。`user.json` 可位于 manifest 与会话之间，导入时跳过；本项目不导出账号信息。图片按 `FILE.export_path` 匹配。
 
 可选字段允许缺省；时间接受以 `Z` 结尾、带可选小数秒的 UTC 时间。校验后只保留已定义字段，未知类型或无法解析的内容片段直接丢弃；容器和元数据字段不合法仍会导致导入失败。
 

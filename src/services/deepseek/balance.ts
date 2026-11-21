@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/index.js'
 import { setAccountToken, useSettings } from '../settings.js'
 
 export type Balance = {
@@ -33,7 +34,7 @@ export const fetchBalance = async (): Promise<Balance | null> => {
     if (response.status === 401 && token && useSettings.getState().accountToken) {
       setAccountToken(null)
     }
-    throw new Error(`余额获取失败（${response.status}）`)
+    throw new Error(translate('errorBalanceFetch', { status: response.status }))
   }
   const data = (await response.json()) as {
     is_available?: boolean

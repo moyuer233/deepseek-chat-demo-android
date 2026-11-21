@@ -1,5 +1,6 @@
 package com.moyuer233.deepseeknative.data
 
+import com.moyuer233.deepseeknative.ui.NativeCopy
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -54,13 +55,13 @@ object ChatExport {
                     return url
                 }
             } else if (status == "EMPTY") {
-                throw IllegalStateException("账号内没有可导出的会话")
+                throw IllegalStateException(NativeCopy.chatExportEmpty)
             } else if (status == "FAILED") {
-                throw IllegalStateException("导出失败，请稍后重试")
+                throw IllegalStateException(NativeCopy.chatExportFailed)
             }
             Thread.sleep(POLL_INTERVAL_MS)
         }
-        throw IllegalStateException("导出超时，请稍后重试")
+        throw IllegalStateException(NativeCopy.chatExportTimeout)
     }
 
     private fun request(url: String, token: String): String {
@@ -93,7 +94,7 @@ object ChatExport {
             conn.setRequestProperty("Authorization", "Bearer " + token)
         }
         val status = conn.responseCode
-        if (status !in 200..299) throw IllegalStateException("下载失败 HTTP " + status)
+        if (status !in 200..299) throw IllegalStateException(NativeCopy.downloadFailedHttp + status)
         var total = 0L
         conn.inputStream.use { input ->
             FileOutputStream(target).use { out ->

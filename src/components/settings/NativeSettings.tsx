@@ -3,7 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
-import { applyImport, BackupError, clearHistory, discardImport, exportHistory, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
+import { applyImport, BackupError, clearHistory, discardImport, exportHistory, exportHistoryToFile, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
@@ -96,6 +96,10 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
   const onExport = async () => {
     try {
+      // 原生端边生成边落盘，避免整包 ZIP 驻留内存；保存完成的提示由原生弹出
+      if (await exportHistoryToFile()) {
+        return
+      }
       const { name, blob } = await exportHistory()
       await shareBlob(name, blob)
     } catch (error) {
@@ -136,7 +140,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         showToast(t('updateLatest'))
       }
     } catch {
-      showToast('检查更新失败')
+      showToast(t('updateCheckFailed'))
     }
   }
 

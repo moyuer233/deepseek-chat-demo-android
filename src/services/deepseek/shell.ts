@@ -1,3 +1,5 @@
+import { translate } from '../../i18n/index.js'
+
 /** 简易 WebView 壳桥：Android 注入 window.NativeShell，不依赖 Capacitor。 */
 export type NativeShell = {
   getToken(): string
@@ -12,8 +14,6 @@ export type NativeShell = {
   beginExport?(name: string): string
   appendExport?(path: string, base64: string): number
   finishExport?(path: string, mime: string, name: string): void
-  pickImages?(): void
-  makeApiKey?(token: string, name: string): string
   requestMic?(): void
   clearToken?(): void
 }
@@ -81,7 +81,7 @@ export const shellPlatformAuthLogin = (): Promise<{ token: string; probes: strin
   new Promise((resolve, reject) => {
     const shell = nativeShell()
     if (!shell) {
-      reject(new Error('原生授权不可用'))
+      reject(new Error(translate('errorAuthUnavailable')))
       return
     }
     registerShellAuthCallbacks()
@@ -98,7 +98,7 @@ export const requestChatArchive = (): Promise<{ path: string; name: string; byte
   new Promise((resolve, reject) => {
     const shell = nativeShell()
     if (!shell?.startChatImport) {
-      reject(new Error('当前版本不支持从 chat.deepseek.com 导入'))
+      reject(new Error(translate('errorChatImportUnsupported')))
       return
     }
     ;(window as unknown as { __onChatArchiveReady?: (path: string, name: string, bytes: number) => void }).__onChatArchiveReady =
@@ -121,7 +121,7 @@ export const requestChatArchive = (): Promise<{ path: string; name: string; byte
 export const readArchiveFile = async (path: string, bytes: number, name: string): Promise<File> => {
   const shell = nativeShell()
   if (!shell?.readArchiveChunk) {
-    throw new Error('读取归档失败')
+    throw new Error(translate('errorArchiveRead'))
   }
   const chunkSize = 512 * 1024
   const parts: BlobPart[] = []
@@ -131,11 +131,11 @@ export const readArchiveFile = async (path: string, bytes: number, name: string)
     const size = Math.min(chunkSize, bytes - offset)
     const b64 = shell.readArchiveChunk(path, offset, size)
     if (!b64) {
-      throw new Error('读取归档失败')
+      throw new Error(translate('errorArchiveRead'))
     }
     const binary = atob(b64)
     if (binary.length !== size) {
-      throw new Error('读取归档失败：数据块长度不匹配')
+      throw new Error(translate('errorArchiveChunk'))
     }
     const chunk = new Uint8Array(size)
     for (let i = 0; i < size; i += 1) {

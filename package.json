@@ -11,6 +11,7 @@
     "android:sync": "pnpm build && cap sync android",
     "type": "tsc -p tsconfig.json",
     "lint": "oxlint src rspack.config.ts",
+    "check:zip": "node scripts/check-zip-writer.ts",
     "format": "oxfmt --write ."
   },
   "dependencies": {

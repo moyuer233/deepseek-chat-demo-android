@@ -48,38 +48,26 @@ const resolveSize = async (blob: Blob): Promise<{ size: number; buffer?: ArrayBu
   return { size: buffer.byteLength, buffer }
 }
 
-/** STORE 流式写入；成品必须能再次导入。 */
-export const writeArchive = async (entries: { name: string; blob: Blob }[]): Promise<Blob> => {
-  if (entries.length >= ZIP64_COUNT) {
-    throw new ArchiveLimitError()
-  }
-  // 串行测量 size=0 的 blob，避免同时把多个大图读进内存。
-  const resolved: { name: string; blob: Blob; size: number; buffer?: ArrayBuffer }[] = []
-  for (const entry of entries) {
-    const { size, buffer } = await resolveSize(entry.blob)
-    resolved.push({ ...entry, size, buffer })
-  }
+type ArchiveEntry = { name: string; blob: Blob }
+
+/**
+ * STORE 流式写入；成品必须能再次导入。
+ * 条目按需读取（可传生成器）：图片等大附件逐条读入、写完即释放，不在内存里攒整份归档。
+ * 传 onChunk 时边写边交付（原生端直接落盘），不保留整包 Blob。
+ */
+export function writeArchive(entries: Iterable<ArchiveEntry> | AsyncIterable<ArchiveEntry>): Promise<Blob>
+export function writeArchive(
+  entries: Iterable<ArchiveEntry> | AsyncIterable<ArchiveEntry>,
+  onChunk: (chunk: Uint8Array) => void,
+): Promise<void>
+export async function writeArchive(
+  entries: Iterable<ArchiveEntry> | AsyncIterable<ArchiveEntry>,
+  onChunk?: (chunk: Uint8Array) => void,
+): Promise<Blob | void> {
   const names = new Set<string>()
   let dataSize = 0
   let directorySize = 0
-  const prepared = resolved.map(({ name, blob, size, buffer }) => {
-    const normalized = entryName(name)
-    if (names.has(normalized.name)) {
-      invalid()
-    }
-    names.add(normalized.name)
-    if (size >= ZIP64_SIZE) {
-      throw new ArchiveLimitError()
-    }
-    dataSize += size + 46 + normalized.byteLength
-    directorySize += 46 + normalized.byteLength
-    if (dataSize >= ZIP64_SIZE || directorySize >= ZIP64_SIZE) {
-      throw new ArchiveLimitError()
-    }
-    return { name: normalized.name, blob, size, buffer }
-  })
-
-  const expectedSize = dataSize + directorySize + 22
+  let count = 0
   const chunks: Blob[] = []
   let size = 0
   let completed = false
@@ -88,15 +76,35 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
       throw error
     }
     size += chunk.byteLength
-    if (size > expectedSize) {
-      invalid()
+    if (onChunk) {
+      onChunk(chunk)
+    } else {
+      chunks.push(new Blob([chunk]))
     }
-    chunks.push(new Blob([chunk]))
     completed = final
   })
   try {
-    for (const { name, blob, size: blobSize, buffer } of prepared) {
-      const entry = new ZipPassThrough(name)
+    for await (const { name, blob } of entries) {
+      count += 1
+      if (count >= ZIP64_COUNT) {
+        throw new ArchiveLimitError()
+      }
+      // 串行测量：size=0 的 blob 读完立刻写入，写完即释放
+      const { size: blobSize, buffer } = await resolveSize(blob)
+      const normalized = entryName(name)
+      if (names.has(normalized.name)) {
+        invalid()
+      }
+      names.add(normalized.name)
+      if (blobSize >= ZIP64_SIZE) {
+        throw new ArchiveLimitError()
+      }
+      dataSize += blobSize + 46 + normalized.byteLength
+      directorySize += 46 + normalized.byteLength
+      if (dataSize >= ZIP64_SIZE || directorySize >= ZIP64_SIZE) {
+        throw new ArchiveLimitError()
+      }
+      const entry = new ZipPassThrough(normalized.name)
       entry.mtime = new Date(1980, 0, 1)
       zip.add(entry)
       if (buffer) {
@@ -130,8 +138,13 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
       }
     }
     zip.end()
+    // 大小在全部条目写完后才能确定，集中校验，避免半截归档
+    const expectedSize = dataSize + directorySize + 22
     if (!completed || size !== expectedSize) {
       invalid()
+    }
+    if (onChunk) {
+      return
     }
     return new Blob(chunks, { type: 'application/zip' })
   } finally {

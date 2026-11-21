@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                 result.data?.getStringExtra(ChatLoginActivity.EXTRA_TOKEN)
             } else null
             if (token.isNullOrEmpty()) {
-                webViewRef?.evaluateJavascript("window.__onChatArchiveError && window.__onChatArchiveError('已取消登录')", null)
+                webViewRef?.evaluateJavascript("window.__onChatArchiveError && window.__onChatArchiveError('" + NativeCopy.importLoginCancelled + "')", null)
                 return@registerForActivityResult
             }
             Thread {

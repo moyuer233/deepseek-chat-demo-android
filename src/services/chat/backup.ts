@@ -1,6 +1,7 @@
 import { formatDate } from '../../utils/format.js'
 import * as db from './db.js'
 import { applyPreparedImport, importIntoHistory, replaceHistory, useChatStore } from './store.js'
+import { createNativeExport } from '../deepseek/share.js'
 import { clearSessionUsage } from './usageTotals.js'
 import type { Session } from './types.js'
 
@@ -15,29 +16,51 @@ const enqueueBackup = <T>(run: () => Promise<T>): Promise<T> => {
   return task
 }
 
-const backupFileName = (date: Date) => `deepseek_data-${formatDate(date)}.zip`
+const backupFileName = () => `deepseek_data-${formatDate(new Date())}.zip`
 
-/** 导出为历史会话导出格式的 ZIP，可再次导入。 */
+/**
+ * 导出时逐条读取会话：列表和标题取导出开始时的快照，未打开的会话按需读取，不填满详情缓存。
+ * 生成器在导出器内部才开始执行，此时仍处于 backup 队列中，数据不会被并发导入/清空。
+ */
+async function* readSessions(): AsyncGenerator<Session> {
+  const { sessions, sessionCache } = useChatStore.getState()
+  for (const summary of sessions) {
+    const session = Object.hasOwn(sessionCache, summary.id)
+      ? sessionCache[summary.id]
+      : await db.loadSession(summary.id)
+    if (!session) {
+      throw new Error(`History session disappeared during export: ${summary.id}`)
+    }
+    // 详情读取期间可能重命名，归档标题与开始时的列表保持一致。
+    yield { ...session, ...summary }
+  }
+}
+
+/** 导出为历史会话导出格式的 ZIP，可再次导入（网页端：整包 Blob）。 */
 export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
   enqueueBackup(async () => {
-    // 列表和已加载内容保留导出开始时的快照；未打开的会话逐条读取，不填满详情缓存。
-    const { sessions, sessionCache } = useChatStore.getState()
-    async function* readSessions(): AsyncGenerator<Session> {
-      for (const summary of sessions) {
-        const session = Object.hasOwn(sessionCache, summary.id)
-          ? sessionCache[summary.id]
-          : await db.loadSession(summary.id)
-        if (!session) {
-          throw new Error(`History session disappeared during export: ${summary.id}`)
-        }
-        // 详情读取期间可能重命名，归档标题与开始时的列表保持一致。
-        yield { ...session, ...summary }
-      }
+    const { exportArchive } = await import('./history/exportArchive.js')
+    const blob = await exportArchive(readSessions())
+    return { name: backupFileName(), blob }
+  })
+
+/** 原生端边生成边落盘，避免整包 ZIP 驻留内存；Web 环境返回 null。 */
+export const exportHistoryToFile = (): Promise<{ name: string } | null> =>
+  enqueueBackup(async () => {
+    const name = backupFileName()
+    const sink = createNativeExport(name)
+    if (!sink) {
+      return null
     }
     const { exportArchive } = await import('./history/exportArchive.js')
-    const now = new Date()
-    const blob = await exportArchive(readSessions())
-    return { name: backupFileName(now), blob }
+    try {
+      await exportArchive(readSessions(), (chunk) => sink.append(chunk))
+      sink.finish()
+      return { name }
+    } catch (error) {
+      sink.abort()
+      throw error
+    }
   })
 
 /**
