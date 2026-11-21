@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private var permissionsLauncher: ActivityResultLauncher<Array<String>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
     private var siderBackCallback: Any? = null
+    private var backPending = false
     private var legacyBackCallback: OnBackPressedCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -134,8 +135,19 @@ class MainActivity : ComponentActivity() {
                     web.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
                     return
                 }
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
+                if (backPending) return
+                backPending = true
+                webViewRef?.evaluateJavascript("window.__onBack ? String(window.__onBack()) : 'false'") { value ->
+                    backPending = false
+                    if (value != "true" && !isFinishing) {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                } ?: run {
+                    backPending = false
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
             }
         }
         legacyBackCallback = legacy
@@ -206,9 +218,13 @@ class MainActivity : ComponentActivity() {
                         val dir = java.io.File(cacheDir, "camera").apply { mkdirs() }
                         val file = java.io.File(dir, "photo_" + System.currentTimeMillis() + ".jpg")
                         val uri = FileProvider.getUriForFile(this@MainActivity, packageName + ".fileprovider", file)
-                        cameraUri = uri
-                        cameraLauncher?.launch(uri)
-                        return true
+                        val launcher = cameraLauncher
+                        if (launcher != null) {
+                            cameraUri = uri
+                            launcher.launch(uri)
+                            return true
+                        }
+                        android.widget.Toast.makeText(this@MainActivity, "无法打开相机，改用文件选择", android.widget.Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         android.util.Log.w("Camera", "capture failed", e)
                     }
@@ -246,6 +262,16 @@ class MainActivity : ComponentActivity() {
         rootView.addView(web, android.widget.FrameLayout.LayoutParams(-1, -1))
         setContentView(rootView)
         web.loadUrl("https://appassets.androidplatform.net/web/index.html")
+    }
+
+    override fun onDestroy() {
+        webViewRef?.let { web ->
+            web.loadUrl("about:blank")
+            web.removeAllViews()
+            web.destroy()
+        }
+        webViewRef = null
+        super.onDestroy()
     }
 
     private fun registerSiderBack() {
@@ -287,7 +313,12 @@ class MainActivity : ComponentActivity() {
         fun getToken(): String = DshAuth.token(this@MainActivity) ?: ""
 
         @JavascriptInterface
-        fun takePendingArchive(): String = com.moyuer233.deepseeknative.data.PendingArchive.take(this@MainActivity)
+        fun peekPendingArchive(): String = com.moyuer233.deepseeknative.data.PendingArchive.peek(this@MainActivity)
+
+        @JavascriptInterface
+        fun clearPendingArchive() {
+            com.moyuer233.deepseeknative.data.PendingArchive.clear(this@MainActivity)
+        }
 
         @JavascriptInterface
         fun startAuth() {
@@ -392,29 +423,37 @@ class MainActivity : ComponentActivity() {
                 val expected = java.io.File(cacheDir, "export").canonicalPath
                 val file = java.io.File(path)
                 if (!file.exists()) return
-                        if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return
+                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                    val dir = java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "DeepSeekNative").apply { mkdirs() }
+                    val target = java.io.File(dir, name.replace(Regex("[^A-Za-z0-9._-]"), "_"))
+                    file.inputStream().use { input -> target.outputStream().use { input.copyTo(it) } }
+                    runOnUiThread {
+                        android.widget.Toast.makeText(this@MainActivity, "已导出到 " + target.absolutePath, android.widget.Toast.LENGTH_LONG).show()
+                    }
+                    return
+                }
                 val values = android.content.ContentValues().apply {
                     put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
                     put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime.ifBlank { "application/zip" })
                     put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/DeepSeekNative")
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
-                    }
+                    put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
                 }
                 val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                uri?.let { u ->
-                    contentResolver.openOutputStream(u)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        values.clear()
-                        values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
-                        contentResolver.update(u, values, null, null)
-                    }
-                }
+                    ?: throw IllegalStateException("无法创建下载文件")
+                contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
+                    ?: throw IllegalStateException("无法写入下载文件")
+                values.clear()
+                values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                contentResolver.update(uri, values, null, null)
                 runOnUiThread {
                     android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 android.util.Log.w("NativeShell", "finishExport failed", e)
+                runOnUiThread {
+                    android.widget.Toast.makeText(this@MainActivity, "导出失败：" + (e.message ?: "未知错误"), android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

@@ -32,6 +32,7 @@ import { Tooltip } from '../base/Tooltip.js'
 import { Markdown } from '../markdown/Markdown.js'
 import { SiteThumbnails } from '../search/SiteLogo.js'
 import { toggleSearchPanel, useSearchPanel } from '../search/searchPanelState.js'
+import { nativeShell } from '../../services/deepseek/shell.js'
 import styles from './ReplyArea.module.css'
 import './thinking.markdown.css'
 
@@ -288,7 +289,19 @@ const PageLink = ({ page, failedTip }: { page: PageItem; failedTip?: string }) =
         <span className={styles.pageText}>{page.title}</span>
       </Tooltip>
     ) : (
-      <a className={styles.pageText} href={page.url} target="_blank" rel="noreferrer">
+      <a
+        className={styles.pageText}
+        href={page.url}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(event) => {
+          // 原生壳没有实现 onCreateWindow，交给系统浏览器打开
+          if (nativeShell()) {
+            event.preventDefault()
+            nativeShell()?.openExternal?.(page.url)
+          }
+        }}
+      >
         {page.title}
       </a>
     )}

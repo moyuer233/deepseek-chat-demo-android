@@ -123,7 +123,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     <div className={styles.header}>
       <button type="button" className={styles.back} onClick={onBack} aria-label="返回">‹</button>
       <div className={styles.title}>{title}</div>
-      <span style={{ width: 40 }} />
+      <span className={styles.spacer40} />
     </div>
   )
 

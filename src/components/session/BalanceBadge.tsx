@@ -50,10 +50,13 @@ export const BalanceBadge = () => {
     ) : null
   }
 
+  // 余额归零/账户不可用时点变红（与插件一致）
+  const healthy = balance.available && balance.total > 0.005
   const symbol = currencySymbol(balance.currency)
   return (
     <div className={styles.balance} title={t('balanceTooltip')}>
-      <span className={balance.available ? styles.dotOk : styles.dotError} />
+      <span className={healthy ? styles.dotOk : styles.dotError} />
+      <span className={styles.label}>{t('balanceLabel')}</span>
       <span className={styles.value}>{symbol}{balance.total.toFixed(2)}</span>
       {balance.granted > 0 ? (
         <span className={styles.bonus}>({t('balanceBonus')} {symbol}{balance.granted.toFixed(2)})</span>

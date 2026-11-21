@@ -92,7 +92,13 @@ class TopUpActivity : ComponentActivity() {
                     put(MediaStore.Images.Media.IS_PENDING, 1)
                 }
                 val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
-                contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: return null
+                try {
+                    contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        ?: throw IllegalStateException("无法写入相册")
+                } catch (e: Exception) {
+                    contentResolver.delete(uri, null, null)
+                    return null
+                }
                 values.clear()
                 values.put(MediaStore.Images.Media.IS_PENDING, 0)
                 contentResolver.update(uri, values, null, null)

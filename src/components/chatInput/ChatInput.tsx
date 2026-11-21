@@ -109,8 +109,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const voice = useVoiceInput((transcript) => {
     const textarea = textareaRef.current
     const current = getDraft(sessionId).text
-    const start = textarea?.selectionStart ?? current.length
-    const end = textarea?.selectionEnd ?? current.length
+    const focused = textarea !== null && document.activeElement === textarea
+    const start = focused ? (textarea.selectionStart ?? current.length) : current.length
+    const end = focused ? (textarea.selectionEnd ?? current.length) : current.length
     setText(current.slice(0, start) + transcript + current.slice(end))
     requestAnimationFrame(() => {
       textarea?.focus({ preventScroll: true })
@@ -188,7 +189,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               }
             }}
           >
-            {recording ? t('voiceInputStop') : '按住说话'}
+            {recording ? t('voiceInputStop') : t('voiceHoldToSpeak')}
           </button>
         ) : null}
         <textarea
@@ -388,9 +389,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           {attachMenu ? (
             <div className={styles.attachSheet}>
               {[
-                { key: 'camera', label: '拍照', icon: 'M4 8h3l2-2h6l2 2h3v11H4z M12 12a3 3 0 100 6 3 3 0 000-6z' },
-                { key: 'gallery', label: '相册', icon: 'M4 5h16v14H4z M8 11l3 3 2-2 3 3' },
-                { key: 'file', label: '文件', icon: 'M6 3h8l4 4v14H6z M14 3v5h5' },
+                { key: 'camera', label: t('attachCamera'), icon: 'M4 8h3l2-2h6l2 2h3v11H4z M12 12a3 3 0 100 6 3 3 0 000-6z' },
+                { key: 'gallery', label: t('attachGallery'), icon: 'M4 5h16v14H4z M8 11l3 3 2-2 3 3' },
+                { key: 'file', label: t('attachFile'), icon: 'M6 3h8l4 4v14H6z M14 3v5h5' },
               ].map((item) => (
                 <button
                   key={item.key}

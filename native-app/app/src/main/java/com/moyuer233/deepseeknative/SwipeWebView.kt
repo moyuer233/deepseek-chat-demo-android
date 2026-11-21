@@ -11,17 +11,20 @@ import kotlin.math.min
 /**
  * 支持左缘横滑开/关侧边栏的 WebView：
  * 拖动时把进度（0..1）通过 window.__siderDrag 传给网页，松手调 __siderSwipeEnd。
+ * DOWN 不吞事件（避免左缘按钮点不动），只有真正横向拖动后才接管。
  */
 @SuppressLint("ViewConstructor")
 class SwipeWebView(context: Context) : WebView(context) {
     var siderOpen: Boolean = false
     private val edgeWidth = 24 * resources.displayMetrics.density
     private val touchSlop = 8 * resources.displayMetrics.density
-    private var tracking = false
+    private var candidate = false
+    private var dragging = false
     private var downX = 0f
     private var downY = 0f
     private var lastX = 0f
     private var lastTime = 0L
+    private var lastSend = 0L
     private var velocity = 0f
     private var progress = 0f
 
@@ -32,23 +35,20 @@ class SwipeWebView(context: Context) : WebView(context) {
                 downY = ev.y
                 lastX = ev.x
                 lastTime = ev.eventTime
+                lastSend = 0L
                 velocity = 0f
+                dragging = false
                 progress = if (siderOpen) 1f else 0f
-                tracking = if (siderOpen) {
-                    ev.x < width * 0.85f
-                } else {
-                    ev.x <= edgeWidth
-                }
-                if (!siderOpen && tracking) {
-                    // 收起状态下的左缘手势由原生独占，避免网页把这串手势当成文本长按
-                    return true
-                }
+                candidate = if (siderOpen) ev.x < width * 0.85f else ev.x <= edgeWidth
             }
             MotionEvent.ACTION_MOVE -> {
-                if (tracking) {
+                if (candidate) {
                     val dx = ev.x - downX
                     val dy = ev.y - downY
-                    if (abs(dx) > touchSlop && abs(dx) > abs(dy) * 1.2f) {
+                    if (!dragging && abs(dx) > touchSlop && abs(dx) > abs(dy) * 1.2f) {
+                        dragging = true
+                    }
+                    if (dragging) {
                         val now = ev.eventTime
                         if (now > lastTime) {
                             velocity = (ev.x - lastX) / (now - lastTime) * 1000f
@@ -60,18 +60,25 @@ class SwipeWebView(context: Context) : WebView(context) {
                         } else {
                             progress = clamp(1f + dx / (width * 0.82f))
                         }
-                        evaluateJavascript("window.__siderDrag && window.__siderDrag($progress)", null)
+                        if (now - lastSend >= 16) {
+                            lastSend = now
+                            evaluateJavascript("window.__siderDrag && window.__siderDrag($progress)", null)
+                        }
                         return true
                     }
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (tracking && ev.actionMasked == MotionEvent.ACTION_UP && progress > 0.001f && progress < 0.999f) {
-                    evaluateJavascript("window.__siderSwipeEnd && window.__siderSwipeEnd($progress, $velocity)", null)
-                    tracking = false
+                if (dragging) {
+                    if (ev.actionMasked == MotionEvent.ACTION_UP) {
+                        evaluateJavascript("window.__siderSwipeEnd && window.__siderSwipeEnd($progress, $velocity)", null)
+                    }
+                    candidate = false
+                    dragging = false
                     return true
                 }
-                tracking = false
+                candidate = false
+                dragging = false
             }
         }
         return super.dispatchTouchEvent(ev)

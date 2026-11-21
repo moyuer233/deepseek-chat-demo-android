@@ -1,6 +1,11 @@
 import type { zh } from './zh.js'
 
 export const en = {
+  voiceHoldToSpeak: 'Hold to talk',
+  attachCamera: 'Camera',
+  attachGallery: 'Photos',
+  attachFile: 'File',
+  balanceLabel: 'Balance',
   balanceTooltip: 'DeepSeek account balance',
   balanceBonus: 'bonus',
   balanceFailed: 'Failed to load balance',

@@ -15,17 +15,20 @@ object PendingArchive {
             .apply()
     }
 
-    /** 取出并清空；没有则返回空串。 */
-    fun take(context: Context): String {
+    /** 读取但不清空；导入成功后再调用 clear，失败可重试。 */
+    fun peek(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val path = prefs.getString("path", null) ?: return ""
         val name = prefs.getString("name", "deepseek_data.zip") ?: "deepseek_data.zip"
         val bytes = prefs.getLong("bytes", 0)
-        prefs.edit().clear().apply()
         return JSONObject()
             .put("path", path)
             .put("name", name)
             .put("bytes", bytes)
             .toString()
+    }
+
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 }

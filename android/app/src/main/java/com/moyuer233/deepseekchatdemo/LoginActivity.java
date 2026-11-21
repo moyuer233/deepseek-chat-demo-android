@@ -91,6 +91,9 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 每次登录重新取态，避免复用旧 Cookie 导致拿到过期会话
+        android.webkit.CookieManager.getInstance().removeAllCookies(null);
+        android.webkit.CookieManager.getInstance().flush();
         String url = getIntent().getStringExtra(EXTRA_URL);
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         if (url == null || url.isEmpty()) {

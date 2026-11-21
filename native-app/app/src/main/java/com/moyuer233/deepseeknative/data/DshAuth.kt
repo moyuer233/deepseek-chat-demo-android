@@ -24,7 +24,7 @@ object DshAuth {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun token(context: Context): String? =
-        prefs(context).getString(KEY_TOKEN, null)?.takeIf { it.isNotEmpty() }
+        SecurePrefs.get(context, PREFS, KEY_TOKEN)?.takeIf { it.isNotEmpty() }
 
     fun clear(context: Context) {
         prefs(context).edit().remove(KEY_TOKEN).apply()
@@ -122,7 +122,8 @@ object DshAuth {
             ?: throw IllegalStateException("auth_exchange: " + payload.take(200))
         if (!bizData.has("token")) throw IllegalStateException("auth_exchange: " + payload.take(200))
         val token = bizData.getString("token")
-        store.edit().putString(KEY_TOKEN, token).remove(KEY_VERIFIER).remove(KEY_STATE).apply()
+        SecurePrefs.put(context, PREFS, KEY_TOKEN, token)
+        store.edit().remove(KEY_VERIFIER).remove(KEY_STATE).apply()
         return token
     }
 }

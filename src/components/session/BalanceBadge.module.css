@@ -29,6 +29,10 @@
   background: var(--dsw-alias-state-error-primary, #d93025);
 }
 
+.label {
+  color: var(--dsw-alias-label-tertiary);
+}
+
 .value {
   font-weight: 500;
 }

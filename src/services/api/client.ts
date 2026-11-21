@@ -82,7 +82,8 @@ export const request = async (url: string, init: RequestInit): Promise<Response>
     // 账号 grant 失效时清掉，避免所有请求都卡在过期凭证上
     if (response.status === 401) {
       const { accountToken } = useSettings.getState()
-      if (accountToken) {
+      const usedGrant = new Headers(init.headers).has('x-dsh-auth-token')
+      if (accountToken && usedGrant) {
         setAccountToken(null)
       }
     }

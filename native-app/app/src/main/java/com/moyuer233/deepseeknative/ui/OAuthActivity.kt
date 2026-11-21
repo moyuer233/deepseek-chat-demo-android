@@ -40,7 +40,13 @@ class OAuthActivity : ComponentActivity() {
     }
 
     private fun handle(url: String): Boolean {
-        if (!url.startsWith(DshAuth.REDIRECT_URI)) return false
+        val redirect = android.net.Uri.parse(DshAuth.REDIRECT_URI)
+        val actual = android.net.Uri.parse(url)
+        if (actual.scheme != redirect.scheme || actual.host != redirect.host ||
+            actual.port != redirect.port || actual.path != redirect.path
+        ) {
+            return false
+        }
         if (exchanging) return true
         exchanging = true
         val uri = Uri.parse(url)

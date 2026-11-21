@@ -364,6 +364,7 @@ public class DeepSeekAccountPlugin extends Plugin {
             if (knownSize > MAX_IMAGE_BYTES) {
                 return null;
             }
+            byte[] bytes;
             try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
                 if (in == null) {
                     return null;
@@ -377,7 +378,8 @@ public class DeepSeekAccountPlugin extends Plugin {
                         return null;
                     }
                 }
-                byte[] bytes = buffer.toByteArray();
+                bytes = buffer.toByteArray();
+            }
             String mime = getContext().getContentResolver().getType(uri);
             if (mime == null) {
                 mime = "image/jpeg";
@@ -446,43 +448,46 @@ public class DeepSeekAccountPlugin extends Plugin {
 
     private String request(String url, String method, String token, String body, boolean platform) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setRequestMethod(method);
-        conn.setConnectTimeout(20000);
-        conn.setReadTimeout(60000);
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("Authorization", "Bearer " + token);
-        if (platform) {
-            conn.setRequestProperty("x-client-bundle-id", "com.deepseek.chat");
-            conn.setRequestProperty("x-client-platform", "web");
-            conn.setRequestProperty("x-client-version", "1.0.1");
-            conn.setRequestProperty("x-client-locale", localeHeader());
-            conn.setRequestProperty("x-client-timezone-offset", String.valueOf(timezoneOffsetSeconds()));
-            conn.setRequestProperty("x-device-id", deviceId());
-            conn.setRequestProperty("x-device-model", "");
-        } else {
-            conn.setRequestProperty("x-client-bundle-id", "com.deepseek.chat");
-            conn.setRequestProperty("x-client-platform", "web");
-            conn.setRequestProperty("x-client-version", "2.3.0");
-            conn.setRequestProperty("x-client-locale", localeHeader());
-            conn.setRequestProperty("x-client-timezone-offset", String.valueOf(timezoneOffsetSeconds()));
-        }
-        if (body != null) {
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/json");
-            byte[] payload = body.getBytes(StandardCharsets.UTF_8);
-            conn.setFixedLengthStreamingMode(payload.length);
-            try (java.io.OutputStream out = conn.getOutputStream()) {
-                out.write(payload);
+        try {
+            conn.setRequestMethod(method);
+            conn.setConnectTimeout(20000);
+            conn.setReadTimeout(60000);
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            if (platform) {
+                conn.setRequestProperty("x-client-bundle-id", "com.deepseek.chat");
+                conn.setRequestProperty("x-client-platform", "web");
+                conn.setRequestProperty("x-client-version", "1.0.1");
+                conn.setRequestProperty("x-client-locale", localeHeader());
+                conn.setRequestProperty("x-client-timezone-offset", String.valueOf(timezoneOffsetSeconds()));
+                conn.setRequestProperty("x-device-id", deviceId());
+                conn.setRequestProperty("x-device-model", "");
+            } else {
+                conn.setRequestProperty("x-client-bundle-id", "com.deepseek.chat");
+                conn.setRequestProperty("x-client-platform", "web");
+                conn.setRequestProperty("x-client-version", "2.3.0");
+                conn.setRequestProperty("x-client-locale", localeHeader());
+                conn.setRequestProperty("x-client-timezone-offset", String.valueOf(timezoneOffsetSeconds()));
             }
+            if (body != null) {
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json");
+                byte[] payload = body.getBytes(StandardCharsets.UTF_8);
+                conn.setFixedLengthStreamingMode(payload.length);
+                try (java.io.OutputStream out = conn.getOutputStream()) {
+                    out.write(payload);
+                }
+            }
+            int status = conn.getResponseCode();
+            InputStream stream = status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream();
+            String text = readAll(stream);
+            if (status < 200 || status >= 300) {
+                throw new Exception("HTTP " + status + " " + text);
+            }
+            return text;
+        } finally {
+            conn.disconnect();
         }
-        int status = conn.getResponseCode();
-        InputStream stream = status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream();
-        String text = readAll(stream);
-        conn.disconnect();
-        if (status < 200 || status >= 300) {
-            throw new Exception("HTTP " + status + " " + text);
-        }
-        return text;
     }
 
     private long download(String url, File target, String token) throws Exception {

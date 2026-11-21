@@ -99,6 +99,10 @@ public class TopUpActivity extends AppCompatActivity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                if (url != null && url.equals(lastInjectedUrl)) {
+                    return;
+                }
+                lastInjectedUrl = url;
                 if (!hookSource.isEmpty()) {
                     view.evaluateJavascript(hookSource, null);
                 }

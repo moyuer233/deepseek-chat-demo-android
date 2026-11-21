@@ -16,11 +16,10 @@ object SessionStore {
     private const val KEY_THEME = "theme_mode"
     private const val KEY_LANG_EN = "lang_english"
 
-    fun token(context: Context): String? =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TOKEN, null)
+    fun token(context: Context): String? = SecurePrefs.get(context, PREFS, KEY_TOKEN)
 
     fun saveToken(context: Context, token: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_TOKEN, token).apply()
+        SecurePrefs.put(context, PREFS, KEY_TOKEN, token)
     }
 
     fun mobile(context: Context): String? =
@@ -36,11 +35,10 @@ object SessionStore {
         return if (mobile.length == 11) mobile.take(3) + "******" + mobile.takeLast(2) else mobile
     }
 
-    fun apiKey(context: Context): String? =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_API_KEY, null)?.takeIf { it.isNotEmpty() }
+    fun apiKey(context: Context): String? = SecurePrefs.get(context, PREFS, KEY_API_KEY)?.takeIf { it.isNotEmpty() }
 
     fun saveApiKey(context: Context, key: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_API_KEY, key).apply()
+        SecurePrefs.put(context, PREFS, KEY_API_KEY, key)
     }
 
     fun fontStep(context: Context): Int =

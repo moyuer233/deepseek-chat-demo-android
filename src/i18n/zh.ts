@@ -1,4 +1,9 @@
 export const zh = {
+  voiceHoldToSpeak: '按住说话',
+  attachCamera: '拍照',
+  attachGallery: '相册',
+  attachFile: '文件',
+  balanceLabel: '余额',
   balanceTooltip: 'DeepSeek 账户余额',
   balanceBonus: '赠送',
   balanceFailed: '余额获取失败',
