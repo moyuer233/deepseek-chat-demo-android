@@ -1,6 +1,6 @@
 import { App as NativeApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
@@ -25,7 +25,6 @@ import {
   useSettingsDialog,
 } from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
-import { Onboarding } from '../components/onboarding/Onboarding.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
@@ -39,17 +38,7 @@ import { closeMobileSider, useMobileSider } from '../components/sider/mobileSide
 import { MobileSider, Sider } from '../components/sider/Sider.js'
 import styles from './App.module.css'
 
-/** 首启标记只在模块加载时读一次，避免把 localStorage 读进 effect 依赖。 */
-const readOnboarded = (): boolean => {
-  try {
-    return localStorage.getItem('chat-demo:onboarded') === '1'
-  } catch {
-    return false
-  }
-}
 const isNativeApp = Capacitor.isNativePlatform()
-// 原生壳由 MainActivity 的 Compose 引导页负责；网页引导只留给浏览器版本，避免两套引导连播
-const showOnboardingInitially = !isNativeApp && !readOnboarded()
 
 export const App = () => {
   const t = useTranslate()
@@ -74,13 +63,6 @@ export const App = () => {
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
   const activeId = useChatStore((state) => state.activeId)
-  // 首次启动引导：只在原生端、且没看过时展示一次
-  const [onboarding, setOnboarding] = useState(showOnboardingInitially)
-  const onboardingRef = useRef(onboarding)
-  useEffect(() => {
-    onboardingRef.current = onboarding
-  }, [onboarding])
-
   usePreventPageScroll(isMobile)
 
   useEffect(() => {
@@ -106,10 +88,6 @@ export const App = () => {
     let listener: { remove: () => void } | null = null
     let cancelled = false
     void NativeApp.addListener('backButton', () => {
-      // 引导期间吞掉返回键，避免误退出
-      if (onboardingRef.current) {
-        return
-      }
       if (useAccount.getState().phase === 'preview') {
         cancelPreview()
         return
@@ -257,14 +235,6 @@ export const App = () => {
         </main>
         <SearchPanel />
       </div>
-      {onboarding ? (
-        <Onboarding
-          onFinish={() => {
-            setOnboarding(false)
-            newChat()
-          }}
-        />
-      ) : null}
       <SettingsDialog />
       <Toast />
     </>
