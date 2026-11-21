@@ -4,6 +4,9 @@ export type NativeShell = {
   startAuth(): void
   openExternal(url: string): void
   openTopUp(): void
+  beginExport?(name: string): string
+  appendExport?(path: string, base64: string): number
+  finishExport?(path: string, mime: string, name: string): void
   pickImages?(): void
   makeApiKey?(token: string, name: string): string
 }

@@ -40,10 +40,16 @@ private enum class Screen { Onboarding, Welcome, PhoneLogin, PasswordLogin, Chat
 class MainActivity : ComponentActivity() {
     private var webViewRef: WebView? = null
     private var authLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
+    private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
+    private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        fileChooserLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+            fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
+            fileChooserCallback = null
+        }
         authLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
             val ok = result.resultCode == android.app.Activity.RESULT_OK
             val token = if (ok) com.moyuer233.deepseeknative.data.DshAuth.token(this) ?: "" else ""
@@ -119,6 +125,60 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                     }
                 }
+
+                @android.webkit.JavascriptInterface
+                fun beginExport(name: String): String {
+                    val dir = java.io.File(cacheDir, "export").apply { mkdirs() }
+                    val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }
+                    val file = java.io.File(dir, safe)
+                    file.outputStream().use { }
+                    return file.absolutePath
+                }
+
+                @android.webkit.JavascriptInterface
+                fun appendExport(path: String, base64: String): Int {
+                    return try {
+                        val expected = java.io.File(cacheDir, "export").canonicalPath
+                        val file = java.io.File(path)
+                        if (!file.canonicalPath.startsWith(expected)) return -1
+                        val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+                        java.io.FileOutputStream(file, true).use { it.write(bytes) }
+                        file.length().toInt()
+                    } catch (e: Exception) {
+                        -1
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                fun finishExport(path: String, mime: String, name: String) {
+                    try {
+                        val expected = java.io.File(cacheDir, "export").canonicalPath
+                        val file = java.io.File(path)
+                        if (!file.canonicalPath.startsWith(expected) || !file.exists()) return
+                        val values = android.content.ContentValues().apply {
+                            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
+                            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime.ifBlank { "application/zip" })
+                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/DeepSeekNative")
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+                            }
+                        }
+                        val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                        uri?.let { u ->
+                            contentResolver.openOutputStream(u)?.use { out -> file.inputStream().use { it.copyTo(out) } }
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                values.clear()
+                                values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                                contentResolver.update(u, values, null, null)
+                            }
+                        }
+                        runOnUiThread {
+                            android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("NativeShell", "finishExport failed", e)
+                    }
+                }
             }, "NativeShell")
             web.webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
@@ -129,6 +189,21 @@ class MainActivity : ComponentActivity() {
             web.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(msg: android.webkit.ConsoleMessage?): Boolean {
                     android.util.Log.d("WebConsole", (msg?.message() ?: "") + " @" + (msg?.lineNumber() ?: 0))
+                    return true
+                }
+
+                override fun onShowFileChooser(
+                    view: WebView,
+                    callback: android.webkit.ValueCallback<Array<android.net.Uri>>,
+                    params: FileChooserParams,
+                ): Boolean {
+                    fileChooserCallback?.onReceiveValue(emptyArray())
+                    fileChooserCallback = callback
+                    val types = params.acceptTypes.filter { it.isNotBlank() }.toTypedArray()
+                    fileChooserLauncher?.launch(if (types.isEmpty()) arrayOf("*/*") else types) ?: run {
+                        callback.onReceiveValue(emptyArray())
+                        return false
+                    }
                     return true
                 }
             }

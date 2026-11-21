@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { DeepSeekAccount } from './plugin.js'
+import { nativeShell } from './shell.js'
 
 /** 512 KiB 一段，避免一次性把整包 base64 塞进 JS↔原生通道。 */
 const CHUNK = 512 * 1024
@@ -15,6 +16,24 @@ const toBase64 = (bytes: Uint8Array) => {
 
 /** 原生端把 Blob 写成缓存文件并弹系统分享；网页端仍走浏览器下载。 */
 export const shareBlob = async (name: string, blob: Blob) => {
+  const shell = nativeShell()
+  if (shell?.beginExport && shell.appendExport && shell.finishExport) {
+    const path = shell.beginExport(name)
+    let written = 0
+    for (let offset = 0; offset < blob.size; offset += CHUNK) {
+      const chunk = new Uint8Array(await blob.slice(offset, offset + CHUNK).arrayBuffer())
+      const bytes = shell.appendExport(path, toBase64(chunk))
+      if (bytes < 0) {
+        throw new Error('导出文件写入失败，请重试')
+      }
+      written += chunk.length
+    }
+    if (written !== blob.size) {
+      throw new Error('导出文件写入不完整，请重试')
+    }
+    shell.finishExport(path, blob.type || 'application/zip', name)
+    return
+  }
   if (Capacitor.isNativePlatform()) {
     const { path } = await DeepSeekAccount.beginExportFile({ name })
     let written = 0
