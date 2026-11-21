@@ -89,10 +89,21 @@ export const totalUsage = (): UsageStats => {
 }
 
 /** 当前会话上下文占用（按估算 token / 128k） */
-/** 上下文占用按「实际会发给模型的内容」估算：有压缩记录时只算摘要 + 压缩点之后的消息 */
+/**
+ * 上下文占用：优先用最近一次请求由 API 报告的提示词规模（未缓存输入 + 缓存读取 + 缓存写入），
+ * 与 DSH 的 token-meter 口径一致——它包含图片、工具与历史思考，比本地字符估算准确。
+ * 还没有请求记录时退回本地估算（含压缩摘要），此时图片不计入。
+ */
 export const contextPressure = (session: Session | null) => {
   let tokens = 0
-  if (session) {
+  const lastUsage = session
+    ? [...session.messages].reverse().find((message) => message.role === 'assistant' && message.usage)
+    : undefined
+  if (lastUsage?.usage) {
+    const usage = lastUsage.usage
+    tokens =
+      usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens
+  } else if (session) {
     const compaction = session.compaction
     const cutoffIndex = compaction
       ? session.messages.findIndex((message) => message.id === compaction.throughId)
