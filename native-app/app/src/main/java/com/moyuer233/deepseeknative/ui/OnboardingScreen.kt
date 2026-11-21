@@ -4,7 +4,9 @@ import com.moyuer233.deepseeknative.NativeCopy
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
@@ -64,8 +67,19 @@ import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 fun OnboardingScreen(onDone: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val pages = remember {
+        listOf(
+            Triple(NativeCopy.onboardingTitle1, NativeCopy.onboardingDesc1, 0),
+            Triple(NativeCopy.onboardingTitle2, NativeCopy.onboardingDesc2, 1),
+            Triple(NativeCopy.onboardingTitle3, NativeCopy.onboardingDesc3, 2),
+            Triple(NativeCopy.onboardingTitle4, NativeCopy.onboardingDesc4, 3),
+        )
+    }
+    // pageCount 跟着 pages 走，增删页不会越界/空白
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+    // 页面内容用 currentPage（滑动中就跟手），底部控件用 settledPage（停下才切），避免中途文案互换
     val index = pagerState.currentPage
+    val settledPage = pagerState.settledPage
     var authorized by remember { mutableStateOf(DshAuth.token(context) != null) }
     var chatImportStatus by remember { mutableStateOf("") }
     var chatImporting by remember { mutableStateOf(false) }
@@ -121,15 +135,9 @@ fun OnboardingScreen(onDone: () -> Unit) {
         }.start()
     }
     // 系统返回键/返回手势：先退回上一页引导，第一页时才交给系统（退出）
-    androidx.activity.compose.BackHandler(enabled = index > 0) {
-        scope.launch { pagerState.animateScrollToPage(index - 1) }
+    androidx.activity.compose.BackHandler(enabled = settledPage > 0 && !pagerState.isScrollInProgress) {
+        scope.launch { pagerState.animateScrollToPage(settledPage - 1) }
     }
-    val pages = listOf(
-        Triple(NativeCopy.onboardingTitle1, NativeCopy.onboardingDesc1, 0),
-        Triple(NativeCopy.onboardingTitle2, NativeCopy.onboardingDesc2, 1),
-        Triple(NativeCopy.onboardingTitle3, NativeCopy.onboardingDesc3, 2),
-        Triple(NativeCopy.onboardingTitle4, NativeCopy.onboardingDesc4, 3),
-    )
     Column(
         modifier = Modifier.fillMaxSize().background(LocalAppColors.current.background).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -143,7 +151,11 @@ fun OnboardingScreen(onDone: () -> Unit) {
         ) { page ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    // 可滚动：横屏 / 大字体下内容超高时不会被裁掉、也不会压到下面的蓝点和按钮
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     if (page == 0) {
@@ -176,11 +188,13 @@ fun OnboardingScreen(onDone: () -> Unit) {
             pages.indices.forEach { i ->
                 // 每个点都占固定 14dp 的格子，只让内部圆点变大小/颜色，
                 // 否则「当前页变大」会把整行挤得左右抖动，看起来就是「蓝点位置偏移」
-                val dotColor by animateColorAsState(if (i == index) BrandBlue else Color(0xFFD5D8DE), label = "dotColor")
+                // 未激活点用主题边框色，深色模式下才不会接近白、和激活点混在一起
+                val inactiveDot = LocalAppColors.current.border
+                val dotColor by animateColorAsState(if (i == settledPage) BrandBlue else inactiveDot, label = "dotColor")
                 Box(modifier = Modifier.size(14.dp), contentAlignment = Alignment.Center) {
                     Box(
                         modifier = Modifier
-                            .size(if (i == index) 8.dp else 6.dp)
+                            .size(if (i == settledPage) 8.dp else 6.dp)
                             .background(dotColor, CircleShape),
                     )
                 }
@@ -188,8 +202,12 @@ fun OnboardingScreen(onDone: () -> Unit) {
         }
         // 固定高度的「可选按钮」槽位：没有按钮的页面也占同样空间，
         // 否则第 2/3 页多出一个按钮会把上面的蓝点整体顶上去，看起来就是「蓝点位置偏移」。
-        Box(modifier = Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.Center) {
-            when (pages[index].third) {
+        // 用 min 高度而不是固定高度：状态文案较长时可以多占一行，不会被 Surface 裁掉
+        Box(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (pages[settledPage].third) {
                 1 -> OutlinedButton(
                     onClick = {
                         if (!chatImporting) {
@@ -203,14 +221,22 @@ fun OnboardingScreen(onDone: () -> Unit) {
                             chatImporting -> NativeCopy.importingFromChat
                             chatImportStatus.isNotEmpty() -> chatImportStatus
                             else -> NativeCopy.importChats
-                        }
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
                 2 -> OutlinedButton(
                     onClick = { startOauth() },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
-                ) { Text(if (authorized) NativeCopy.authorized else NativeCopy.authorize) }
+                ) {
+                    Text(
+                        if (authorized) NativeCopy.authorized else NativeCopy.authorize,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         val primaryInteraction = remember { MutableInteractionSource() }
@@ -218,8 +244,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
         val primaryScale by animateFloatAsState(if (primaryPressed) 0.97f else 1f, label = "primaryScale")
         Button(
             onClick = {
-                if (index < pages.lastIndex) {
-                    scope.launch { pagerState.animateScrollToPage(index + 1) }
+                // 用 targetPage 判断，连点时不会两次都指向同一页（第二下没反应）
+                val target = pagerState.targetPage
+                if (target < pages.lastIndex) {
+                    scope.launch { pagerState.animateScrollToPage(target + 1) }
                 } else {
                     onDone()
                 }
@@ -229,7 +257,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp).scale(primaryScale),
         ) {
-            Text(if (index < pages.lastIndex) NativeCopy.next else NativeCopy.start, fontSize = 16.sp)
+            Text(if (settledPage < pages.lastIndex) NativeCopy.next else NativeCopy.start, fontSize = 16.sp)
         }
         TextButton(
             onClick = onDone,
