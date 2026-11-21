@@ -6,7 +6,7 @@
 
 <h1 align="center">DeepSeek Chat Demo</h1>
 
-<p align="center"><i>When the official app makes you wait, this one keeps talking.</i></p>
+<p align="center"><i>Run your own “free-tier” DeepSeek on your API: no free-tier throttling, full history import.</i></p>
 
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
@@ -17,19 +17,19 @@
 
 <p align="center"><b>English</b> | <a href="README.zh-CN.md">简体中文</a></p>
 
-> An **unofficial** Android client built on [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT). Not affiliated with, endorsed by, or sponsored by DeepSeek.
+> An **independent** Android client (not a chat-demo fork) that reuses the [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT) web core. Unofficial; not affiliated with, endorsed by, or sponsored by DeepSeek.
 
-## When the official app makes you wait
+## A “free-tier” DeepSeek on your own API
 
 | Official app: quota reached, wait it out | This app: 1M context, keep chatting |
 | --- | --- |
 | <img src="docs/assets/screens-official-limit.jpg" width="270" alt="Official app: server busy, usage limit reached" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="This app: context 8.2K / 1M" /> |
 
-When the official app's free quota runs out it says the server is busy and the usage limit has been reached. This app takes a different route: it calls `api.deepseek.com` with **your own DeepSeek account grant or API key**, with a **1M-token context window**, and shows "context 8.2K / 1M" plus total tokens right under the composer.
+The free tier throttles you and says the server is busy once its quota is reached. This app takes another route: it calls `api.deepseek.com` with **your own API key or account grant**, so the quota is yours and the free-tier throttling does not apply, with a **1M-token context window** and "context 8.2K / 1M" plus total tokens right under the composer. It is also a full client for your history: import every conversation from chat.deepseek.com and keep it on the device.
 
 Near the limit it only compacts older turns into a summary **on your device** — recent messages stay untouched and your local chat history is never deleted.
 
-Calls still count against your own API quota: no queue, but not unlimited free usage.
+To be clear: API calls are metered against your own account. "Free tier" here means the experience, not zero cost.
 
 ## Screens
 

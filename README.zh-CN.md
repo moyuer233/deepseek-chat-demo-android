@@ -6,7 +6,7 @@
 
 <h1 align="center">DeepSeek Chat Demo</h1>
 
-<p align="center"><i>官方 App 排队的时候，这里还能接着聊。</i></p>
+<p align="center"><i>用你自己的 API，跑一个「免费版 DeepSeek」：不限流、能导入全部历史。</i></p>
 
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
@@ -17,19 +17,19 @@
 
 <p align="center">English | <b>简体中文</b></p>
 
-> 基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）二次开发的**非官方**安卓客户端。与 DeepSeek 无隶属或背书关系。
+> **独立项目**（不是 chat-demo 的 fork），复用了 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）的网页内核。非官方，与 DeepSeek 无隶属或背书关系。
 
-## 官方 App 排队的时候
+## 用 API 跑的「免费版 DeepSeek」
 
 | 官方 App：额度到顶，只能等 | 本 App：1M 上下文，照常聊 |
 | --- | --- |
 | <img src="docs/assets/screens-official-limit.jpg" width="270" alt="官方 App：服务器繁忙，使用额度已达上限" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="本 App：上下文 8.2K / 1M" /> |
 
-官方 App 的免费额度用完后会提示「服务器繁忙，使用额度已达上限，将于 … 恢复」。本 App 不走这条路：它直接调用 `api.deepseek.com` 的聊天接口，用你**自己的 DeepSeek 账号授权**或 API Key 聊天，上下文窗口 **1M token**，输入框下方实时显示「上下文 8.2K / 1M」和累计 tokens。
+官方免费版会限流、额度到顶时提示「服务器繁忙，使用额度已达上限，将于 … 恢复」。本 App 换了一条路：直接调用 `api.deepseek.com` 的聊天接口，用你**自己的 API Key 或账号授权**聊天，额度来自你的账号，**不受官方免费版限流影响**；上下文窗口 **1M token**，输入框下方实时显示「上下文 8.2K / 1M」和累计 tokens。
 
-接近上限时，它只在本机把较早的对话整理成摘要——最近消息原样保留，**本机聊天记录一条不删**，随时可以往上翻。
+它同时是一个能接住历史的完整客户端：从 chat.deepseek.com 导入全部会话，本机保存；接近上限时只在本机把较早的对话整理成摘要——最近消息原样保留，**本机聊天记录一条不删**。
 
-调用仍然消耗你账号的 API 额度：不排队，但不是免费无限。
+前提说清楚：API 调用按量计费，额度用你账号自己的；这里的「免费版」指体验形态，不是零成本。
 
 ## 界面
 
