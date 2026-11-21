@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://github.com/moyuer233/deepseek-chat-demo-android">
+  <a href="https://moyuer233.github.io/deepseek-chat-demo-android/">
     <img src="docs/assets/icon.png" width="96" alt="DeepSeek Chat Demo Android" />
   </a>
 </p>
 
-<h1 align="center">DeepSeek Chat Demo Android</h1>
+<h1 align="center"><a href="https://moyuer233.github.io/deepseek-chat-demo-android/">DeepSeek Chat Demo Android</a></h1>
 
 <p align="center"><i>A “free-tier” DeepSeek on your own API: no throttling, and your history comes along.</i></p>
 
@@ -31,7 +31,7 @@ Chat with your own API key or DeepSeek account grant — the quota is yours, so 
 
 ## Download
 
-[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (current 1.1.1) · [Website](https://moyuer233.github.io/deepseek-chat-demo-android/)
+[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (current 1.1.1).
 
 ## Build
 
