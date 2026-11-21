@@ -52,7 +52,7 @@ b, strong { font-weight: 650; }
 a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 
 /* hero */
-.hero { min-height: 100svh; display: flex; align-items: center; padding: 100px 0 40px; }
+.hero { min-height: 100svh; display: flex; align-items: center; padding: 120px 0 60px; }
 .hero-copy { max-width: 840px; margin: 0 auto; text-align: center; }
 .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
 h1 { margin-top: 18px; font-size: clamp(38px, 4.4vw, 56px); line-height: 1.12; letter-spacing: -0.035em; font-weight: 690; text-wrap: balance; }
@@ -223,13 +223,26 @@ h2 { margin-top: 14px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.15; l
   .meter-bar i, .compact-bar i { animation-name: grow; animation-timeline: view(); animation-range: entry 5% cover 30%; }
 }
 
+@media (min-width: 1024px) {
+  .hero .shell { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 64px; align-items: center; }
+  .hero-copy { max-width: none; margin: 0; text-align: left; }
+  .hero-lede { margin-left: 0; margin-right: 0; }
+  .actions { justify-content: flex-start; }
+  .stage { margin-top: 0; }
+  .device { width: 300px; }
+  .phone-chat { height: 360px; }
+  .chip-a { top: -16px; left: 50%; transform: translateX(-50%); }
+  .chip-b { bottom: -18px; left: 50%; transform: translateX(-50%); }
+  .hero-copy h1 { font-size: clamp(38px, 3.6vw, 50px); }
+}
+
 @media (min-width: 1500px) and (min-height: 950px) {
   :root { --shell: 1400px; --pad: 48px; }
   .hero { padding-top: 120px; }
   h1 { font-size: 64px; }
   .hero-lede { font-size: 18px; max-width: 46em; }
   .device { width: 380px; }
-  .phone-chat { height: 240px; }
+  .phone-chat { height: 470px; }
   .chip-a { left: calc(50% - 500px); }
   .chip-b { right: calc(50% - 500px); }
   h2 { font-size: 48px; }
@@ -262,7 +275,7 @@ h2 { margin-top: 14px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.15; l
   .stage { margin-top: 36px; }
   .chip { display: none; }
   .device { max-width: 320px; }
-  .phone-chat { height: 170px; }
+  .phone-chat { height: 300px; }
   .section { padding: 80px 0; }
   .sec-head { margin-bottom: 32px; }
   .cards3, .trust-row { grid-template-columns: 1fr; gap: 16px; }
@@ -282,7 +295,7 @@ h2 { margin-top: 14px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.15; l
   h1 { font-size: 31px; }
   h2 { font-size: 27px; }
   .hero { padding-top: 108px; }
-  .phone-chat { height: 140px; }
+  .phone-chat { height: 260px; }
   .chip { display: none; }
   .device { max-width: 300px; }
   .section { padding: 64px 0; }
