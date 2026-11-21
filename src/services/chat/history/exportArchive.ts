@@ -29,31 +29,34 @@ export async function exportArchive(
   async function* entries(): AsyncGenerator<ArchiveEntry> {
     yield { name: MANIFEST_PATH, blob: json(manifest) }
     for await (const session of sessions) {
-      const originals = new Map<string, Blob | undefined>()
-      const images = new Map<string, Blob>()
+      // 先只探测原件是否存在（不读 Blob），写出会话 JSON 后再逐张读入、写出即释放
+      const present = new Map<string, boolean>()
       for (const message of session.messages) {
         if (message.role !== 'user') {
           continue
         }
         for (const file of message.files) {
-          if (file.isImage && !originals.has(file.id)) {
-            originals.set(file.id, await db.loadFile(file.id))
+          if (file.isImage && !present.has(file.id)) {
+            present.set(file.id, await db.hasFile(file.id))
           }
         }
       }
+      const images: { path: string; id: string }[] = []
       const data = toSessionFile(session, ({ id, name, isImage }) => {
-        const blob = originals.get(id)
-        if (!blob || !isImage) {
+        if (!isImage || !present.get(id)) {
           return null
         }
         const path = imagePath(session.id, id, name)
-        images.set(path, blob)
+        images.push({ path, id })
         return path
       })
       yield { name: sessionPath(session.id), blob: json(data) }
       // 图片紧跟会话写出：导入端支持会话与图片交错、index 位于末尾
-      for (const [name, blob] of images) {
-        yield { name, blob }
+      for (const image of images) {
+        const blob = await db.loadFile(image.id)
+        if (blob) {
+          yield { name: image.path, blob }
+        }
       }
       index.push(toIndexEntry(data))
     }

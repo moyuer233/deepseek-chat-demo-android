@@ -27,12 +27,15 @@ en += '}\n'
 const nativeSection = sections.find((s) => s.native)
 // Kotlin 字符串里 $ 是模板符，逐条转义，避免文案里出现 $ 时编译失败
 const kq = (v) => q(v).replace(/\$/g, '\\$')
-let kt = 'package com.moyuer233.deepseeknative.ui\n\n'
+let kt = 'package com.moyuer233.deepseeknative\n\n'
 kt += 'import java.util.Locale\n\n'
 kt += '/** 自动生成：改 copy/文案.mjs 后运行 node scripts/gen-copy.mjs；不要直接改本文件。 */\n'
 kt += 'object NativeCopy {\n'
-kt += '    /** 跟随系统语言：英文环境显示英文，其余显示中文。 */\n'
-kt += '    private val en = Locale.getDefault().language == "en"\n\n'
+kt += '    /** 默认跟随系统语言；Web 侧可通过 setLanguage 覆盖为应用内语言。 */\n'
+kt += '    private var en = Locale.getDefault().language == "en"\n\n'
+kt += '    fun setLanguage(locale: String) {\n'
+kt += '        en = locale.startsWith("en")\n'
+kt += '    }\n\n'
 md += '## 原生界面\n\n| 界面 | 中文 | English |\n|---|---|---|\n'
 for (const item of nativeSection?.native ?? []) {
   kt += '    // 界面：' + item.where + '\n'
@@ -43,6 +46,6 @@ kt += '}\n'
 
 await writeFile('src/i18n/zh.ts', zh)
 await writeFile('src/i18n/en.ts', en)
-await writeFile('native-app/app/src/main/java/com/moyuer233/deepseeknative/ui/NativeCopy.kt', kt)
+await writeFile('native-app/app/src/main/java/com/moyuer233/deepseeknative/NativeCopy.kt', kt)
 await writeFile('docs/文案表.md', md)
 console.log('generated: zh.ts en.ts NativeCopy.kt docs/文案表.md')

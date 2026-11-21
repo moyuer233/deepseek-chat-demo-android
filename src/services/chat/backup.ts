@@ -16,7 +16,12 @@ const enqueueBackup = <T>(run: () => Promise<T>): Promise<T> => {
   return task
 }
 
-const backupFileName = () => `deepseek_data-${formatDate(new Date())}.zip`
+const backupFileName = () => {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  // 带上时分秒，避免同一天两次导出同名文件时截断仍在后台拷贝的旧文件
+  return `deepseek_data-${formatDate(now)}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.zip`
+}
 
 /**
  * 导出时逐条读取会话：列表和标题取导出开始时的快照，未打开的会话按需读取，不填满详情缓存。
@@ -48,11 +53,11 @@ export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
 export const exportHistoryToFile = (): Promise<{ name: string } | null> =>
   enqueueBackup(async () => {
     const name = backupFileName()
+    const { exportArchive } = await import('./history/exportArchive.js')
     const sink = createNativeExport(name)
     if (!sink) {
       return null
     }
-    const { exportArchive } = await import('./history/exportArchive.js')
     try {
       await exportArchive(readSessions(), (chunk) => sink.append(chunk))
       sink.finish()

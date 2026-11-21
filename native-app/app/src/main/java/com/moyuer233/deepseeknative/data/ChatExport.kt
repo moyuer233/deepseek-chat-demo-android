@@ -1,6 +1,6 @@
 package com.moyuer233.deepseeknative.data
 
-import com.moyuer233.deepseeknative.ui.NativeCopy
+import com.moyuer233.deepseeknative.NativeCopy
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream

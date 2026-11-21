@@ -1,5 +1,7 @@
 package com.moyuer233.deepseeknative.ui
 
+import com.moyuer233.deepseeknative.NativeCopy
+
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle

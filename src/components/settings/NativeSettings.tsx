@@ -95,7 +95,13 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     void discardImport()
   }
 
+  const [exporting, setExporting] = useState(false)
+
   const onExport = async () => {
+    if (exporting) {
+      return
+    }
+    setExporting(true)
     try {
       // 原生端边生成边落盘，避免整包 ZIP 驻留内存；保存完成的提示由原生弹出
       if (await exportHistoryToFile()) {
@@ -105,6 +111,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       await shareBlob(name, blob)
     } catch (error) {
       showToast({ key: error instanceof BackupError ? error.key : 'historyExportFailed', type: 'error' })
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -146,14 +154,18 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   }
 
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   const onDelete = async () => {
-    setDeleteOpen(false)
+    setDeleteBusy(true)
     try {
       await clearHistory()
       showToast({ key: 'historyDeleted' })
+      setDeleteOpen(false)
     } catch {
       showToast({ key: 'historyDeleteFailed', type: 'error' })
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
@@ -242,8 +254,26 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
                 }
               }}
             />
-            <Row icon={<IconDownloadOutline16 />} title={t('exportAllLabel')} onClick={() => void onExport()} />
-            <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => setDeleteOpen(true)} />
+            <Row
+              icon={<IconDownloadOutline16 />}
+              title={t('exportAllLabel')}
+              value={exporting ? '…' : undefined}
+              onClick={() => {
+                if (!exporting) {
+                  void onExport()
+                }
+              }}
+            />
+            <Row
+              icon={<IconTrashOutline16 />}
+              title={t('deleteAllSessions')}
+              danger
+              onClick={() => {
+                if (!deleteBusy) {
+                  setDeleteOpen(true)
+                }
+              }}
+            />
           </div>
           {deleteOpen ? (
             <ConfirmDialog
@@ -253,6 +283,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               tone="danger"
               confirmText={t('delete')}
               confirmVariant="danger"
+              busy={deleteBusy}
               onConfirm={() => void onDelete()}
               onClose={() => setDeleteOpen(false)}
             />

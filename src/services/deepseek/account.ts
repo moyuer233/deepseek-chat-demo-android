@@ -28,13 +28,9 @@ export const openRecharge = async () => {
     openExternalUrl(TOP_UP_URL)
     return
   }
-  try {
-    await DeepSeekAccount.openTopUp()
-  } catch {
-    try {
-      await DeepSeekAccount.openExternal({ url: TOP_UP_URL })
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : String(error))
-    }
+  // 原生充值页打不开时只提示，不再偷偷跳系统浏览器（浏览器里没有扫码辅助）
+  const opened = await DeepSeekAccount.openTopUp()
+  if (!opened) {
+    showToast(translate('errorTopUpUnavailable'))
   }
 }

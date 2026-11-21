@@ -1,5 +1,8 @@
 package com.moyuer233.deepseeknative.ui
 
+import com.moyuer233.deepseeknative.NativeCopy
+
+import com.moyuer233.deepseeknative.BuildConfig
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ContentValues
@@ -63,7 +66,7 @@ class TopUpActivity : ComponentActivity() {
                     signInHinted = true
                     Toast.makeText(
                         this@TopUpActivity,
-                        "请先用 DeepSeek 开放平台账号登录，登录后会自动识别支付二维码",
+                        NativeCopy.topupSignInHint,
                         Toast.LENGTH_LONG,
                     ).show()
                 }
@@ -144,7 +147,7 @@ class TopUpActivity : ComponentActivity() {
                 val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
                 try {
                     contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-                        ?: throw IllegalStateException("无法写入相册")
+                        ?: throw IllegalStateException(NativeCopy.topupSaveFailed)
                 } catch (e: Exception) {
                     contentResolver.delete(uri, null, null)
                     return null
@@ -167,7 +170,7 @@ class TopUpActivity : ComponentActivity() {
     private fun copyText(text: String) {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("pay", text))
-        Toast.makeText(this, "已复制支付内容", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, NativeCopy.topupCopied, Toast.LENGTH_SHORT).show()
     }
 
     inner class Bridge {
@@ -176,18 +179,12 @@ class TopUpActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun onQrImage(dataUrl: String, text: String, method: String) {
-            android.util.Log.d(
-                "DSTopUp",
-                "onQrImage trusted=" + trusted() + " method=" + method + " text=" + text.take(24) + " len=" + dataUrl.length,
-            )
             if (!trusted()) return
             val now = System.currentTimeMillis()
             if (text == lastHandledQr && now - lastHandledAt < 30_000L) {
-                android.util.Log.d("DSTopUp", "skip duplicate qr")
+                if (BuildConfig.DEBUG) android.util.Log.d("DSTopUp", "skip duplicate qr")
                 return
             }
-            lastHandledQr = text
-            lastHandledAt = now
             runOnUiThread {
                 // 优先按二维码内容判断，其次按页面上选中的支付方式
                 val channel = when {
@@ -196,14 +193,23 @@ class TopUpActivity : ComponentActivity() {
                     method == "alipay" -> "alipay"
                     else -> "wechat"
                 }
-                val saved = saveQrImage(dataUrl)
-                android.util.Log.d("DSTopUp", "saveQrImage -> " + saved + " channel=" + channel)
                 copyText(text)
-                if (saved != null) {
-                    openPayApp(channel)
-                } else {
-                    Toast.makeText(this@TopUpActivity, NativeCopy.topupQrSaveFailed, Toast.LENGTH_LONG).show()
-                }
+                // 解码 + 写相册放后台线程，避免主线程卡顿
+                Thread {
+                    val saved = saveQrImage(dataUrl)
+                    runOnUiThread {
+                        if (saved != null) {
+                            lastHandledQr = text
+                            lastHandledAt = System.currentTimeMillis()
+                            if (BuildConfig.DEBUG) android.util.Log.d("DSTopUp", "qr saved channel=" + channel)
+                            openPayApp(channel)
+                        } else {
+                            // 失败不记去重，允许用户原地重试
+                            lastHandledQr = ""
+                            Toast.makeText(this@TopUpActivity, NativeCopy.topupQrSaveFailed, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }.start()
             }
         }
 
@@ -213,9 +219,9 @@ class TopUpActivity : ComponentActivity() {
             runOnUiThread {
                 if (text.startsWith("weixin://")) {
                     AlertDialog.Builder(this@TopUpActivity)
-                        .setTitle("检测到微信支付链接")
+                        .setTitle(NativeCopy.topupWechatLinkTitle)
                         .setMessage(text.take(240))
-                        .setPositiveButton("打开微信") { _, _ ->
+                        .setPositiveButton(NativeCopy.topupOpenWeChat) { _, _ ->
                             runCatching {
                                 startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse(text))
@@ -223,8 +229,8 @@ class TopUpActivity : ComponentActivity() {
                                 )
                             }.onFailure { copyText(text) }
                         }
-                        .setNegativeButton("复制") { _, _ -> copyText(text) }
-                        .setNeutralButton("取消", null)
+                        .setNegativeButton(NativeCopy.topupCopy) { _, _ -> copyText(text) }
+                        .setNeutralButton(NativeCopy.cancel, null as android.content.DialogInterface.OnClickListener?)
                         .show()
                 }
             }
@@ -232,7 +238,7 @@ class TopUpActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun diag(message: String) {
-            if (!trusted()) return
+            if (!trusted() || !BuildConfig.DEBUG) return
             android.util.Log.d("DSTopUp", message)
         }
     }

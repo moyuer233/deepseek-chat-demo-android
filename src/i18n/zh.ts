@@ -215,8 +215,9 @@ export const zh = {
   accountLoginHint: "登录 DeepSeek 账号后即可聊天（免 API Key）。",
   accountRecharge: "充值",
   accountScanAssist: "扫码辅助",
-  accountScanAssistHint: "已在系统设置里开启后，拉起微信时会自动进入扫一扫与相册",
-  accountRechargeHint: "充值页以电脑版打开，出微信二维码后会自动识别并拉起微信；开启扫码辅助可直接进微信扫一扫相册",
+  accountScanAssistHint: "已在系统设置里开启后，拉起微信/支付宝时会自动进入扫一扫与相册",
+  accountScanAssistEnabledHint: "已开启。要关闭请到系统设置 → 无障碍里关闭该服务",
+  accountRechargeHint: "充值页以电脑版打开，出支付码后按所选方式拉起微信/支付宝；开启扫码辅助会自动进扫一扫相册",
   // ===== 导入/导出 =====
   backupInvalidJson: "文件不是有效的 JSON",
   backupUnrecognized: "无法识别该文件，请选择 DeepSeek 导出的历史对话 ZIP 文件",
@@ -282,4 +283,5 @@ export const zh = {
   errorBalanceFetch: "余额获取失败（{status}）",
   errorChatImportUnsupported: "当前版本不支持从 chat.deepseek.com 导入",
   updateCheckFailed: "检查更新失败，请稍后重试",
+  errorTopUpUnavailable: "充值页打开失败，请稍后重试",
 }

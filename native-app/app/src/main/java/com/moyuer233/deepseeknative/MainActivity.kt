@@ -27,7 +27,6 @@ import com.moyuer233.deepseeknative.data.ChatExport
 import com.moyuer233.deepseeknative.data.DshAuth
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.ChatLoginActivity
-import com.moyuer233.deepseeknative.ui.NativeCopy
 import com.moyuer233.deepseeknative.ui.OAuthActivity
 import com.moyuer233.deepseeknative.ui.OnboardingScreen
 import com.moyuer233.deepseeknative.ui.TopUpActivity
@@ -55,6 +54,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 用应用内语言偏好初始化原生文案（Web 侧启动后会再同步一次）
+        NativeCopy.setLanguage(
+            getSharedPreferences("app", MODE_PRIVATE).getString("locale", null)
+                ?: java.util.Locale.getDefault().language,
+        )
         registerLaunchers()
         setupBackHandling()
         cleanupExportCache()
@@ -431,10 +435,12 @@ class MainActivity : ComponentActivity() {
             if (open) registerSiderBack() else unregisterSiderBack()
         }
 
+        /** 返回 false 表示没打开（供 Web 侧提示，避免静默失败）。 */
         @JavascriptInterface
-        fun openTopUp() {
+        fun openTopUp(): Boolean = runCatching {
             startActivity(Intent(this@MainActivity, TopUpActivity::class.java))
-        }
+            true
+        }.getOrDefault(false)
 
         @JavascriptInterface
         fun isScanAssistEnabled(): Boolean {
@@ -442,8 +448,11 @@ class MainActivity : ComponentActivity() {
                 contentResolver,
                 android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
             ) ?: return false
-            val target = packageName + "/" + ScanAssistService::class.java.name
-            return enabled.split(':').any { it.equals(target, ignoreCase = true) }
+            val target = ScanAssistService::class.java.name
+            return enabled.split(':').any { entry ->
+                val component = android.content.ComponentName.unflattenFromString(entry) ?: return@any false
+                component.packageName == packageName && component.className == target
+            }
         }
 
         @JavascriptInterface
@@ -457,14 +466,24 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun setAppLocale(locale: String) {
+            getSharedPreferences("app", MODE_PRIVATE).edit().putString("locale", locale).apply()
+            NativeCopy.setLanguage(locale)
+        }
+
+        @JavascriptInterface
         fun openPlatformPage(url: String) {
             val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
             val host = uri.host ?: return
             if (uri.scheme != "https" || (host != "deepseek.com" && !host.endsWith(".deepseek.com"))) return
-            startActivity(
-                Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.PlatformPageActivity::class.java)
-                    .putExtra(com.moyuer233.deepseeknative.ui.PlatformPageActivity.EXTRA_URL, url),
-            )
+            runOnUiThread {
+                runCatching {
+                    startActivity(
+                        Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.PlatformPageActivity::class.java)
+                            .putExtra(com.moyuer233.deepseeknative.ui.PlatformPageActivity.EXTRA_URL, url),
+                    )
+                }
+            }
         }
 
         @JavascriptInterface

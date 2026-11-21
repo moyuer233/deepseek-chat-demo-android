@@ -1,11 +1,15 @@
-package com.moyuer233.deepseeknative.ui
+package com.moyuer233.deepseeknative
 
 import java.util.Locale
 
 /** 自动生成：改 copy/文案.mjs 后运行 node scripts/gen-copy.mjs；不要直接改本文件。 */
 object NativeCopy {
-    /** 跟随系统语言：英文环境显示英文，其余显示中文。 */
-    private val en = Locale.getDefault().language == "en"
+    /** 默认跟随系统语言；Web 侧可通过 setLanguage 覆盖为应用内语言。 */
+    private var en = Locale.getDefault().language == "en"
+
+    fun setLanguage(locale: String) {
+        en = locale.startsWith("en")
+    }
 
     // 界面：引导页 · 第 1 页标题
     val onboardingTitle1 = if (en) "Welcome to Chat Demo Android" else "欢迎使用Chat Demo Android"
@@ -144,6 +148,27 @@ object NativeCopy {
 
     // 界面：充值 · 二维码保存失败
     val topupQrSaveFailed = if (en) "Couldn't save the QR image; payment content copied instead" else "二维码保存失败，已复制支付内容"
+
+    // 界面：充值 · 未登录提示
+    val topupSignInHint = if (en) "Sign in to DeepSeek Platform first; the payment QR will be detected automatically." else "请先用 DeepSeek 开放平台账号登录，登录后会自动识别支付二维码"
+
+    // 界面：充值 · 复制支付内容提示
+    val topupCopied = if (en) "Payment content copied" else "已复制支付内容"
+
+    // 界面：充值 · 复制按钮
+    val topupCopy = if (en) "Copy" else "复制"
+
+    // 界面：充值 · 检测到微信支付链接
+    val topupWechatLinkTitle = if (en) "WeChat Pay link detected" else "检测到微信支付链接"
+
+    // 界面：充值 · 打开微信按钮
+    val topupOpenWeChat = if (en) "Open WeChat" else "打开微信"
+
+    // 界面：充值 · 相册写入失败
+    val topupSaveFailed = if (en) "Couldn't write to Photos" else "无法写入相册"
+
+    // 界面：应用内网页 · 加载失败
+    val pageLoadFailed = if (en) "Failed to load the page. Check your network and try again." else "页面加载失败，请检查网络后重试"
 
     // 界面：充值 · 没有安装微信
     val topupNoWeChat = if (en) "WeChat not found" else "没有找到微信"

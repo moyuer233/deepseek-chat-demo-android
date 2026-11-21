@@ -13,6 +13,7 @@ import {
   useChatStore,
 } from '../services/chat/store.js'
 import { loadAccountToken } from '../services/deepseek/auth.js'
+import { nativeShell } from '../services/deepseek/shell.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
@@ -66,6 +67,8 @@ export const App = () => {
 
   useEffect(() => {
     document.documentElement.lang = locale
+    // 原生文案跟随应用内语言，而不是只看系统语言
+    nativeShell()?.setAppLocale?.(locale)
   }, [locale])
 
   // 文件数、存储空间达到上限时，附件上只显示「上传失败」，原因用 toast 说明

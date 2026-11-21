@@ -1,5 +1,7 @@
 package com.moyuer233.deepseeknative.ui
 
+import com.moyuer233.deepseeknative.NativeCopy
+
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -24,6 +26,16 @@ class PlatformPageActivity : ComponentActivity() {
         view.settings.javaScriptEnabled = true
         view.settings.domStorageEnabled = true
         view.webViewClient = object : WebViewClient() {
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
+                if (request.isForMainFrame) {
+                    android.widget.Toast.makeText(
+                        this@PlatformPageActivity,
+                        NativeCopy.pageLoadFailed,
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val target = request.url
                 val host = target.host ?: return true
@@ -48,6 +60,18 @@ class PlatformPageActivity : ComponentActivity() {
                 }
             },
         )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        webView?.onPause()
+        webView?.pauseTimers()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView?.onResume()
+        webView?.resumeTimers()
     }
 
     override fun onDestroy() {

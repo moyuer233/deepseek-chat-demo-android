@@ -26,12 +26,13 @@
     var vw = window.innerWidth || 0;
     return r.bottom > -200 && r.top < vh + 200 && r.right > -200 && r.left < vw + 200;
   }
-  // 记录用户点过的支付方式（页面可能是两个按钮，点了才开始下支付单）
+  // 记录用户点过的支付方式：只认按钮这类小元素，避免父容器文案误判
   document.addEventListener('click', function (e) {
     try {
       var node = e.target;
-      for (var depth = 0; node && depth < 6; depth++, node = node.parentElement) {
-        var text = String(node.textContent || '').slice(0, 80);
+      for (var depth = 0; node && depth < 4; depth++, node = node.parentElement) {
+        var text = String(node.innerText || node.textContent || '').trim();
+        if (text.length > 40) continue;
         var k = /支付宝|alipay/i.test(text) ? 'alipay' : (/微信|wechat|weixin/i.test(text) ? 'wechat' : '');
         if (k) {
           if (chosenMethod !== k) {
@@ -43,6 +44,9 @@
       }
     } catch (e) {}
   }, true);
+
+  // 每次新下单时由 hook 调用，清掉上一单的渠道，避免沿用旧值
+  window.__dsResetPayMethod = function () { chosenMethod = ''; };
 
   function currentMethod() {
     return window.__dsPayMethod || detectMethod() || chosenMethod;

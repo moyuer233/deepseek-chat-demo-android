@@ -8,7 +8,7 @@ export interface DeepSeekAccountPlugin {
   /** 读取已保存的 grant token */
   platformAuthToken(): Promise<{ token: string }>
   /** 打开内置充值页（桌面 UA + 二维码解码，解出后拉起微信） */
-  openTopUp(): Promise<void>
+  openTopUp(): Promise<boolean>
   /** 用系统浏览器打开外部链接 */
   openExternal(options: { url: string }): Promise<void>
   /** 应用内打开 DeepSeek 平台页面（用量/账单等） */
@@ -23,7 +23,7 @@ export interface DeepSeekAccountPlugin {
 const shellAccount: DeepSeekAccountPlugin = {
   platformAuthLogin: () => shellPlatformAuthLogin(),
   platformAuthToken: () => Promise.resolve({ token: nativeShell()?.getToken() ?? '' }),
-  openTopUp: () => Promise.resolve(nativeShell()?.openTopUp()),
+  openTopUp: () => Promise.resolve(nativeShell()?.openTopUp() ?? false),
   openExternal: ({ url }) => Promise.resolve(nativeShell()?.openExternal(url)),
   openPlatformPage: ({ url }) => Promise.resolve(nativeShell()?.openPlatformPage?.(url)),
   openAccessibilitySettings: () => Promise.resolve(nativeShell()?.openAccessibilitySettings?.()),

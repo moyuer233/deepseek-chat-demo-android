@@ -16,7 +16,8 @@
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src", "rspack.config.ts"]
+  "include": ["src", "scripts", "rspack.config.ts"]
 }

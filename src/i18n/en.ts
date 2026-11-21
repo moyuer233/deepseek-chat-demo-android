@@ -215,8 +215,9 @@ export const en = {
   accountLoginHint: "Sign in with your DeepSeek account to chat (no API Key needed).",
   accountRecharge: "Top up",
   accountScanAssist: "Scan assist",
-  accountScanAssistHint: "After enabling it in system settings, WeChat opens straight to Scan and Album.",
-  accountRechargeHint: "Opens the desktop top-up page and detects the WeChat QR code; with Scan assist on, WeChat opens straight to Scan and Album.",
+  accountScanAssistHint: "Once enabled in system settings, WeChat or Alipay opens straight to Scan and Album.",
+  accountScanAssistEnabledHint: "Enabled. To turn it off, disable the service in Settings → Accessibility.",
+  accountRechargeHint: "Opens the desktop top-up page and hands the QR to WeChat or Alipay based on the chosen method; Scan assist skips to Scan → Album.",
   // ===== 导入/导出 =====
   backupInvalidJson: "The file is not valid JSON.",
   backupUnrecognized: "File not recognized. Please choose a DeepSeek chat history ZIP.",
@@ -282,4 +283,5 @@ export const en = {
   errorBalanceFetch: "Failed to fetch balance ({status})",
   errorChatImportUnsupported: "This version can't import from chat.deepseek.com",
   updateCheckFailed: "Failed to check for updates. Please try again later.",
+  errorTopUpUnavailable: "Couldn't open the top-up page. Please try again later.",
 }

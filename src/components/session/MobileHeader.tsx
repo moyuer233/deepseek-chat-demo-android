@@ -15,14 +15,21 @@ export const MobileHeader = ({ title }: { title?: string }) => {
   const t = useTranslate()
   const activeId = useChatStore((state) => state.activeId)
   const [compactOpen, setCompactOpen] = useState(false)
+  const [compactBusy, setCompactBusy] = useState(false)
   const compact = () => {
-    setCompactOpen(false)
     if (!activeId) {
+      setCompactOpen(false)
       return
     }
-    void runManualCompaction(activeId).then((ok) => {
-      showToast(ok ? t('compactDone') : t('compactFailed'))
-    })
+    setCompactBusy(true)
+    void runManualCompaction(activeId)
+      .then((ok) => {
+        showToast(ok ? t('compactDone') : t('compactFailed'))
+      })
+      .finally(() => {
+        setCompactBusy(false)
+        setCompactOpen(false)
+      })
   }
   return (
     <>
@@ -70,6 +77,7 @@ export const MobileHeader = ({ title }: { title?: string }) => {
           points={[t('compactPointSummary'), t('compactPointRecent'), t('compactPointLocal')]}
           icon={<DshIcon name="compact-outline" size={18} />}
           confirmText={t('compactAction')}
+          busy={compactBusy}
           onConfirm={compact}
           onClose={() => setCompactOpen(false)}
         />

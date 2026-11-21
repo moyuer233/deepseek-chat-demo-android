@@ -23,7 +23,7 @@ Sign in to chat.deepseek.com once, import every conversation, then chat through 
 ## Two builds
 
 - **0.2.x (current release)** — the Capacitor build: chat-demo's web client wrapped in an Android shell.
-- **1.0.1 (native)** — a Jetpack Compose shell that runs the chat-demo web bundle in a WebView, with native bridges for DSH account grant (API key fallback), chat archive import/export, camera/file picking and the chat.deepseek.com importer. Build it from `native-app/` (see below).
+- **1.1.0 (native)** — a Jetpack Compose shell that runs the chat-demo web bundle in a WebView, with native bridges for DSH account grant (API key fallback), chat archive import/export, camera/file picking and the chat.deepseek.com importer. Build it from `native-app/` (see below).
 
 ## Features
 
@@ -41,6 +41,7 @@ Grab the APK from [Releases](https://github.com/moyuer233/deepseek-chat-demo-and
 - Chat uses API quota. An account without balance gets a 402 and the app shows the top-up entry.
 - The WeChat QR is a UnionPay code (qr.95516.com). The app can open WeChat; the code has to be scanned inside WeChat.
 - Voice input needs microphone permission; photos and files go through the system pickers.
+- Optional "Scan assist": an accessibility service that, only within 20 seconds after the app opens WeChat or Alipay from the top-up flow, taps Scan → Album for you. It is off by default and must be enabled in Android Settings → Accessibility; it never reads or stores your messages or payment details.
 
 ## Build
 
@@ -69,7 +70,7 @@ The native APK ends up in `native-app/app/build/outputs/apk/debug/app-debug.apk`
 - `src/` — chat-demo web client plus the Android adaptation layer.
 - `src/services/deepseek/` — account flow, export/import glue, native bridge.
 - `android/` — Capacitor shell, login/OAuth/top-up activities.
-- `native-app/` — the 1.0.1 native shell: chat-demo web bundle in a WebView plus native bridges (auth/import/export/camera).
+- `native-app/` — the 1.1.0 native shell: chat-demo web bundle in a WebView plus native bridges (auth/import/export/camera).
 - `docs/research/` — API and UX notes.
 
 ## Licence

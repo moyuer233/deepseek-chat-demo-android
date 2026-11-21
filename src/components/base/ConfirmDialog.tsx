@@ -69,8 +69,8 @@ export const ConfirmDialog = ({
       {lead ? <p className={styles.lead}>{lead}</p> : null}
       {points && points.length > 0 ? (
         <ul className={styles.points}>
-          {points.map((point) => (
-            <li key={point}>
+          {points.map((point, index) => (
+            <li key={index}>
               <PointCheck />
               {point}
             </li>

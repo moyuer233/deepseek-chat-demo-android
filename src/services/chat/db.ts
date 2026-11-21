@@ -157,6 +157,10 @@ export const saveFiles = (files: StoredFile[]): Promise<void> => putFiles('files
 export const loadFile = async (id: string): Promise<Blob | undefined> =>
   (await (await getDB()).get('files', id))?.blob
 
+/** 只探测原件是否存在，不读出 Blob（导出时判断图片能否写进归档）。 */
+export const hasFile = async (id: string): Promise<boolean> =>
+  (await (await getDB()).getKey('files', id)) !== undefined
+
 /** 清空导入暂存：开始导入前清除上次中断（如关闭页面）遗留的数据，导入失败后清除本次写入。 */
 export const clearStaging = async (): Promise<void> => {
   const tx = (await getDB()).transaction(['sessionsStaging', 'filesStaging'], 'readwrite')

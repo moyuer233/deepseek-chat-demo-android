@@ -9,7 +9,7 @@ import { fetchBalance, currencySymbol, type Balance } from '../../services/deeps
 import { verifyApiKey } from '../../services/api/client.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { useChatStore } from '../../services/chat/store.js'
-import { isNativeShell, nativeShell, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
+import { isNativeShell, nativeShell, openExternalUrl, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import styles from './AccountPane.module.css'
 import nsStyles from './NativeSettings.module.css'
@@ -132,7 +132,14 @@ export const AccountPane = () => {
         <SettingsRow
           icon={<DshIcon name="link-outline" size={16} />}
           title={t('accountMoreInfo')}
-          onClick={() => void DeepSeekAccount.openPlatformPage({ url: 'https://platform.deepseek.com/usage' })}
+          onClick={() => {
+            const url = 'https://platform.deepseek.com/usage'
+            if (isNativeShell()) {
+              void DeepSeekAccount.openPlatformPage({ url })
+            } else {
+              openExternalUrl(url)
+            }
+          }}
         />
         {isNativeShell() ? (
           <button
@@ -141,7 +148,7 @@ export const AccountPane = () => {
             aria-checked={scanAssist}
             className={nsStyles.row}
             onClick={() => {
-              showToast(t('accountScanAssistHint'))
+              showToast(t(scanAssist ? 'accountScanAssistEnabledHint' : 'accountScanAssistHint'))
               void DeepSeekAccount.openAccessibilitySettings()
             }}
           >
