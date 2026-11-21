@@ -43,11 +43,13 @@ class MainActivity : ComponentActivity() {
     private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
     private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
     private var chatImportLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
+    private var siderBackCallback: Any? = null
+    private var legacyBackCallback: androidx.activity.OnBackPressedCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+        val legacyBack = object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val web = webViewRef
                 if (web != null && web.siderOpen) {
@@ -57,7 +59,9 @@ class MainActivity : ComponentActivity() {
                 isEnabled = false
                 onBackPressedDispatcher.onBackPressed()
             }
-        })
+        }
+        legacyBackCallback = legacyBack
+        onBackPressedDispatcher.addCallback(this, legacyBack)
         chatImportLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
             val token = if (result.resultCode == android.app.Activity.RESULT_OK) {
                 result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.ChatLoginActivity.EXTRA_TOKEN)
@@ -158,8 +162,11 @@ class MainActivity : ComponentActivity() {
 
                 @android.webkit.JavascriptInterface
                 fun setSiderOpen(open: Boolean) {
-                    android.util.Log.d("Sider", "setSiderOpen=" + open)
                     webViewRef?.siderOpen = open
+                    if (android.os.Build.VERSION.SDK_INT >= 34) {
+                        legacyBackCallback?.isEnabled = !open
+                    }
+                    if (open) registerSiderBack() else unregisterSiderBack()
                 }
 
                 @android.webkit.JavascriptInterface
@@ -472,6 +479,42 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun registerSiderBack() {
+        if (android.os.Build.VERSION.SDK_INT < 34 || siderBackCallback != null) return
+        val cb = object : android.window.OnBackAnimationCallback {
+            override fun onBackStarted(backEvent: android.window.BackEvent) {
+                webViewRef?.evaluateJavascript("window.__siderDrag && window.__siderDrag(1)", null)
+            }
+
+            override fun onBackProgressed(backEvent: android.window.BackEvent) {
+                val fraction = (1f - backEvent.progress).coerceIn(0f, 1f)
+                webViewRef?.evaluateJavascript("window.__siderDrag && window.__siderDrag($fraction)", null)
+            }
+
+            override fun onBackInvoked() {
+                webViewRef?.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
+                unregisterSiderBack()
+            }
+
+            override fun onBackCancelled() {
+                webViewRef?.evaluateJavascript("window.__siderSwipeEnd && window.__siderSwipeEnd(1, 0)", null)
+                unregisterSiderBack()
+            }
+        }
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(
+            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb,
+        )
+        siderBackCallback = cb
+    }
+
+    private fun unregisterSiderBack() {
+        val cb = siderBackCallback
+        if (cb != null && android.os.Build.VERSION.SDK_INT >= 34) {
+            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(cb as android.window.OnBackAnimationCallback)
+        }
+        siderBackCallback = null
     }
 
 }
