@@ -16,8 +16,6 @@ export const StatusLine = ({ sessionId }: { sessionId: string | null }) => {
     ? [...session.messages].reverse().find((message) => message.role === 'assistant')
     : undefined
   const model = lastReply && lastReply.role === 'assistant' ? (lastReply.model ?? 'deepseek-flash') : 'deepseek-flash'
-  const promptTokens = usage.input + usage.cacheRead + usage.cacheWrite
-  const cacheRate = promptTokens > 0 ? Math.round((usage.cacheRead / promptTokens) * 100) : 0
   const percent = Math.round(pressure.ratio * 100)
   return (
     <div className={styles.statusLine} aria-live="polite">
@@ -32,10 +30,6 @@ export const StatusLine = ({ sessionId }: { sessionId: string | null }) => {
       <span>
         <DshIcon name="data-outline" size={12} />
         {formatTokens(usage.input + usage.cacheWrite + usage.cacheRead + usage.output)} tokens
-      </span>
-      <span>
-        <DshIcon name="layers-outline" size={12} />
-        {t('statusCache')} {cacheRate}%
       </span>
       {streaming ? (
         <span className={styles.streaming}>
