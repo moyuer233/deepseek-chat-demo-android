@@ -54,7 +54,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
 
-  const cycleLocale = () => setLocale(locale === 'zh' ? 'en' : 'zh')
+  const cycleLocale = () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')
   const cycleTheme = () => setThemePreference(theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system')
   const cycleVoice = () => setTtsVoice(voice === 'stella' ? 'tide' : 'stella')
   const themeLabel =
@@ -143,7 +143,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
             <Row icon={<IconUploadOutline14 />} title={t('upload')} onClick={() => fileRef.current?.click()} />
             <Row
               icon={<IconLinkOutline16 />}
-              title={(locale === 'zh' ? '从 chat.deepseek.com 导入会话' : 'Import chats from chat.deepseek.com') + (chatImportBusy ? '…' : '')}
+              title={(locale === 'zh-CN' ? '从 chat.deepseek.com 导入会话' : 'Import chats from chat.deepseek.com') + (chatImportBusy ? '…' : '')}
               onClick={() => {
                 if (!chatImportBusy) void onChatImport()
               }}
@@ -173,25 +173,25 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     <Shell>
       {header(t('settings'), onClose)}
       <div className={styles.body}>
-        <div className={styles.section}>{locale === 'zh' ? '账户' : 'Account'}</div>
+        <div className={styles.section}>{locale === 'zh-CN' ? '账户' : 'Account'}</div>
         <div className={styles.card}>
           <Row icon={<IconSettingsOutline16 />} title={t('accountTab')} onClick={() => setPage('account')} />
           <Row icon={<IconDataOutline16 />} title={t('settingDialogAsideDataOptionLabel')} onClick={() => setPage('data')} />
           <Row icon={<IconLinkOutline16 />} title={t('accountRecharge')} onClick={() => void openRecharge()} />
         </div>
 
-        <div className={styles.section}>{locale === 'zh' ? '应用' : 'App'}</div>
+        <div className={styles.section}>{locale === 'zh-CN' ? '应用' : 'App'}</div>
         <div className={styles.card}>
-          <Row icon={<IconGlobeLanguageOutline14 />} title={t('settingsLocalePreference')} value={locale === 'zh' ? '中文' : 'English'} onClick={cycleLocale} />
+          <Row icon={<IconGlobeLanguageOutline14 />} title={t('settingsLocalePreference')} value={locale === 'zh-CN' ? '中文' : 'English'} onClick={cycleLocale} />
           <Row icon={<IconDarkOutline16 />} title={t('avatarMenuSettingsDialogThemeItemLabel')} value={themeLabel} onClick={cycleTheme} />
         </div>
 
-        <div className={styles.section}>{locale === 'zh' ? '语音' : 'Voice'}</div>
+        <div className={styles.section}>{locale === 'zh-CN' ? '语音' : 'Voice'}</div>
         <div className={styles.card}>
           <Row icon={<IconPlayMediaOutline16 />} title={t('settingsTtsVoice')} value={voice} onClick={cycleVoice} />
         </div>
 
-        <div className={styles.section}>{locale === 'zh' ? '关于' : 'About'}</div>
+        <div className={styles.section}>{locale === 'zh-CN' ? '关于' : 'About'}</div>
         <div className={styles.card}>
           <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value="0.3.0" />
           <Row icon="🔗" title={t('aboutSource')} onClick={() => nativeShell()?.openExternal('https://github.com/moyuer233/deepseek-chat-demo-android')} />
