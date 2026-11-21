@@ -58,6 +58,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [voiceMode, setVoiceMode] = useState(false)
   const [voiceCancel, setVoiceCancel] = useState(false)
+  const [autoSendPending, setAutoSendPending] = useState(false)
   const voiceStartY = useRef(0)
   const voiceCancelRef = useRef(false)
   const autoSendRef = useRef(false)
@@ -120,8 +121,8 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     setText(next)
     if (autoSendRef.current) {
       autoSendRef.current = false
-      // 等 useVoiceInput 把状态切回 idle 再发送
-      window.setTimeout(() => sendRef.current(), 120)
+      // 转写完成后状态会切回 idle，由 effect 触发发送
+      setAutoSendPending(true)
       return
     }
     requestAnimationFrame(() => {
@@ -168,6 +169,15 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       textareaRef.current?.focus()
     }
   }
+  sendRef.current = send
+
+  // 语音转写结果就绪且状态回到 idle 后自动发送，避免 120ms 定时器落在转写中途
+  useEffect(() => {
+    if (autoSendPending && voice.status === 'idle') {
+      setAutoSendPending(false)
+      sendRef.current()
+    }
+  }, [autoSendPending, voice.status])
 
   return (
     <>
@@ -189,6 +199,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             onPointerDown={(event) => {
               voiceStartY.current = event.clientY
               voiceCancelRef.current = false
+              autoSendRef.current = false
               setVoiceCancel(false)
               if (voice.status === 'idle' && ensureApiKey()) {
                 void voice.toggle()
@@ -210,6 +221,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               }
               if (voiceCancelRef.current) {
                 voiceCancelRef.current = false
+                autoSendRef.current = false
                 setVoiceCancel(false)
                 voice.cancel()
                 return
