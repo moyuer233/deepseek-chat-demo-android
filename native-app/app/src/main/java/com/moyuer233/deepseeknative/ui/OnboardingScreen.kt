@@ -18,7 +18,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import com.moyuer233.deepseeknative.data.ArchiveImporter
+import com.moyuer233.deepseeknative.data.DshAuth
+import com.moyuer233.deepseeknative.data.LocalStore
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,17 +47,48 @@ import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
-private data class OnboardPage(val title: String, val body: String)
-
-/** 首启引导（对齐老版 4 步里的核心 3 步，可跳过）。 */
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
-    val pages = listOf(
-        OnboardPage("欢迎使用 DeepSeek", "和官方 App 一样的外观，聊天与数据都由你自己掌控。"),
-        OnboardPage("导入历史会话", "支持 deepseek_data ZIP 归档，导入后在侧边栏按时间分组展示。"),
-        OnboardPage("连接聊天内核", "用 DeepSeek 账号授权或 API Key 即可开始聊天，无需验证码。"),
-    )
+    val context = LocalContext.current
     var index by remember { mutableStateOf(0) }
+    var importedCount by remember { mutableStateOf(0) }
+    var authorized by remember { mutableStateOf(DshAuth.token(context) != null) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val result = ArchiveImporter.import(context, uri)
+            if (result.error != null) {
+                Toast.makeText(context, "导入失败：" + result.error, Toast.LENGTH_LONG).show()
+            } else {
+                LocalStore.save(context, result.sessions)
+                importedCount = result.sessions.size
+                Toast.makeText(context, "已导入 " + importedCount + " 个会话", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        authorized = result.resultCode == Activity.RESULT_OK
+        if (authorized) Toast.makeText(context, "授权成功", Toast.LENGTH_SHORT).show()
+    }
+    fun startOauth() {
+        Thread {
+            try {
+                val url = DshAuth.init(context).getString("authorizeUrl")
+                (context as? Activity)?.runOnUiThread {
+                    oauthLauncher.launch(Intent(context, OAuthActivity::class.java).putExtra(OAuthActivity.EXTRA_URL, url))
+                }
+            } catch (e: Exception) {
+                (context as? Activity)?.runOnUiThread {
+                    Toast.makeText(context, "授权初始化失败：" + (e.message ?: ""), Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
+    val pages = listOf(
+        Triple("欢迎使用 DeepSeek", "和官方 App 一样的外观，聊天与数据都由你自己掌控。", 0),
+        Triple("导入历史会话", "支持 deepseek_data ZIP 归档；导入后按时间分组展示。", 1),
+        Triple("连接聊天内核", "用 DeepSeek 账号授权或 API Key 即可聊天，无需验证码。", 2),
+        Triple("准备就绪", "随时可以在设置里更换主题、字体和授权方式。", 3),
+    )
     Column(
         modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -58,7 +99,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
             Spacer(Modifier.height(12.dp))
         }
         Text(
-            pages[index].title,
+            pages[index].first,
             color = TextPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.SemiBold,
@@ -67,7 +108,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            pages[index].body,
+            pages[index].second,
             color = TextSecondary,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -84,6 +125,18 @@ fun OnboardingScreen(onDone: () -> Unit) {
                         .background(if (i == index) BrandBlue else Color(0xFFD5D8DE), CircleShape),
                 )
             }
+        }
+        if (pages[index].third == 1) {
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+            ) { Text(if (importedCount > 0) "已导入 " + importedCount + " 个会话" else "选择归档导入") }
+        }
+        if (pages[index].third == 2) {
+            OutlinedButton(
+                onClick = { startOauth() },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
+            ) { Text(if (authorized) "已授权" else "使用 DeepSeek 账号授权") }
         }
         Button(
             onClick = { if (index < pages.lastIndex) index++ else onDone() },
