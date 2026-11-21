@@ -382,7 +382,13 @@ fun ChatScreen(
                     var attachments = emptyList<Pair<String, Boolean>>()
                     if (pendingAttachment != null) {
                         val bytes = runCatching { java.io.File(pendingAttachment.path).readBytes() }.getOrNull()
-                        val fileId = bytes?.let { ApiClient.uploadFile(grant, it, pendingAttachment.name, pendingAttachment.mime) }
+                        val fileId = bytes?.let { ApiClient.uploadFile(
+                            grant,
+                            it,
+                            pendingAttachment.name,
+                            pendingAttachment.mime,
+                            if (pendingAttachment.isImage) null else "rich_layout_recognition",
+                        ) }
                         if (fileId == null) {
                             scope.launch { updateAssistant { it.copy(done = true) }; error = "附件上传失败，请稍后重试" }
                             return@withContext

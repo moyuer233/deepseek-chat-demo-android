@@ -380,7 +380,7 @@ object ApiClient {
     }
 
     /** 上传图片到 anthropic files，返回 file_id。 */
-    fun uploadFile(grant: String, bytes: ByteArray, filename: String, mime: String): String? {
+    fun uploadFile(grant: String, bytes: ByteArray, filename: String, mime: String, purpose: String? = null): String? {
         return try {
             val boundary = "----dsnative" + System.currentTimeMillis()
             val conn = (URL("https://api.deepseek.com/anthropic/v1/files").openConnection() as HttpURLConnection).apply {
@@ -393,6 +393,12 @@ object ApiClient {
                 setRequestProperty("anthropic-beta", "files-api-2025-04-14")
             }
             conn.outputStream.use { out ->
+                if (purpose != null) {
+                    val purposePart = "--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"purpose\"\r\n\r\n" +
+                        purpose + "\r\n"
+                    out.write(purposePart.toByteArray())
+                }
                 val head = "--" + boundary + "\r\n" +
                     "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
                     "Content-Type: " + mime + "\r\n\r\n"
