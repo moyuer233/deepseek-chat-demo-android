@@ -18,7 +18,7 @@
 <link rel="icon" type="image/png" href="./icon.png" />
 <link rel="apple-touch-icon" href="./icon.png" />
 <meta name="theme-color" content="#f7f8fb" />
-<link rel="stylesheet" href="./styles.css?v=20261122-7" />
+<link rel="stylesheet" href="./styles.css?v=20261122-8" />
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -47,10 +47,10 @@
       <div class="hero-copy">
         <p class="eyebrow">非官方 · 独立开源</p>
         <h1>DeepSeek 安卓客户端，<br />用你自己的 API 聊天。</h1>
-        <p class="hero-lede">聊天直连 api.deepseek.com，用你的 API Key 或 DeepSeek 账号授权；额度、账单都在你自己账号里，网页免费版的限流不适用。把 chat.deepseek.com 导出的会话 ZIP 导入进来，接着用 API 聊。</p>
+        <p class="hero-lede">用你的 API Key 或 DeepSeek开放平台 账号授权；额度、账单都在你自己账号里，不受免费版的限流影响。把 chat.deepseek.com 导入进来，接着用 API 聊。</p>
         <div class="actions">
           <a class="btn btn-primary" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载 APK</a>
-          <a class="btn btn-ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">看源码</a>
+          <a class="btn btn-ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">源码</a>
         </div>
         <p class="hero-meta">Android 7.0+ · 约 2.9 MB · MIT 开源</p>
       </div>
@@ -94,13 +94,13 @@
       <header class="sec-head">
         <p class="kicker"><span>01</span>计费与机制</p>
         <h2>从授权到聊天，三步。</h2>
-        <p class="sec-lede">用 DeepSeek 账号授权，或填自己的 API Key；聊天请求直连 api.deepseek.com，按你账号的 API 用量计费，不经过本项目的中转服务器。</p>
+        <p class="sec-lede">用 DeepSeek开放平台 账号授权，从 api.deepseek.com 导入会话，按你账号的 API 用量计费使用。</p>
       </header>
       <div class="cards3">
         <article class="card">
           <span class="card-num">01</span>
           <h3>授权账号，或填 API Key</h3>
-          <p>用 DeepSeek 账号授权，或填自己的 API Key；账号登录在 DeepSeek 官方授权页完成，App 不接触密码，token 只存本机。</p>
+          <p>用 DeepSeek 账号授权，或填自己的 API Key；账号登录在 DeepSeek开放平台 官方授权页完成，App 不接触密码，token 只存本机。</p>
         </article>
         <article class="card">
           <span class="card-num">02</span>
@@ -160,12 +160,12 @@
           <div class="meter-legend"><span>deepseek-flash</span><span>79% · 1.2M tokens</span></div>
         </div>
         <dl class="meter-rows">
-          <div><dt>上下文窗口</dt><dd>1,048,576</dd></div>
-          <div><dt>压缩策略</dt><dd>旧对话 → 摘要</dd></div>
-          <div><dt>本机原文</dt><dd>保留</dd></div>
+          <div><dt>模型显示</dt><dd>设置里配置的模型</dd></div>
+          <div><dt>上下文占用</dt><dd>当前上下文占用量</dd></div>
+          <div><dt>累计tokens</dt><dd>显示API累计使用的token</dd></div>
         </dl>
       </div>
-      <p class="section-note">上下文占用优先采用最近一次 API usage，含图片与思考；没有请求记录时按本地字数估算。</p>
+      <p class="section-note">上下文占用显示采用 API usage 官方接口。</p>
     </div>
   </section>
 
@@ -190,7 +190,7 @@
           </div>
           <div class="split-copy">
             <p class="kicker"><span>04</span>上下文压缩</p>
-            <h2>快到 1M，也不从头再来。</h2>
+            <h2>快到上限，也不从头再来。</h2>
             <p class="sec-lede">上下文快满时，App 只在本机把较早的对话压成摘要：摘要参与下一次请求，最近消息保持原样，本机完整记录一条不删。手动点「压缩」或到阈值自动压，都能接着聊。</p>
             <ul class="ticks">
               <li>手动点「压缩」，随时可用</li>
@@ -205,15 +205,15 @@
   <section class="section dark" id="native">
     <div class="shell split">
       <div class="split-copy">
-        <p class="kicker light"><span>05</span>原生外壳</p>
-        <h2>原生外壳，装进安卓。</h2>
-        <p class="sec-lede">相机、相册、文件、麦克风走系统能力；返回键逐级后退，右滑开侧栏。</p>
-        <p class="section-note">导出的 ZIP 保存在「下载/DeepSeekNative」，可在系统文件管理器里直接取用。</p>
+        <p class="kicker light"><span>05</span>账户管理</p>
+        <h2>余额/充值/API配置，都在此处。</h2>
+        <p class="sec-lede">快捷查看余额、辅助充值、更多用量信息、设置APIKey、退出登录。</p>
+        <p class="section-note">不用再去浏览器打开Deepseek开放平台就能进行操作。</p>
       </div>
       <div class="split-visual">
         <div class="account">
           <div class="account-title">账户</div>
-          <div class="account-profile"><span class="account-avatar">D</span><div><b>已授权</b><span>DeepSeek 账号 · 免 API Key</span></div></div>
+          <div class="account-profile"><span class="account-avatar">D</span><div><b>已授权</b><span>DeepSeek开放平台 账号 · 免 API Key</span></div></div>
           <div class="account-balance"><span>余额</span><b>¥1.37</b></div>
           <div class="account-row"><span>充值</span><i>›</i></div>
           <div class="account-row"><span>更多账号信息</span><i>›</i></div>
@@ -230,7 +230,7 @@
       <header class="sec-head center">
         <p class="kicker"><span>06</span>下载</p>
         <h2>下载与安装。</h2>
-        <p class="sec-lede">装完后用 DeepSeek 账号授权，或填自己的 API Key。</p>
+        <p class="sec-lede">让我们开始吧！</p>
       </header>
       <div class="install-card">
         <img src="./icon.png" width="30" height="30" alt="" />
@@ -244,7 +244,7 @@
       <div class="faq">
         <details><summary>收费吗？</summary><p>App 免费、MIT 开源。聊天按你自己账号的 API 用量计费，本项目不加价、不代收。</p></details>
         <details><summary>和官方是什么关系？</summary><p>非官方客户端，与深度求索无隶属关系；复用 chat-demo（MIT）网页内核，保留署名与 LICENSE。</p></details>
-        <details><summary>数据存在哪？</summary><p>会话和导入的历史存在手机本地；聊天请求直连 DeepSeek 官方 API，不经过作者的中转服务器。</p></details>
+        <details><summary>数据存在哪？</summary><p>会话和导入的历史存在手机本地；聊天请求直连 DeepSeek 官方 API。</p></details>
       </div>
     </div>
   </section>
