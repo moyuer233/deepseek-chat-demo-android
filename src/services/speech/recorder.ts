@@ -109,6 +109,7 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
       analyser,
     }
   } catch (error) {
+    // oxlint-disable-next-line no-console
     console.warn('[recorder] failed ' + (error instanceof DOMException ? error.name + ': ' + error.message : String(error)))
     release()
     throw error

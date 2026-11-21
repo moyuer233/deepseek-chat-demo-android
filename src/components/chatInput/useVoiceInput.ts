@@ -94,6 +94,7 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       }
     } catch (error) {
       // 诊断：区分录音上传/转写失败，日志会出现在 adb logcat -s WebConsole
+      // oxlint-disable-next-line no-console
       console.warn('[voice] finish failed ' + errorDetail(error))
       if (operationRef.current === operation && !controller?.signal.aborted) {
         showToast({ key: 'voiceInputFailed' })
@@ -140,6 +141,7 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       }
       recordingRef.current = recording
     } catch (error) {
+      // oxlint-disable-next-line no-console
       console.warn('[voice] start failed ' + errorDetail(error))
       if (operationRef.current === operation) {
         setStatus('idle')
