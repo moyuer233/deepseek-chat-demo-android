@@ -31,7 +31,7 @@
 
 ## 下载
 
-[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases)（当前 1.1.0）。
+[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases)（当前 1.1.0）· [官网](https://moyuer233.github.io/deepseek-chat-demo-android/)
 
 ## 构建
 
