@@ -54,7 +54,11 @@ class ChatLoginActivity : ComponentActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(android.graphics.Color.WHITE)
-            setPadding(0, window.statusBarColor, 0, 0)
+        }
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, bars.top, 0, bars.bottom)
+            insets
         }
         val bar = TextView(this).apply {
             text = "登录 DeepSeek（完成登录后自动返回）"

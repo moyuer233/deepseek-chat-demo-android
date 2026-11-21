@@ -98,7 +98,12 @@ fun OnboardingScreen(onDone: () -> Unit) {
 
     val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         authorized = result.resultCode == Activity.RESULT_OK
-        if (authorized) Toast.makeText(context, "授权成功", Toast.LENGTH_SHORT).show()
+        if (authorized) {
+            Toast.makeText(context, "授权成功", Toast.LENGTH_SHORT).show()
+        } else {
+            val error = result.data?.getStringExtra(OAuthActivity.EXTRA_ERROR)
+            Toast.makeText(context, "授权失败：" + (error ?: "已取消"), Toast.LENGTH_LONG).show()
+        }
     }
     fun startOauth() {
         Thread {

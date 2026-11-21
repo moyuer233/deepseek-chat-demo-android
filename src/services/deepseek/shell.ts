@@ -95,6 +95,9 @@ export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 
       throw new Error('读取归档失败')
     }
     const binary = atob(b64)
+    if (binary.length !== size) {
+      throw new Error('读取归档失败：数据块长度不匹配')
+    }
     for (let i = 0; i < binary.length; i += 1) {
       out[offset + i] = binary.charCodeAt(i)
     }

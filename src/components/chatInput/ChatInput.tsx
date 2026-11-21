@@ -375,7 +375,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             >
               <IconStopFill16 />
             </button>
-          ) : text.trim().length > 0 ? (
+          ) : canSend ? (
             <button
               type="button"
               className={clsx(styles.sendButton, !canSend && styles.disabled)}

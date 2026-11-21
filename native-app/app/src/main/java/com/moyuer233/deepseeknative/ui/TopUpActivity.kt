@@ -116,7 +116,14 @@ class TopUpActivity : ComponentActivity() {
 
     inner class Bridge {
         @JavascriptInterface
+        private fun trusted(): Boolean {
+            val host = runCatching { android.net.Uri.parse(webView?.url ?: "").host }.getOrNull() ?: return false
+            return host == "deepseek.com" || host.endsWith(".deepseek.com")
+        }
+
+        @JavascriptInterface
         fun onQrImage(dataUrl: String, text: String) {
+            if (!trusted()) return
             runOnUiThread {
                 val saved = saveQrImage(dataUrl)
                 copyText(text)
@@ -130,6 +137,7 @@ class TopUpActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun onQr(text: String) {
+            if (!trusted()) return
             runOnUiThread {
                 if (text.startsWith("weixin://")) {
                     AlertDialog.Builder(this@TopUpActivity)
@@ -152,6 +160,7 @@ class TopUpActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun diag(message: String) {
+            if (!trusted()) return
             android.util.Log.d("DSTopUp", message)
         }
     }

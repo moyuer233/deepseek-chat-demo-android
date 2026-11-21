@@ -143,14 +143,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showChatDemo() {
-        WebView.setWebContentsDebuggingEnabled(true)
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         val web = SwipeWebView(this)
         webViewRef = web
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
-        web.settings.allowFileAccess = true
+        web.settings.allowFileAccess = false
+        web.settings.allowContentAccess = false
         web.settings.mediaPlaybackRequiresUserGesture = false
-        web.settings.userAgentString = web.settings.userAgentString
         web.addJavascriptInterface(Bridge(), "NativeShell")
         val loader = WebViewAssetLoader.Builder()
             .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -158,6 +158,15 @@ class MainActivity : ComponentActivity() {
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: android.webkit.WebResourceRequest): android.webkit.WebResourceResponse? =
                 loader.shouldInterceptRequest(request.url)
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: android.webkit.WebResourceRequest): Boolean {
+                val url = request.url
+                if (url.host == "appassets.androidplatform.net") return false
+                if (url.scheme == "https" || url.scheme == "http") {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, url)) }
+                }
+                return true
+            }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(msg: android.webkit.ConsoleMessage?): Boolean {
@@ -194,7 +203,19 @@ class MainActivity : ComponentActivity() {
                         android.util.Log.w("Camera", "capture failed", e)
                     }
                 }
-                val types = params.acceptTypes.filter { it.isNotBlank() }.toTypedArray()
+                val types = params.acceptTypes.filter { it.isNotBlank() }.flatMap { accept ->
+                    when {
+                        accept.contains("*") || accept.contains("/") -> listOf(accept)
+                        accept.startsWith(".") -> when (accept.lowercase()) {
+                            ".zip" -> listOf("application/zip", "application/x-zip-compressed")
+                            ".pdf" -> listOf("application/pdf")
+                            ".png" -> listOf("image/png")
+                            ".jpg", ".jpeg" -> listOf("image/jpeg")
+                            else -> listOf("*/*")
+                        }
+                        else -> listOf("*/*")
+                    }
+                }.distinct().toTypedArray()
                 fileChooserLauncher?.launch(if (types.isEmpty()) arrayOf("*/*") else types)
                 return true
             }
@@ -293,8 +314,10 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun openExternal(url: String) {
+            val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
+            if (uri.scheme != "https" && uri.scheme != "http") return
             runCatching {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
         }
 
@@ -310,7 +333,7 @@ class MainActivity : ComponentActivity() {
             return try {
                 val expected = java.io.File(cacheDir, "export").canonicalPath
                 val file = java.io.File(path)
-                if (!file.canonicalPath.startsWith(expected)) return ""
+                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return ""
                 java.io.RandomAccessFile(file, "r").use { raf ->
                     raf.seek(offset.toLong())
                     val len = minOf(size, (file.length() - offset).toInt().coerceAtLeast(0))
@@ -328,7 +351,7 @@ class MainActivity : ComponentActivity() {
             runCatching {
                 val expected = java.io.File(cacheDir, "export").canonicalPath
                 val file = java.io.File(path)
-                if (file.canonicalPath.startsWith(expected)) file.delete()
+                if (file.canonicalPath != expected && file.canonicalPath.startsWith(expected + java.io.File.separator)) file.delete()
             }
         }
 
@@ -344,7 +367,7 @@ class MainActivity : ComponentActivity() {
             return try {
                 val expected = java.io.File(cacheDir, "export").canonicalPath
                 val file = java.io.File(path)
-                if (!file.canonicalPath.startsWith(expected)) return -1
+                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return -1
                 val bytes = Base64.decode(base64, Base64.DEFAULT)
                 java.io.FileOutputStream(file, true).use { it.write(bytes) }
                 file.length().toInt()
@@ -358,7 +381,8 @@ class MainActivity : ComponentActivity() {
             try {
                 val expected = java.io.File(cacheDir, "export").canonicalPath
                 val file = java.io.File(path)
-                if (!file.canonicalPath.startsWith(expected) || !file.exists()) return
+                if (!file.exists()) return
+                        if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return
                 val values = android.content.ContentValues().apply {
                     put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
                     put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime.ifBlank { "application/zip" })
