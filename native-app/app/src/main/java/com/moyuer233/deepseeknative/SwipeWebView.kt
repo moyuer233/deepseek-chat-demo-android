@@ -16,7 +16,7 @@ import kotlin.math.min
 @SuppressLint("ViewConstructor")
 class SwipeWebView(context: Context) : WebView(context) {
     var siderOpen: Boolean = false
-    private val edgeWidth = 24 * resources.displayMetrics.density
+    private val edgeWidth = 16 * resources.displayMetrics.density
     private val touchSlop = 8 * resources.displayMetrics.density
     private var candidate = false
     private var dragging = false
