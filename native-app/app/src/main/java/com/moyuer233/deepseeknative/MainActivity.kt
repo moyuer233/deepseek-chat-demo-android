@@ -49,7 +49,9 @@ class MainActivity : ComponentActivity() {
                     DeepSeekTheme {
                         OnboardingScreen(onDone = {
                             SessionStore.setOnboarded(this)
-                            recreate()
+                            // 用全新 Activity 进入 chat-demo，避免原地重建时 WebView 初始化卡加载
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
                         })
                     }
                 }
