@@ -14,6 +14,13 @@ export type VoiceInputStatus = 'idle' | 'recording' | 'transcribing'
  */
 const AVAILABLE = typeof window === 'undefined' || window.isSecureContext
 
+const errorDetail = (error: unknown): string => {
+  if (error instanceof DOMException) {
+    return error.name + ': ' + error.message
+  }
+  return error instanceof Error ? error.name + ': ' + error.message : String(error)
+}
+
 const describeRecordingError = (error: unknown): TranslationMessage => {
   if (error instanceof DOMException) {
     if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
@@ -85,7 +92,9 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       } else {
         showToast({ key: 'voiceInputEmpty' })
       }
-    } catch {
+    } catch (error) {
+      // 诊断：区分录音上传/转写失败，日志会出现在 adb logcat -s WebConsole
+      console.warn('[voice] finish failed ' + errorDetail(error))
       if (operationRef.current === operation && !controller?.signal.aborted) {
         showToast({ key: 'voiceInputFailed' })
       }
@@ -131,6 +140,7 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       }
       recordingRef.current = recording
     } catch (error) {
+      console.warn('[voice] start failed ' + errorDetail(error))
       if (operationRef.current === operation) {
         setStatus('idle')
         showToast(describeRecordingError(error))
