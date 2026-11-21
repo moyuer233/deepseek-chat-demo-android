@@ -1,6 +1,10 @@
 package com.moyuer233.deepseeknative
 
 import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
+import androidx.webkit.WebViewAssetLoader
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.data.LocalSession
 import androidx.activity.ComponentActivity
@@ -37,6 +41,32 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 默认启动：直接展示 chat-demo 界面（WebView 套壳）；带 screen/native 参数时才进原生调试页。
+        if (!intent.hasExtra("screen") && !intent.hasExtra("native") && !intent.hasExtra("importLocal")) {
+            val web = WebView(this)
+            web.settings.javaScriptEnabled = true
+            web.settings.domStorageEnabled = true
+            web.settings.allowFileAccess = true
+            web.settings.mediaPlaybackRequiresUserGesture = false
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
+                .build()
+            web.webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView,
+                    request: android.webkit.WebResourceRequest,
+                ): android.webkit.WebResourceResponse? = assetLoader.shouldInterceptRequest(request.url)
+            }
+            web.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(msg: android.webkit.ConsoleMessage?): Boolean {
+                    android.util.Log.d("WebConsole", (msg?.message() ?: "") + " @" + (msg?.lineNumber() ?: 0))
+                    return true
+                }
+            }
+            setContentView(web)
+            web.loadUrl("https://appassets.androidplatform.net/web/index.html")
+            return
+        }
         val debugScreen = intent.getStringExtra("screen")
         val importLocal = intent.getStringExtra("importLocal")
         if (importLocal != null) {
