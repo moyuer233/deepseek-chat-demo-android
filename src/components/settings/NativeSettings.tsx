@@ -6,6 +6,7 @@ import { nativeShell, readArchiveFile, requestChatArchive } from '../../services
 import { showToast } from '../base/toastState.js'
 import { clearHistory, exportHistory, importHistory } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
+import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
 import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
@@ -169,8 +170,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     const usage = session ? sessionUsage(session) : null
     const total = totalUsage()
     const pressure = contextPressure(session)
-    const row = (title: string, value: string) => (
-      <Row icon={<IconDataOutline16 />} title={title} value={value} />
+    const row = (glyph: 'checklist-outline' | 'data-outline' | 'layers-outline' | 'paper-plane-outline' | 'context-injection-outline', title: string, value: string) => (
+      <Row icon={<DshIcon name={glyph} size={16} />} title={title} value={value} />
     )
     return (
       <Shell>
@@ -180,22 +181,22 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
           <div className={styles.card}>
             {usage ? (
               <>
-                {row(t('usageRequests'), String(usage.requests))}
-                {row(t('usageInput'), formatTokens(usage.input + usage.cacheWrite))}
-                {row(t('usageCacheRead'), formatTokens(usage.cacheRead))}
-                {row(t('usageOutput'), formatTokens(usage.output))}
+                {row('checklist-outline', t('usageRequests'), String(usage.requests))}
+                {row('data-outline', t('usageInput'), formatTokens(usage.input + usage.cacheWrite))}
+                {row('layers-outline', t('usageCacheRead'), formatTokens(usage.cacheRead))}
+                {row('paper-plane-outline', t('usageOutput'), formatTokens(usage.output))}
               </>
             ) : (
               <Row icon={<IconDataOutline16 />} title={t('usageRequests')} value="0" />
             )}
-            {row(t('usageContext'), formatTokens(pressure.tokens) + ' / ' + formatTokens(pressure.window))}
+            {row('context-injection-outline', t('usageContext'), formatTokens(pressure.tokens) + ' / ' + formatTokens(pressure.window))}
           </div>
           <div className={styles.section}>{t('usageTotal')}</div>
           <div className={styles.card}>
-            {row(t('usageRequests'), String(total.requests))}
-            {row(t('usageInput'), formatTokens(total.input + total.cacheWrite))}
-            {row(t('usageCacheRead'), formatTokens(total.cacheRead))}
-            {row(t('usageOutput'), formatTokens(total.output))}
+            {row('checklist-outline', t('usageRequests'), String(total.requests))}
+            {row('data-outline', t('usageInput'), formatTokens(total.input + total.cacheWrite))}
+            {row('layers-outline', t('usageCacheRead'), formatTokens(total.cacheRead))}
+            {row('paper-plane-outline', t('usageOutput'), formatTokens(total.output))}
           </div>
         </div>
       </Shell>

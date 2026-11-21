@@ -3,7 +3,6 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import {
   IconGlobeLanguageOutline14,
   IconMicOutline16,
-  IconSendOutline16,
   IconStopFill16,
   IconThinkOutline14,
 } from '../base/icons.js'
@@ -32,6 +31,7 @@ import { useVoiceInput } from './useVoiceInput.js'
 import { VoiceButton } from './VoiceButton.js'
 import { Spectrum } from './Spectrum.js'
 import { StatusLine } from './StatusLine.js'
+import { DshIcon } from './StatusIcons.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './ChatInput.module.css'
 
@@ -303,19 +303,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           <IconButton
             size="m"
             tone="primary"
-            icon={
-              attachMenu ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 8v8M8 12h8" strokeLinecap="round" />
-                </svg>
-              )
-            }
+            icon={<DshIcon name={attachMenu ? 'close-outline' : 'plus-outline'} size={18} />}
             tooltip={t('uploadFile')}
             disabled={importingHistory}
             onClick={() => {
@@ -424,7 +412,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               aria-disabled={!canSend}
               onClick={send}
             >
-              <IconSendOutline16 />
+              <DshIcon name="paper-plane-outline" size={16} />
             </button>
           ) : null}
         </div>
