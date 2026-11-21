@@ -16,7 +16,6 @@ import kotlin.math.min
 @SuppressLint("ViewConstructor")
 class SwipeWebView(context: Context) : WebView(context) {
     var siderOpen: Boolean = false
-    private val edgeWidth = 16 * resources.displayMetrics.density
     private val touchSlop = 8 * resources.displayMetrics.density
     private var candidate = false
     private var dragging = false
@@ -39,13 +38,18 @@ class SwipeWebView(context: Context) : WebView(context) {
                 velocity = 0f
                 dragging = false
                 progress = if (siderOpen) 1f else 0f
-                candidate = if (siderOpen) ev.x < width * 0.85f else ev.x <= edgeWidth
+                // 任意位置起步都可以：关闭时只认向右滑，打开时只认向左滑
+                candidate = true
             }
             MotionEvent.ACTION_MOVE -> {
                 if (candidate) {
                     val dx = ev.x - downX
                     val dy = ev.y - downY
                     if (!dragging && abs(dx) > touchSlop && abs(dx) > abs(dy) * 1.2f) {
+                        if (dx > 0f == siderOpen) {
+                            // 方向不对（关闭时左滑 / 打开时右滑）不接管，交给页面
+                            return super.dispatchTouchEvent(ev)
+                        }
                         dragging = true
                         // 已经交给网页 DOWN，开始原生手势时补发 CANCEL，避免网页触摸状态残留
                         val cancel = MotionEvent.obtain(ev)
