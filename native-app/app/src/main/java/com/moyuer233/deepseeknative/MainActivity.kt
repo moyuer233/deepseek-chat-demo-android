@@ -256,6 +256,9 @@ class MainActivity : ComponentActivity() {
         fun getToken(): String = DshAuth.token(this@MainActivity) ?: ""
 
         @JavascriptInterface
+        fun takePendingArchive(): String = com.moyuer233.deepseeknative.data.PendingArchive.take(this@MainActivity)
+
+        @JavascriptInterface
         fun startAuth() {
             Thread {
                 try {

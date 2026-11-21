@@ -5,6 +5,7 @@ export type NativeShell = {
   openExternal(url: string): void
   openTopUp(): void
   startChatImport?(): void
+  takePendingArchive?(): string
   readArchiveChunk?(path: string, offset: number, size: number): string
   deleteArchive?(path: string): void
   beginExport?(name: string): string

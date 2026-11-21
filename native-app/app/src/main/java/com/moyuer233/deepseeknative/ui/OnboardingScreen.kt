@@ -27,9 +27,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import androidx.compose.ui.platform.LocalContext
-import com.moyuer233.deepseeknative.data.ArchiveImporter
+import com.moyuer233.deepseeknative.data.ChatExport
 import com.moyuer233.deepseeknative.data.DshAuth
-import com.moyuer233.deepseeknative.data.LocalStore
+import com.moyuer233.deepseeknative.data.PendingArchive
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,18 +54,36 @@ fun OnboardingScreen(onDone: () -> Unit) {
     var index by remember { mutableStateOf(0) }
     var importedCount by remember { mutableStateOf(0) }
     var authorized by remember { mutableStateOf(DshAuth.token(context) != null) }
-    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            val result = ArchiveImporter.import(context, uri)
-            if (result.error != null) {
-                Toast.makeText(context, "导入失败：" + result.error, Toast.LENGTH_LONG).show()
-            } else {
-                LocalStore.save(context, result.sessions)
-                importedCount = result.sessions.size
-                Toast.makeText(context, "已导入 " + importedCount + " 个会话", Toast.LENGTH_SHORT).show()
-            }
+    var chatImportStatus by remember { mutableStateOf("") }
+    var chatImporting by remember { mutableStateOf(false) }
+    val chatImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val token = if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.getStringExtra(ChatLoginActivity.EXTRA_TOKEN)
+        } else null
+        if (token.isNullOrEmpty()) {
+            chatImporting = false
+            chatImportStatus = "已取消导入"
+            return@rememberLauncherForActivityResult
         }
+        chatImporting = true
+        Thread {
+            try {
+                val exported = ChatExport.exportAndDownload(token, context.cacheDir)
+                PendingArchive.save(context, exported.file.absolutePath, exported.fileName, exported.bytes)
+                (context as? Activity)?.runOnUiThread {
+                    chatImporting = false
+                    chatImportStatus = "已获取归档，进入 chat-demo 后自动导入"
+                    Toast.makeText(context, "导出完成，完成后会自动导入", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                (context as? Activity)?.runOnUiThread {
+                    chatImporting = false
+                    chatImportStatus = "导出失败：" + (e.message ?: "")
+                }
+            }
+        }.start()
     }
+
     val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         authorized = result.resultCode == Activity.RESULT_OK
         if (authorized) Toast.makeText(context, "授权成功", Toast.LENGTH_SHORT).show()
@@ -86,7 +104,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
     }
     val pages = listOf(
         Triple("欢迎使用 DeepSeek", "和官方 App 一样的外观，聊天与数据都由你自己掌控。", 0),
-        Triple("导入历史会话", "支持 deepseek_data ZIP 归档；导入后按时间分组展示。", 1),
+        Triple("导入历史会话", "从 chat.deepseek.com 登录并导出全部会话；进入 chat-demo 后自动导入。", 1),
         Triple("连接聊天内核", "用 DeepSeek 账号授权或 API Key 即可聊天，无需验证码。", 2),
         Triple("准备就绪", "随时可以在设置里更换主题、字体和授权方式。", 3),
     )
@@ -129,9 +147,21 @@ fun OnboardingScreen(onDone: () -> Unit) {
         }
         if (pages[index].third == 1) {
             OutlinedButton(
-                onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
+                onClick = {
+                    if (!chatImporting) {
+                        chatImportLauncher.launch(Intent(context, ChatLoginActivity::class.java))
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
-            ) { Text(if (importedCount > 0) "已导入 " + importedCount + " 个会话" else "选择归档导入") }
+            ) {
+                Text(
+                    when {
+                        chatImporting -> "正在从 chat.deepseek.com 导出…"
+                        chatImportStatus.isNotEmpty() -> chatImportStatus
+                        else -> "从 chat.deepseek.com 导入会话"
+                    }
+                )
+            }
         }
         if (pages[index].third == 2) {
             OutlinedButton(
