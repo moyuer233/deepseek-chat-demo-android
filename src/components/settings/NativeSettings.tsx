@@ -54,7 +54,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
 
-  const cycleLocale = () => setLocale(locale === 'zh-CN' ? 'en' : 'zh')
+  const cycleLocale = () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')
   const cycleTheme = () => setThemePreference(theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system')
   const cycleVoice = () => setTtsVoice(voice === 'stella' ? 'tide' : 'stella')
   const themeLabel =

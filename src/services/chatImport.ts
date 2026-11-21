@@ -1,4 +1,4 @@
-import { exportHistory, importHistory } from './chat/backup.js'
+import { importHistory } from './chat/backup.js'
 import { nativeShell, readArchiveBytes, requestChatArchive } from './deepseek/shell.js'
 import { showToast } from '../components/base/toastState.js'
 

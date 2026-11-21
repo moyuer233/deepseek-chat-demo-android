@@ -81,7 +81,7 @@ export const requestChatArchive = (): Promise<{ path: string; name: string; byte
   })
 
 /** 分块读取原生下载好的归档（base64）。 */
-export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 1024): Uint8Array => {
+export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 1024): Uint8Array<ArrayBuffer> => {
   const shell = nativeShell()
   if (!shell?.readArchiveChunk) {
     throw new Error('读取归档失败')
