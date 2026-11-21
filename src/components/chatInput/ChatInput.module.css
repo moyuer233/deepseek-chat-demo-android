@@ -396,3 +396,60 @@
 .menuOpen {
   overflow: visible;
 }
+
+
+/* 动效：发送键弹出、附件卡片错峰上浮、开关按压缩放 */
+@keyframes send-pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.sendButton {
+  animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes card-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.attachCard {
+  animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.attachCard:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.attachCard:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.toggle {
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+
+.toggle:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sendButton,
+  .attachCard,
+  .toggle {
+    animation: none;
+    transition: none;
+  }
+}

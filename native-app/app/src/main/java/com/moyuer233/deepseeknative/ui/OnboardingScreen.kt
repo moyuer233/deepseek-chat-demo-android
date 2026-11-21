@@ -1,5 +1,17 @@
 package com.moyuer233.deepseeknative.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -113,35 +125,47 @@ fun OnboardingScreen(onDone: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(1f))
-        if (index == 0) {
-            Image(painter = painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(84.dp))
-            Spacer(Modifier.height(12.dp))
+        AnimatedContent(
+            targetState = index,
+            transitionSpec = {
+                (slideInHorizontally { it / 6 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 6 } + fadeOut())
+            },
+            label = "onboardingPage",
+        ) { page ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (page == 0) {
+                    Image(painter = painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(84.dp))
+                    Spacer(Modifier.height(12.dp))
+                }
+                Text(
+                    pages[page].first,
+                    color = LocalAppColors.current.textPrimary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    pages[page].second,
+                    color = LocalAppColors.current.textSecondary,
+                    fontSize = 15.sp,
+                    lineHeight = 22.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 36.dp),
+                )
+            }
         }
-        Text(
-            pages[index].first,
-            color = LocalAppColors.current.textPrimary,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp),
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            pages[index].second,
-            color = LocalAppColors.current.textSecondary,
-            fontSize = 15.sp,
-            lineHeight = 22.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 36.dp),
-        )
         Spacer(Modifier.weight(1.2f))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 20.dp)) {
             pages.indices.forEach { i ->
+                val dotSize by animateDpAsState(if (i == index) 8.dp else 6.dp, label = "dotSize")
+                val dotColor by animateColorAsState(if (i == index) BrandBlue else Color(0xFFD5D8DE), label = "dotColor")
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
-                        .size(if (i == index) 8.dp else 6.dp)
-                        .background(if (i == index) BrandBlue else Color(0xFFD5D8DE), CircleShape),
+                        .size(dotSize)
+                        .background(dotColor, CircleShape),
                 )
             }
         }
@@ -169,11 +193,15 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
             ) { Text(if (authorized) "已授权" else "使用 DeepSeek 账号授权") }
         }
+        val primaryInteraction = remember { MutableInteractionSource() }
+        val primaryPressed by primaryInteraction.collectIsPressedAsState()
+        val primaryScale by animateFloatAsState(if (primaryPressed) 0.97f else 1f, label = "primaryScale")
         Button(
             onClick = { if (index < pages.lastIndex) index++ else onDone() },
+            interactionSource = primaryInteraction,
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp).scale(primaryScale),
         ) {
             Text(if (index < pages.lastIndex) "下一步" else "开始使用", fontSize = 16.sp)
         }

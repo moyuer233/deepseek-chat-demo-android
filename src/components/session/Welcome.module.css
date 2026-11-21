@@ -124,3 +124,25 @@
   user-select: none;
   -webkit-user-drag: none;
 }
+
+
+@keyframes logo-in {
+  from {
+    transform: translateY(4px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.logo {
+  animation: logo-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo {
+    animation: none;
+  }
+}
