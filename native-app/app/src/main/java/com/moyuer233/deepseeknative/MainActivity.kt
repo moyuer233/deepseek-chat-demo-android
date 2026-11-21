@@ -174,6 +174,16 @@ class MainActivity : ComponentActivity() {
                 return true
             }
 
+            override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: android.webkit.JsResult?): Boolean {
+                android.app.AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message ?: "")
+                    .setPositiveButton("确定") { _, _ -> result?.confirm() }
+                    .setNegativeButton("取消") { _, _ -> result?.cancel() }
+                    .setOnCancelListener { result?.cancel() }
+                    .show()
+                return true
+            }
+
             override fun onPermissionRequest(request: PermissionRequest) {
                 if (!request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
                     request.deny()

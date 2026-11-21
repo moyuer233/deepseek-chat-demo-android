@@ -65,6 +65,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         : t('avatarMenuSettingsDialogThemeSelectDarkOption')
 
   const onImport = async (file: File) => {
+    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
     if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
       return
     }
@@ -86,6 +87,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   }
 
   const onChatImport = async () => {
+    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
     if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
       return
     }
@@ -105,6 +107,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   }
 
   const onDelete = async () => {
+    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
     if (!window.confirm(t('deleteAllSessionsModalDescription'))) {
       return
     }
@@ -145,7 +148,9 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               icon={<IconLinkOutline16 />}
               title={(locale === 'zh-CN' ? '从 chat.deepseek.com 导入会话' : 'Import chats from chat.deepseek.com') + (chatImportBusy ? '…' : '')}
               onClick={() => {
-                if (!chatImportBusy) void onChatImport()
+                if (!chatImportBusy) {
+                  void onChatImport()
+                }
               }}
             />
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
