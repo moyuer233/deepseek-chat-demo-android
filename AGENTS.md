@@ -74,8 +74,7 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
   支付二维码链路已实测（2026-11-20 真机）：jsQR 解码出银联 URL → 存图到相册 → 打开微信扫一扫/相册 → 微信显示「聚合收款 杭州深度求索… ¥10.00 确认付款」页，用户手动确认成功（未实际付款）。接口只返回银联 url、无 weixin://，所以无法自动直跳微信收银台。详见 docs/research/wechat-pay.md。
 - 官方 App 支付实证（REA + jadx-headless-mcp 0.7.1）：全包 Pay 命中 7 个全是微信 SDK 自带类，
   trace-android-references 查 PayReq 只有 2 条 SDK 内部引用、应用层零引用 → 官方 App 没接微信支付。
-- REA Android 反编译：JAR 在 H:\tools\jadx-headless-mcp\jadx-headless-mcp-0.7.1-all.jar，
-  REA_JADX_MCP_JAR 已写入用户环境变量；CLI 用法 rea inspect-android-package <apk>。
+- REA Android 反编译：需要本机安装 jadx-headless-mcp，并把 JAR 路径写进环境变量 `REA_JADX_MCP_JAR`；CLI 用法 `rea inspect-android-package <apk>`。
 
 ## 代码审查（2026-11-20，OCR delegate 全量）
 
@@ -91,24 +90,22 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 - **失效 grant**：401 时清掉 accountToken，回退 API Key；登录 WebView 加 5 分钟超时。
 - **遗留（未改）**：LoginActivity 复用旧会话导致重新导入可能直接用旧 token（有超时但无强制清登录态）；openTopUp 的「回退系统浏览器」实际不可达；i18n 仍有少量未用键（已删 onboardingManual）；无自动化测试（建议补 import/export 自检脚本）。
 
-## 本机环境（换机器要重看）
+## 构建环境要求（换机器按本机实际情况填写）
 
-- JDK 21：`C:\Program Files\Java\jdk-21.0.10`
-- Android SDK：`H:\Android\Sdk`（已装 platform-tools、platforms;android-36、build-tools;36.0.0、emulator、system-images;android-36;google_apis;x86_64）。
-- Gradle：`GRADLE_USER_HOME=H:\Android\gradle-home`；8.14.3 发行包从腾讯镜像下载（官方 CDN 约 1MB/min，太慢）；
-  `init.d/mirror.gradle` 已配阿里云 maven 镜像（本机 maven.google.com 不通）。
-- 模拟器：AVD 名 `dsapp`（pixel_6 / Android 16 / google_apis x86_64），目录在 `H:\Android\avd`，WHPX 可用。
-  启动：`ANDROID_AVD_HOME=H:\Android\avd H:\Android\Sdk\emulator\emulator.exe -avd dsapp -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot`
-  装机：`adb install -r android/app/build/outputs/apk/debug/app-debug.apk`；截图：`adb exec-out screencap -p > shot.png`
-- C 盘只剩约 2.4GB，SDK、Gradle 缓存、AVD 一律放 H:。
-- git 全局代理 `127.0.0.1:7897` 当前 TLS 握手失败：git 命令加 `-c http.proxy= -c https.proxy=` 走直连；
-  `gh` 不要设 HTTPS_PROXY。npm 走 npmmirror；`maven.google.com` 直连不通，Gradle 需配阿里云镜像。
-- 会话沙箱为 danger-full-access，不需要申请审批。
+- JDK 21（`JAVA_HOME` 指向它）。
+- Android SDK，需含：platform-tools、platforms;android-36、build-tools;36.0.0、emulator 与 android-36 google_apis x86_64 镜像。
+- Gradle 依赖缓存目录可用 `GRADLE_USER_HOME` 指定；国内网络建议在 `init.d/mirror.gradle` 配阿里云 maven 镜像（maven.google.com 常不通）。
+- 模拟器：任意 API 34+ 的 x86_64 AVD 即可；无窗口启动示例
+  `emulator -avd <AVD 名> -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot`。
+  装机：`adb install -r native-app/app/build/outputs/apk/debug/app-debug.apk`；截图：`adb exec-out screencap -p > shot.png`。
+- 依赖下载占空间较大，SDK、Gradle 缓存、AVD 建议放在空间充足的盘。
+- 国内网络：npm 走 npmmirror；git 若需代理用 `-c http.proxy=<代理地址> -c https.proxy=<代理地址>`，代理不通时改直连。
+- 具体盘符、用户名、代理端口、设备序列号等本机事实不写进仓库，放在本地笔记里。
 
 ## 发布
 
 - 版本：0.2.0（versionCode 2，versionName 0.2.0）；上一版 0.1.0 对应 tag v0.1.0-android
-- 签名密钥：`H:\Android\keystores\dsapp-release.jks`，密码在 `H:\Android\keystores\dsapp-release.txt`（都不进仓库）
+- 签名密钥：keystore 与密码文件都放在仓库外（路径写进 `native-app/keystore.properties`，该文件已 gitignore），仓库内不出现任何密钥与密码
 - Release：v0.2.0 → https://github.com/moyuer233/deepseek-chat-demo-android/releases/tag/v0.2.0 （APK 自签名）；历史版 v0.1.0-android
 - **gh 命令必须带 `-R moyuer233/deepseek-chat-demo-android`**：本地 `origin` 指向 chat-demo fork，不带 -R 会操作错仓库。
 

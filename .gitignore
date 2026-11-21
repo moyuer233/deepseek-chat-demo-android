@@ -25,6 +25,8 @@ android/build/
 
 .android-skills-src/
 .taste-skill/
+.agents/
+.claude/
 native-app/.gradle/
 native-app/build/
 native-app/app/build/
