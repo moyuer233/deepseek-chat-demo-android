@@ -122,7 +122,7 @@ object DshAuth {
             ?: throw IllegalStateException("auth_exchange: " + payload.take(200))
         if (!bizData.has("token")) throw IllegalStateException("auth_exchange: " + payload.take(200))
         val token = bizData.getString("token")
-        SecurePrefs.put(context, PREFS, KEY_TOKEN, token)
+        runCatching { SecurePrefs.put(context, PREFS, KEY_TOKEN, token) }
         store.edit().remove(KEY_VERIFIER).remove(KEY_STATE).apply()
         return token
     }

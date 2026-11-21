@@ -81,32 +81,6 @@ export const requestChatArchive = (): Promise<{ path: string; name: string; byte
     shell.startChatImport()
   })
 
-/** 分块读取原生下载好的归档（base64）。 */
-export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 1024): Uint8Array<ArrayBuffer> => {
-  const shell = nativeShell()
-  if (!shell?.readArchiveChunk) {
-    throw new Error('读取归档失败')
-  }
-  const out = new Uint8Array(bytes)
-  let offset = 0
-  while (offset < bytes) {
-    const size = Math.min(chunkSize, bytes - offset)
-    const b64 = shell.readArchiveChunk(path, offset, size)
-    if (!b64) {
-      throw new Error('读取归档失败')
-    }
-    const binary = atob(b64)
-    if (binary.length !== size) {
-      throw new Error('读取归档失败：数据块长度不匹配')
-    }
-    for (let i = 0; i < binary.length; i += 1) {
-      out[offset + i] = binary.charCodeAt(i)
-    }
-    offset += binary.length
-  }
-  return out
-}
-
 /** 分块读取归档并直接拼成 File，避免再复制一份完整 Uint8Array。 */
 export const readArchiveFile = (
   path: string,

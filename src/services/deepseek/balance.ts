@@ -1,5 +1,5 @@
 import { nativeShell } from './shell.js'
-import { useSettings } from '../settings.js'
+import { setAccountToken, useSettings } from '../settings.js'
 
 export type Balance = {
   /** 账户是否可用（is_available） */
@@ -24,8 +24,16 @@ export const fetchBalance = async (): Promise<Balance | null> => {
   } else {
     headers.Authorization = `Bearer ${apiKey}`
   }
-  const response = await fetch('https://api.deepseek.com/user/balance', { headers })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+  const response = await fetch('https://api.deepseek.com/user/balance', {
+    headers,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer))
   if (!response.ok) {
+    if (response.status === 401 && token && useSettings.getState().accountToken) {
+      setAccountToken(null)
+    }
     throw new Error(`余额获取失败（${response.status}）`)
   }
   const data = (await response.json()) as {
@@ -44,4 +52,4 @@ export const fetchBalance = async (): Promise<Balance | null> => {
   }
 }
 
-export const currencySymbol = (currency: string) => CURRENCY_SYMBOL[currency] ?? ''
+export const currencySymbol = (currency: string) => CURRENCY_SYMBOL[currency] ?? `${currency} `

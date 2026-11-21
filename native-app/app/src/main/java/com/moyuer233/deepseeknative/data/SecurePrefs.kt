@@ -15,7 +15,12 @@ object SecurePrefs {
     private const val ALIAS = "ds_secure_prefs"
     private const val PREFIX = "enc1:"
 
+    @Volatile
+    private var cachedKey: SecretKey? = null
+
+    @Synchronized
     private fun key(): SecretKey {
+        cachedKey?.let { return it }
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (ks.getEntry(ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
@@ -25,7 +30,9 @@ object SecurePrefs {
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .build()
         )
-        return generator.generateKey()
+        val generated = generator.generateKey()
+        cachedKey = generated
+        return generated
     }
 
     fun encrypt(value: String): String {
@@ -56,6 +63,11 @@ object SecurePrefs {
 
     fun get(context: Context, prefs: String, name: String): String? {
         val stored = context.getSharedPreferences(prefs, Context.MODE_PRIVATE).getString(name, null) ?: return null
+        if (!stored.startsWith(PREFIX)) {
+            // 旧版本明文：读到时顺手迁移为密文
+            runCatching { put(context, prefs, name, stored) }
+            return stored
+        }
         return runCatching { decrypt(stored) }.getOrNull()
     }
 }

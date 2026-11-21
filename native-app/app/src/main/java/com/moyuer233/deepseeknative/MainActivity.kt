@@ -137,9 +137,10 @@ class MainActivity : ComponentActivity() {
                 }
                 if (backPending) return
                 backPending = true
-                webViewRef?.evaluateJavascript("window.__onBack ? String(window.__onBack()) : 'false'") { value ->
+                android.os.Handler(mainLooper).postDelayed({ backPending = false }, 1000)
+                webViewRef?.evaluateJavascript("window.__onBack ? window.__onBack() : false") { value ->
                     backPending = false
-                    if (value != "true" && !isFinishing) {
+                    if (value?.trim('"') != "true" && !isFinishing) {
                         isEnabled = false
                         onBackPressedDispatcher.onBackPressed()
                     }
@@ -426,7 +427,8 @@ class MainActivity : ComponentActivity() {
                 if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
                     val dir = java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "DeepSeekNative").apply { mkdirs() }
-                    val target = java.io.File(dir, name.replace(Regex("[^A-Za-z0-9._-]"), "_"))
+                    val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }
+                    val target = java.io.File(dir, safeName)
                     file.inputStream().use { input -> target.outputStream().use { input.copyTo(it) } }
                     runOnUiThread {
                         android.widget.Toast.makeText(this@MainActivity, "已导出到 " + target.absolutePath, android.widget.Toast.LENGTH_LONG).show()
@@ -441,14 +443,24 @@ class MainActivity : ComponentActivity() {
                 }
                 val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                     ?: throw IllegalStateException("无法创建下载文件")
-                contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-                    ?: throw IllegalStateException("无法写入下载文件")
                 values.clear()
                 values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
-                contentResolver.update(uri, values, null, null)
-                runOnUiThread {
-                    android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
-                }
+                // 100MB+ 拷贝放后台线程，避免阻塞 WebView 的 JS 线程
+                Thread {
+                    try {
+                        contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
+                            ?: throw IllegalStateException("无法写入下载文件")
+                        contentResolver.update(uri, values, null, null)
+                        runOnUiThread {
+                            android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        runCatching { contentResolver.delete(uri, null, null) }
+                        runOnUiThread {
+                            android.widget.Toast.makeText(this@MainActivity, "导出失败：" + (e.message ?: "未知错误"), android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }.start()
             } catch (e: Exception) {
                 android.util.Log.w("NativeShell", "finishExport failed", e)
                 runOnUiThread {

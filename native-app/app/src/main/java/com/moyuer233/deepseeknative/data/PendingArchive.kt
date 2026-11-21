@@ -19,6 +19,10 @@ object PendingArchive {
     fun peek(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val path = prefs.getString("path", null) ?: return ""
+        if (!java.io.File(path).exists()) {
+            prefs.edit().clear().apply()
+            return ""
+        }
         val name = prefs.getString("name", "deepseek_data.zip") ?: "deepseek_data.zip"
         val bytes = prefs.getLong("bytes", 0)
         return JSONObject()

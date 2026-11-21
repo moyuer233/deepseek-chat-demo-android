@@ -47,6 +47,11 @@ class SwipeWebView(context: Context) : WebView(context) {
                     val dy = ev.y - downY
                     if (!dragging && abs(dx) > touchSlop && abs(dx) > abs(dy) * 1.2f) {
                         dragging = true
+                        // 已经交给网页 DOWN，开始原生手势时补发 CANCEL，避免网页触摸状态残留
+                        val cancel = MotionEvent.obtain(ev)
+                        cancel.action = MotionEvent.ACTION_CANCEL
+                        super.dispatchTouchEvent(cancel)
+                        cancel.recycle()
                     }
                     if (dragging) {
                         val now = ev.eventTime
@@ -70,7 +75,9 @@ class SwipeWebView(context: Context) : WebView(context) {
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (dragging) {
-                    if (ev.actionMasked == MotionEvent.ACTION_UP) {
+                    if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+                        evaluateJavascript("window.__siderClose && window.__siderClose()", null)
+                    } else {
                         evaluateJavascript("window.__siderSwipeEnd && window.__siderSwipeEnd($progress, $velocity)", null)
                     }
                     candidate = false

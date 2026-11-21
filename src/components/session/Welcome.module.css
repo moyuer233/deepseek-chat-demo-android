@@ -116,9 +116,7 @@
   margin-top: 0;
 }
 
-.login {
-  transition: transform 0.12s ease, background-color 0.15s ease;
-}
+
 
 .login:active {
   transform: scale(0.96);

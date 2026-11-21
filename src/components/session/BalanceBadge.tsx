@@ -11,7 +11,11 @@ export const BalanceBadge = () => {
 
   useEffect(() => {
     let cancelled = false
+    let timer = 0
     const load = () => {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
       void fetchBalance()
         .then((data) => {
           if (cancelled) {
@@ -26,11 +30,17 @@ export const BalanceBadge = () => {
           }
         })
     }
-    load()
-    const timer = window.setInterval(load, 60_000)
+    const start = () => {
+      window.clearInterval(timer)
+      load()
+      timer = window.setInterval(load, 60_000)
+    }
+    start()
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
-        load()
+        start()
+      } else {
+        window.clearInterval(timer)
       }
     }
     document.addEventListener('visibilitychange', onVisible)
@@ -51,7 +61,7 @@ export const BalanceBadge = () => {
   }
 
   // 余额归零/账户不可用时点变红（与插件一致）
-  const healthy = balance.available && balance.total > 0.005
+  const healthy = !failed && balance.available && balance.total > 0.005
   const symbol = currencySymbol(balance.currency)
   return (
     <div className={styles.balance} title={t('balanceTooltip')}>

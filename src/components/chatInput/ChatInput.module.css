@@ -278,14 +278,15 @@
   transition-property: border, background;
   transition-duration: 0.2s;
 
+  transition: border-color 0.2s, background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+
   &:hover:not(:disabled) {
     background-color: var(--dsw-alias-interactive-bg-hover);
-    transition: background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
-}
+  }
 
-.toggle:active {
-  transform: scale(0.96);
-}
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
 
   &:disabled {
     opacity: 0.4;
@@ -327,10 +328,11 @@
   cursor: pointer;
   transition: background 0.2s ease;
 
+  animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+
   &:not(.disabled):hover {
     background: var(--dsw-alias-button-primary-hover);
-    animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+  }
 
   &.disabled {
     opacity: 0.4;
@@ -388,11 +390,11 @@
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 
   [data-ds-dark-theme] & {
     background: #26282f;
-    animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
+  }
 }
 
 .attachCard:active {

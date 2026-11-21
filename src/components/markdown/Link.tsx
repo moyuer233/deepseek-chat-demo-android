@@ -1,4 +1,5 @@
 import type { Image, Link as LinkNode } from 'mdast'
+import { nativeShell } from '../../services/deepseek/shell.js'
 import { memo, type ReactNode } from 'react'
 
 const sanitizeUrl = (url: string) => {
@@ -39,7 +40,18 @@ export const Link = memo(function Link({
   const href = sanitizeUrl(node.url)
 
   return (
-    <a href={href} title={node.title || undefined} target="_blank" rel="noreferrer">
+    <a
+      href={href}
+      title={node.title || undefined}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(event) => {
+        if (nativeShell() && href) {
+          event.preventDefault()
+          nativeShell()?.openExternal?.(href)
+        }
+      }}
+    >
       {children}
     </a>
   )
@@ -49,7 +61,18 @@ export const Link = memo(function Link({
 export function ImageAsLink({ node }: { node: Image }) {
   const url = sanitizeUrl(node.url)
   return (
-    <a href={url} title={node.title ?? ''} target="_blank" rel="noreferrer">
+    <a
+      href={url}
+      title={node.title ?? ''}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(event) => {
+        if (nativeShell() && url) {
+          event.preventDefault()
+          nativeShell()?.openExternal?.(url)
+        }
+      }}
+    >
       {url}
     </a>
   )

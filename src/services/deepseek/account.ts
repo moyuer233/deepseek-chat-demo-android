@@ -6,6 +6,7 @@ import { setAccountToken, setApiKey, useSettings } from '../settings.js'
 import { readArchivePreview, type ArchivePreview } from './archive.js'
 import { DeepSeekAccount } from './plugin.js'
 import { isNativeShell, nativeShell, readArchiveFile, requestChatArchive } from './shell.js'
+import { translate } from '../../i18n/index.js'
 
 /** 一步一次：chat 登录 → 导出 → 预览 → 导入 → platform 登录 → 建 Key。 */
 export type AccountPhase =
@@ -60,13 +61,34 @@ export const startLoginAndImport = async () => {
     if (isNativeShell()) {
       // 原生壳：一次性完成后台导入（原生登录/导出/分块读取），不做整包预览
       set({ phase: 'exporting', error: null, preview: null, importedCount: null })
-      const archive = await requestChatArchive()
+      let archivePath: string | null = null
+      try {
+        const archive = await Promise.race([
+          requestChatArchive(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('导入超时，请重试')), 20 * 60 * 1000)),
+        ])
+        archivePath = archive.path
+      // oxlint-disable-next-line no-alert -- WebView 由 onJsConfirm 显示原生确认框
+      if (!window.confirm(translate('historyImportConfirmTitle') + '\n' + translate('historyImportConfirmDescription'))) {
+        nativeShell()?.deleteArchive?.(archive.path)
+        set({ phase: 'idle' })
+        return
+      }
       set({ phase: 'importing' })
-      const file = readArchiveFile(archive.path, archive.bytes, archive.name)
-      const count = await importHistory(file)
-      nativeShell()?.deleteArchive?.(archive.path)
-      set({ phase: 'done', importedCount: count })
-      return
+        const file = readArchiveFile(archive.path, archive.bytes, archive.name)
+        const count = await importHistory(file)
+        nativeShell()?.deleteArchive?.(archive.path)
+        archivePath = null
+        set({ phase: 'done', importedCount: count })
+        return
+      } catch (error) {
+        set({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
+        return
+      } finally {
+        if (archivePath) {
+          nativeShell()?.deleteArchive?.(archivePath)
+        }
+      }
     }
     set({ phase: 'chatLogin', error: null, preview: null, importedCount: null })
     const { token } = await DeepSeekAccount.loginChat()

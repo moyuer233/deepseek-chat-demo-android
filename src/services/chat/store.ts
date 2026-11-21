@@ -880,20 +880,24 @@ const prepareFiles = async (sessionId: string, request: Request, signal: AbortSi
     }
   }
   let backfilled = false
-  for (const file of pending.values()) {
-    signal.throwIfAborted()
-    try {
-      const serverId = await Promise.race([ensureServerId(apiKey, file), aborted])
-      if (serverId) {
-        serverIds.set(file.id, serverId)
-        backfilled = true
-      }
-    } catch {
+  try {
+    for (const file of pending.values()) {
       signal.throwIfAborted()
+      try {
+        const serverId = await Promise.race([ensureServerId(apiKey, file), aborted])
+        if (serverId) {
+          serverIds.set(file.id, serverId)
+          backfilled = true
+        }
+      } catch {
+        signal.throwIfAborted()
+      }
     }
-  }
-  if (backfilled) {
-    saveServerIds(sessionId, serverIds)
+  } finally {
+    // 中途停止时也保留已上传成功的 serverId，避免下次重复上传
+    if (backfilled) {
+      saveServerIds(sessionId, serverIds)
+    }
   }
 
   // 用补齐后的会话重新取历史与提问，保证请求里都是 serverId

@@ -23,10 +23,12 @@ android {
             val propsFile = rootProject.file("keystore.properties")
             if (propsFile.exists()) {
                 val props = Properties().apply { propsFile.inputStream().use { load(it) } }
-                storeFile = file(props.getProperty("storeFile"))
-                storePassword = props.getProperty("storePassword")
-                keyAlias = props.getProperty("keyAlias")
-                keyPassword = props.getProperty("keyPassword")
+                storeFile = rootProject.file(
+                    requireNotNull(props.getProperty("storeFile")) { "keystore.properties 缺少 storeFile" }
+                )
+                storePassword = requireNotNull(props.getProperty("storePassword")) { "keystore.properties 缺少 storePassword" }
+                keyAlias = requireNotNull(props.getProperty("keyAlias")) { "keystore.properties 缺少 keyAlias" }
+                keyPassword = requireNotNull(props.getProperty("keyPassword")) { "keystore.properties 缺少 keyPassword" }
             }
         }
     }
