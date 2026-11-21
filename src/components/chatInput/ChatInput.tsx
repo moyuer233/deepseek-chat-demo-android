@@ -1,7 +1,8 @@
 import clsx from 'clsx'
-import { memo, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   IconGlobeLanguageOutline14,
+  IconMicOutline16,
   IconPaperclipOutline16,
   IconSendOutline16,
   IconStopFill16,
@@ -56,6 +57,10 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const [voiceMode, setVoiceMode] = useState(false)
+  const [attachMenu, setAttachMenu] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const togglesRef = useRef<HTMLDivElement>(null)
 
@@ -156,7 +161,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
 
   return (
     <div
-      className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session)}
+      className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session, attachMenu && styles.menuOpen)}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           textareaRef.current?.focus({ preventScroll: true })
@@ -165,9 +170,33 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     >
       <DraftAttachments items={attachments} onRetry={retryFile} onRemove={removeFile} />
       <div className={styles.textareaWrapper}>
+        {voiceMode && isMobile ? (
+          <button
+            type="button"
+            className={styles.voiceBar}
+            disabled={!voice.available || importingHistory}
+            onPointerDown={() => {
+              if (voice.status === 'idle' && ensureApiKey()) {
+                void voice.toggle()
+              }
+            }}
+            onPointerUp={() => {
+              if (voice.status === 'recording') {
+                void voice.toggle()
+              }
+            }}
+            onPointerCancel={() => {
+              if (voice.status === 'recording') {
+                void voice.toggle()
+              }
+            }}
+          >
+            {recording ? t('voiceInputStop') : '按住说话'}
+          </button>
+        ) : null}
         <textarea
           ref={textareaRef}
-          className={clsx(styles.textarea, recording && isMobile && styles.textareaHidden)}
+          className={clsx(styles.textarea, (recording || (voiceMode && isMobile)) && isMobile && styles.textareaHidden)}
           placeholder={t('chatInputPlaceholderChat')}
           rows={2}
           // 移动端不自动聚焦，避免一打开就弹出键盘
@@ -230,51 +259,29 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </Tooltip>
         </div>
         <div className={styles.right}>
-          <VoiceButton
-            status={voice.status}
-            disabled={!voice.available}
-            seconds={voice.seconds}
-            onClick={() => {
-              if (
-                voice.status !== 'idle' ||
-                (!useChatStore.getState().importingHistory && ensureApiKey())
-              ) {
-                void voice.toggle()
-              }
-            }}
-          />
           <IconButton
             size="m"
             tone="primary"
-            icon={<IconPaperclipOutline16 />}
+            icon={
+              attachMenu ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v8M8 12h8" strokeLinecap="round" />
+                </svg>
+              )
+            }
             tooltip={t('uploadFile')}
             disabled={importingHistory}
             onClick={() => {
               if (!ensureApiKey()) {
                 return
               }
-              if (Capacitor.isNativePlatform()) {
-                void DeepSeekAccount.pickImages()
-                  .then(({ files }: { files: { name: string; mime: string; base64: string }[] }) => {
-                    if (files.length > 0) {
-                      acceptFiles(
-                        files.map((item: { name: string; mime: string; base64: string }) => {
-                          const binary = atob(item.base64)
-                          const bytes = new Uint8Array(binary.length)
-                          for (let i = 0; i < binary.length; i++) {
-                            bytes[i] = binary.charCodeAt(i)
-                          }
-                          return new File([bytes], item.name, { type: item.mime })
-                        })
-                      )
-                    }
-                  })
-                  .catch(() => {
-                    // 取消选择或原生不可用：保持静默
-                  })
-                return
-              }
-              fileInputRef.current?.click()
+              setAttachMenu((value) => !value)
             }}
           />
           <input
@@ -288,6 +295,74 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               event.target.value = ''
             }}
           />
+          {isMobile ? (
+            voiceMode ? (
+              <IconButton
+                size="m"
+                tone="primary"
+                icon={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                    <rect x="3" y="6" width="18" height="12" rx="2" />
+                    <path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10" strokeLinecap="round" />
+                  </svg>
+                }
+                tooltip={t('chatInputPlaceholderChat')}
+                onClick={() => {
+                  if (recording) {
+                    void voice.toggle()
+                  }
+                  setVoiceMode(false)
+                }}
+              />
+            ) : text.length > 0 || streaming ? null : (
+              <IconButton
+                size="m"
+                tone="primary"
+                icon={<IconMicOutline16 />}
+                tooltip={t('voiceInput')}
+                onClick={() => {
+                  if (ensureApiKey()) {
+                    setVoiceMode(true)
+                  }
+                }}
+              />
+            )
+          ) : (
+            <VoiceButton
+              status={voice.status}
+              disabled={!voice.available}
+              seconds={voice.seconds}
+              onClick={() => {
+                if (voice.status !== 'idle' || ensureApiKey()) {
+                  void voice.toggle()
+                }
+              }}
+            />
+          )}
+
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(event) => {
+              acceptFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              acceptFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
+
           {streaming && sessionId ? (
             <button
               type="button"
@@ -300,7 +375,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             >
               <IconStopFill16 />
             </button>
-          ) : (
+          ) : text.trim().length > 0 ? (
             <button
               type="button"
               className={clsx(styles.sendButton, !canSend && styles.disabled)}
@@ -310,9 +385,40 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             >
               <IconSendOutline16 />
             </button>
-          )}
+          ) : null}
         </div>
       </div>
+          {attachMenu ? (
+            <div className={styles.attachSheet}>
+              {[
+                { key: 'camera', label: '拍照', icon: 'M4 8h3l2-2h6l2 2h3v11H4z M12 12a3 3 0 100 6 3 3 0 000-6z' },
+                { key: 'gallery', label: '相册', icon: 'M4 5h16v14H4z M8 11l3 3 2-2 3 3' },
+                { key: 'file', label: '文件', icon: 'M6 3h8l4 4v14H6z M14 3v5h5' },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={styles.attachCard}
+                  onClick={() => {
+                    setAttachMenu(false)
+                    if (item.key === 'camera') {
+                      cameraInputRef.current?.click()
+                    } else if (item.key === 'gallery') {
+                      imageInputRef.current?.click()
+                    } else {
+                      fileInputRef.current?.click()
+                    }
+                  }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d={item.icon} />
+                  </svg>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
       {dragging ? <DragMask /> : null}
     </div>
   )

@@ -35,7 +35,7 @@ import { Modal } from '../base/Modal.js'
 import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { AccountPane } from './AccountPane.js'
-import { NativeSettings } from './NativeSettings.js'
+import { importFromChatDeepSeek } from '../../services/chatImport.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
@@ -86,10 +86,6 @@ const SettingsContent = () => {
   const historyBusy = historyImport.busy || historyDelete.busy || replacingHistory
   const accountPhase = useAccount((state) => state.phase)
   const accountBusy = !['idle', 'error', 'done'].includes(accountPhase)
-  // 移动端：原生风格整页设置
-  if (isMobile) {
-    return <NativeSettings onClose={closeSettings} />
-  }
   return (
     <>
       <Modal
@@ -154,6 +150,26 @@ const SettingsContent = () => {
               <ApiKeyField editor={apiKeyEditor} />
               <ImportHistory historyImport={historyImport} disabled={historyBusy} />
               <ExportHistory disabled={historyBusy} />
+              <SettingCell
+                label="从 chat.deepseek.com 导入会话"
+                description="登录 chat.deepseek.com，导出全部会话并在本机导入（会覆盖本地会话）"
+                status={null}
+                action={
+                  <Button
+                    variant="outlined"
+                    size="m"
+                    className={styles.cellButton}
+                    disabled={historyBusy}
+                    onClick={() => {
+                      if (window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
+                        void importFromChatDeepSeek()
+                      }
+                    }}
+                  >
+                    {t('historyImport')}
+                  </Button>
+                }
+              />
               <SettingCell
                 label={t('deleteAllSessions')}
                 status={null}

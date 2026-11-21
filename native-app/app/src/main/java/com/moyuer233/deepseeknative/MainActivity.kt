@@ -45,6 +45,8 @@ class MainActivity : ComponentActivity() {
     private var chatImportLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
     private var siderBackCallback: Any? = null
     private var legacyBackCallback: androidx.activity.OnBackPressedCallback? = null
+    private var pendingPermissionRequest: android.webkit.PermissionRequest? = null
+    private var permissionsLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +89,12 @@ class MainActivity : ComponentActivity() {
                 }
             }.start()
         }
+        permissionsLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+            val request = pendingPermissionRequest
+            pendingPermissionRequest = null
+            if (request == null) return@registerForActivityResult
+            if (grants.values.all { it }) request.grant(request.resources) else request.deny()
+        }
         fileChooserLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
             fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
             fileChooserCallback = null
@@ -119,6 +127,7 @@ class MainActivity : ComponentActivity() {
                 }
                 return
             }
+            android.webkit.WebView.setWebContentsDebuggingEnabled(true)
             val web = SwipeWebView(this)
             web.settings.javaScriptEnabled = true
             web.settings.domStorageEnabled = true
@@ -278,6 +287,19 @@ class MainActivity : ComponentActivity() {
                     return true
                 }
 
+                override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
+                    if (!request.resources.contains(android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                        request.deny()
+                        return
+                    }
+                    if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        request.grant(request.resources)
+                    } else {
+                        pendingPermissionRequest = request
+                        permissionsLauncher?.launch(arrayOf(android.Manifest.permission.RECORD_AUDIO)) ?: request.deny()
+                    }
+                }
+
                 override fun onShowFileChooser(
                     view: WebView,
                     callback: android.webkit.ValueCallback<Array<android.net.Uri>>,
@@ -300,6 +322,12 @@ class MainActivity : ComponentActivity() {
             val top = if (statusId > 0) res.getDimensionPixelSize(statusId) else 0
             val bottom = if (navId > 0) res.getDimensionPixelSize(navId) else 0
             rootView.setPadding(0, top, 0, bottom)
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+                val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                val ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
+                view.setPadding(0, bars.top, 0, maxOf(bars.bottom, ime.bottom))
+                insets
+            }
             rootView.addView(
                 web,
                 android.widget.FrameLayout.LayoutParams(
