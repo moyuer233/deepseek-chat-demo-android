@@ -298,7 +298,9 @@ const PageLink = ({ page, failedTip }: { page: PageItem; failedTip?: string }) =
           // 原生壳没有实现 onCreateWindow，交给系统浏览器打开
           if (nativeShell()) {
             event.preventDefault()
-            nativeShell()?.openExternal?.(page.url)
+            if (page.url) {
+              nativeShell()?.openExternal?.(page.url)
+            }
           }
         }}
       >

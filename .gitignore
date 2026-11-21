@@ -27,3 +27,5 @@ android/build/
 native-app/.gradle/
 native-app/build/
 native-app/app/build/
+
+**/keystore.properties

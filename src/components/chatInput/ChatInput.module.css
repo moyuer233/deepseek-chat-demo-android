@@ -280,7 +280,12 @@
 
   &:hover:not(:disabled) {
     background-color: var(--dsw-alias-interactive-bg-hover);
-  }
+    transition: background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+
+.toggle:active {
+  transform: scale(0.96);
+}
 
   &:disabled {
     opacity: 0.4;
@@ -324,7 +329,8 @@
 
   &:not(.disabled):hover {
     background: var(--dsw-alias-button-primary-hover);
-  }
+    animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
 
   &.disabled {
     opacity: 0.4;
@@ -385,7 +391,8 @@
 
   [data-ds-dark-theme] & {
     background: #26282f;
-  }
+    animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
 }
 
 .attachCard:active {
@@ -410,9 +417,7 @@
   }
 }
 
-.sendButton {
-  animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+
 
 @keyframes card-in {
   from {
@@ -425,9 +430,7 @@
   }
 }
 
-.attachCard {
-  animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
+
 
 .attachCard:nth-child(2) {
   animation-delay: 0.04s;
@@ -437,13 +440,8 @@
   animation-delay: 0.08s;
 }
 
-.toggle {
-  transition: background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
-}
 
-.toggle:active {
-  transform: scale(0.96);
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .sendButton,

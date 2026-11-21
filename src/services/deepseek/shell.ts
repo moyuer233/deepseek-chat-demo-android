@@ -106,3 +106,36 @@ export const readArchiveBytes = (path: string, bytes: number, chunkSize = 512 * 
   }
   return out
 }
+
+/** 分块读取归档并直接拼成 File，避免再复制一份完整 Uint8Array。 */
+export const readArchiveFile = (
+  path: string,
+  bytes: number,
+  name: string,
+  chunkSize = 512 * 1024
+): File => {
+  const shell = nativeShell()
+  if (!shell?.readArchiveChunk) {
+    throw new Error('读取归档失败')
+  }
+  const parts: BlobPart[] = []
+  let offset = 0
+  while (offset < bytes) {
+    const size = Math.min(chunkSize, bytes - offset)
+    const b64 = shell.readArchiveChunk(path, offset, size)
+    if (!b64) {
+      throw new Error('读取归档失败')
+    }
+    const binary = atob(b64)
+    if (binary.length !== size) {
+      throw new Error('读取归档失败：数据块长度不匹配')
+    }
+    const chunk = new Uint8Array(size)
+    for (let i = 0; i < size; i += 1) {
+      chunk[i] = binary.charCodeAt(i)
+    }
+    parts.push(chunk)
+    offset += size
+  }
+  return new File(parts, name || 'deepseek_data.zip', { type: 'application/zip' })
+}

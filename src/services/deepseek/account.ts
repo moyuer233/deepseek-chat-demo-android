@@ -5,7 +5,7 @@ import { importHistory } from '../chat/backup.js'
 import { setAccountToken, setApiKey, useSettings } from '../settings.js'
 import { readArchivePreview, type ArchivePreview } from './archive.js'
 import { DeepSeekAccount } from './plugin.js'
-import { isNativeShell } from './shell.js'
+import { isNativeShell, nativeShell, readArchiveFile, requestChatArchive } from './shell.js'
 
 /** 一步一次：chat 登录 → 导出 → 预览 → 导入 → platform 登录 → 建 Key。 */
 export type AccountPhase =
@@ -57,6 +57,17 @@ const loadArchive = async (path: string, fileName: string) => {
 export const startLoginAndImport = async () => {
   try {
     requireNative()
+    if (isNativeShell()) {
+      // 原生壳：一次性完成后台导入（原生登录/导出/分块读取），不做整包预览
+      set({ phase: 'exporting', error: null, preview: null, importedCount: null })
+      const archive = await requestChatArchive()
+      set({ phase: 'importing' })
+      const file = readArchiveFile(archive.path, archive.bytes, archive.name)
+      const count = await importHistory(file)
+      nativeShell()?.deleteArchive?.(archive.path)
+      set({ phase: 'done', importedCount: count })
+      return
+    }
     set({ phase: 'chatLogin', error: null, preview: null, importedCount: null })
     const { token } = await DeepSeekAccount.loginChat()
     set({ phase: 'exporting' })
