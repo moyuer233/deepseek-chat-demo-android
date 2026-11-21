@@ -56,7 +56,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const autoCompact = useSettings((s) => s.autoCompact)
   const model = useSettings((s) => s.model)
   const activeId = useChatStore((state) => state.activeId)
-  const [page, setPage] = useState<'main' | 'account' | 'data' | 'usage'>('main')
+  const [page, setPage] = useState<'main' | 'account' | 'data' | 'chat'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
 
@@ -165,7 +165,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       </Shell>
     )
   }
-  if (page === 'usage') {
+  if (page === 'chat') {
     const session = activeId ? (getSession(activeId) ?? null) : null
     const usage = session ? sessionUsage(session) : null
     const total = totalUsage()
@@ -175,8 +175,22 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     )
     return (
       <Shell>
-        {header(t('usageStats'), () => setPage('main'))}
+        {header(t('chatSettings'), () => setPage('main'))}
         <div className={styles.body}>
+          <div className={styles.card}>
+            <Row
+              icon={<IconDataOutline16 />}
+              title={t('modelSetting')}
+              value={model === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash'}
+              onClick={() => setModel(model === 'deepseek-flash' ? 'deepseek-v4-pro' : 'deepseek-flash')}
+            />
+            <Row
+              icon={<DshIcon name="compact-outline" size={16} />}
+              title={t('contextCompression')}
+              value={autoCompact ? t('enabled') : t('disabled')}
+              onClick={() => setAutoCompact(!autoCompact)}
+            />
+          </div>
           <div className={styles.section}>{t('usageSession')}</div>
           <div className={styles.card}>
             {usage ? (
@@ -219,7 +233,6 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               }}
             />
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
-            <Row icon={<IconDataOutline16 />} title={t('usageStats')} onClick={() => setPage('usage')} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>
           <input
@@ -253,20 +266,9 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
         <div className={styles.section}>{t('nativeSettingsApp')}</div>
         <div className={styles.card}>
-          <Row
-            icon={<IconDataOutline16 />}
-            title={t('modelSetting')}
-            value={model === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash'}
-            onClick={() => setModel(model === 'deepseek-flash' ? 'deepseek-v4-pro' : 'deepseek-flash')}
-          />
+          <Row icon={<DshIcon name="sparkle" size={16} />} title={t('chatSettings')} onClick={() => setPage('chat')} />
           <Row icon={<IconGlobeLanguageOutline14 />} title={t('settingsLocalePreference')} value={locale === 'zh-CN' ? '中文' : 'English'} onClick={cycleLocale} />
           <Row icon={<IconDarkOutline16 />} title={t('avatarMenuSettingsDialogThemeItemLabel')} value={themeLabel} onClick={cycleTheme} />
-          <Row
-            icon={<IconDataOutline16 />}
-            title={t('contextCompression')}
-            value={autoCompact ? t('enabled') : t('disabled')}
-            onClick={() => setAutoCompact(!autoCompact)}
-          />
         </div>
 
         <div className={styles.section}>{t('nativeSettingsVoice')}</div>
