@@ -207,7 +207,21 @@ class MainActivity : ComponentActivity() {
                     return true
                 }
             }
-            setContentView(web)
+            val rootView = android.widget.FrameLayout(this)
+            val res = resources
+            val statusId = res.getIdentifier("status_bar_height", "dimen", "android")
+            val navId = res.getIdentifier("navigation_bar_height", "dimen", "android")
+            val top = if (statusId > 0) res.getDimensionPixelSize(statusId) else 0
+            val bottom = if (navId > 0) res.getDimensionPixelSize(navId) else 0
+            rootView.setPadding(0, top, 0, bottom)
+            rootView.addView(
+                web,
+                android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            setContentView(rootView)
             web.loadUrl("https://appassets.androidplatform.net/web/index.html")
             return
         }
