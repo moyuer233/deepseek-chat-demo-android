@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DeepSeek Chat Demo — 用 API 跑的「免费版 DeepSeek」</title>
+<meta name="description" content="独立安卓客户端：用自己的 API Key 或 DeepSeek 账号授权聊天，不受免费版限流；从 chat.deepseek.com 导入全部历史。基于 chat-demo（MIT）。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234D6BFE'/%3E%3Cpath d='M8 20c4 4 12 4 16 0M10 13c1-3 5-4 8-2 2 1 3 3 4 5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./styles.css" />
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="DeepSeek Chat Demo 首页">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><path d="M8.5 20.5c3.8 3.6 11.2 3.6 15 0M10.5 13.5c1-2.8 4.6-4 7.4-2.4 1.8 1 2.9 2.8 3.8 4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <span>DeepSeek Chat Demo</span>
+    </a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="#context">上下文</a>
+      <a href="#features">功能</a>
+      <a href="#history">历史</a>
+      <a href="#native">原生</a>
+    </nav>
+    <a class="btn small primary" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载 APK</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top" data-enter>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">非官方 · MIT · Android 7.0+</p>
+        <h1>用你自己的 API，<br />跑一个「免费版 DeepSeek」。</h1>
+        <p class="lede">不走官方免费版的限流入口，额度用你自己的账号。从 chat.deepseek.com 把全部历史搬过来，1M 上下文照常聊。</p>
+        <div class="hero-cta">
+          <a class="btn primary" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载 APK</a>
+          <a class="btn ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">看源码</a>
+        </div>
+        <dl class="facts">
+          <div><dt>1M</dt><dd>上下文窗口</dd></div>
+          <div><dt>2.9 MB</dt><dd>安装包</dd></div>
+          <div><dt>0</dt><dd>排队时间</dd></div>
+        </dl>
+      </div>
+
+      <div class="hero-device">
+        <div class="phone" id="phone">
+          <div class="phone-screen">
+            <div class="appbar">
+              <span class="appbar-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h16M4 16h10"/></svg></span>
+              <span class="appbar-title">1M 上下文演示</span>
+              <span class="balance"><i></i>¥1.37</span>
+              <span class="appbar-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+            </div>
+            <div class="chat" id="chat">
+              <p class="bubble">用一句话解释 1M 上下文意味着什么？</p>
+              <p class="thinking">已思考 2 秒 ›</p>
+              <div class="reply">
+                <p class="answer" id="answer">1M 上下文约等于一次读完《三体》三部曲，或者 3000 页技术文档——对话再长，也不用从头再来。</p>
+                <div class="reply-actions" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                </div>
+              </div>
+              <p class="sources">已搜索 3 个网页 · 查看来源</p>
+              <p class="bubble second">那再压缩成三条。</p>
+              <p class="answer short">1. 一次读完《三体》三部曲；2. 或 3000 页技术文档；3. 对话再长也不用重开。</p>
+            </div>
+            <div class="composer">
+              <div class="composer-box">
+                <p class="composer-text" id="composerText">请输入消息</p>
+                <div class="composer-row">
+                  <span class="chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.6 5.6L20 11l-5.4 2.4L12 19l-2.6-5.6L4 11l5.4-2.4L12 3Z"/></svg>深度思考</span>
+                  <span class="chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>智能搜索</span>
+                  <span class="composer-spacer"></span>
+                  <span class="composer-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                  <span class="composer-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+                </div>
+              </div>
+              <p class="statusline">
+                <span class="status-model"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.6 5.6L20 11l-5.4 2.4L12 19l-2.6-5.6L4 11l5.4-2.4L12 3Z"/></svg>deepseek-flash</span>
+                <span class="status-ctx">上下文 <b id="ctxUsed">8.2K</b> / 1M (<span id="ctxPct">1</span>%)</span>
+                <span>9.2K tokens</span>
+              </p>
+              <p class="caveat">内容由 AI 生成，请仔细甄别</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="context">
+    <div class="wrap split">
+      <div class="split-copy">
+        <p class="eyebrow">上下文 · 看得见</p>
+        <h2>1M 窗口，<br />写到状态行里。</h2>
+        <p class="lede">输入框下方实时显示模型、上下文占用和累计 tokens。接近上限时只在本机把旧对话压成摘要，最近消息与原文都留着。</p>
+        <ul class="ticks">
+          <li><span></span>1,048,576 token 窗口</li>
+          <li><span></span>本地压缩，原文不删</li>
+          <li><span></span>换设备也能导出带走</li>
+        </ul>
+      </div>
+      <div class="split-visual context-visual">
+        <div class="split-stack">
+        <div class="meter-card">
+          <div class="meter-head">
+            <span class="meter-title">上下文</span>
+            <span class="meter-value" id="meterValue">8.2K <em>/ 1M</em></span>
+          </div>
+          <div class="meter" role="img" aria-label="上下文占用约 1%"><span id="meterFill"></span></div>
+          <div class="meter-foot"><span>deepseek-flash</span><span id="meterPct">1%</span></div>
+          <div class="meter-rows">
+            <div><span>本会话</span><b>9.2K tokens</b></div>
+            <div><span>上下文窗口</span><b>1,048,576</b></div>
+            <div><span>压缩策略</span><b>旧对话 → 摘要</b></div>
+          </div>
+        </div>
+        <svg class="section-art" viewBox="0 0 440 96" role="img" aria-label="上下文从 8.2K 增长到 1M 的示意">
+          <g fill="none" stroke="var(--line)" stroke-width="1">
+            <path d="M0 72h440M0 48h440M0 24h440" />
+          </g>
+          <path d="M0 72c40-2 68-14 96-18s52-16 78-24 54-10 82-16 58-6 84-8" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" />
+          <circle cx="340" cy="6" r="3.5" fill="var(--brand)" />
+          <text x="0" y="92" fill="var(--muted)" font-size="10" font-family="var(--mono)">0</text>
+          <text x="392" y="92" fill="var(--muted)" font-size="10" font-family="var(--mono)">1M</text>
+        </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">聊天能力</p>
+        <h2>把活干完，而不是演示。</h2>
+        <p class="lede">该有的都有，开关是真开关，入口都能点到底。</p>
+        <svg class="section-art feature-art" viewBox="0 0 560 64" role="img" aria-label="能力示意：对话、搜索、文件、语音连成一条线">
+          <g fill="none" stroke="var(--line)" stroke-width="1.5">
+            <rect x="1" y="12" width="120" height="40" rx="10" />
+            <rect x="145" y="12" width="120" height="40" rx="10" />
+            <rect x="289" y="12" width="120" height="40" rx="10" />
+            <rect x="433" y="12" width="120" height="40" rx="10" />
+            <path d="M121 32h24M265 32h24M409 32h24" />
+          </g>
+          <g fill="var(--brand)">
+            <circle cx="24" cy="32" r="4" />
+            <circle cx="168" cy="32" r="4" />
+            <circle cx="312" cy="32" r="4" />
+            <circle cx="456" cy="32" r="4" />
+          </g>
+        </svg>
+      </div>
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 2.4 5.2L20 10l-5.6 1.8L12 17l-2.4-5.2L4 10l5.6-1.8L12 3Z"/></svg></span>
+          <h3>深度思考</h3>
+          <p>思考过程可展开，和回答分开渲染；长问题先想再答。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span>
+          <h3>智能搜索</h3>
+          <p>联网找、带上来源；结果作为引用出现在回答里。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg></span>
+          <h3>图片与文件</h3>
+          <p>拍照、相册、文件三入口；PDF 能读，图片能描述。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg></span>
+          <h3>朗读与语音</h3>
+          <p>账号音色朗读回复；按住说话，松手转文字发送。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+          <h3>分支与重写</h3>
+          <p>重新生成、编辑重发都会留分支；左右切换，不丢旧答案。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+          <h3>导出与备份</h3>
+          <p>一条命令换成 deepseek_data ZIP，随时导入回来。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="history">
+    <div class="wrap split reverse">
+      <div class="split-copy">
+        <p class="eyebrow">历史导入</p>
+        <h2>不是从零开始。</h2>
+        <p class="lede">从 chat.deepseek.com 导出 ZIP，导入前先看差异：新增多少、哪些有更新、哪些只在本机。合并、仅新增、覆盖替换，选一个。</p>
+        <ol class="steps">
+          <li><span>01</span>网页版导出会话 ZIP</li>
+          <li><span>02</span>数据管理 → 导入历史对话</li>
+          <li><span>03</span>看差异，确认导入</li>
+        </ol>
+      </div>
+      <div class="split-visual">
+        <div class="dialog" role="img" aria-label="导入差异预览：新增 12，有更新 3，本地独有 0">
+          <div class="dialog-head">
+            <span class="dialog-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></span>
+            <b>导入历史对话</b>
+          </div>
+          <p class="dialog-lead">新增 12 · 有更新 3 · 本地独有 0</p>
+          <div class="dialog-option">
+            <b>合并</b><span>保留本机，更新同名会话</span>
+          </div>
+          <div class="dialog-option">
+            <b>仅新增</b><span>已有会话不动</span>
+          </div>
+          <div class="dialog-option danger">
+            <b>覆盖替换</b><span>清空本机后导入</span>
+          </div>
+          <div class="dialog-foot"><span class="btn small ghost">取消</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" id="native">
+    <div class="wrap split">
+      <div class="split-copy">
+        <p class="eyebrow">原生外壳</p>
+        <h2>装进安卓，<br />而不是塞个网页。</h2>
+        <p class="lede">相机、相册、文件、麦克风走系统能力；返回键逐级后退，右滑开侧栏，左滑收回。Release 开 R8，安装包约 2.9 MB。</p>
+        <ul class="ticks">
+          <li><span></span>Android 7.0+（minSdk 24）</li>
+          <li><span></span>自签名 APK，GitHub Releases 直接装</li>
+          <li><span></span>MIT 开源，复用 chat-demo 网页内核</li>
+        </ul>
+      </div>
+      <div class="split-visual">
+        <div class="settings-card" role="img" aria-label="设置页：账户、数据管理、语言、主题">
+          <div class="settings-head"><span>设置</span></div>
+          <p class="settings-group">账户</p>
+          <div class="settings-row"><span>账户</span><i>›</i></div>
+          <div class="settings-row"><span>数据管理</span><i>›</i></div>
+          <p class="settings-group">应用</p>
+          <div class="settings-row"><span>对话</span><i>›</i></div>
+          <div class="settings-row"><span>语言</span><em>中文</em><i>›</i></div>
+          <div class="settings-row"><span>主题</span><em>跟随系统</em><i>›</i></div>
+          <p class="settings-group">关于</p>
+          <div class="settings-row"><span>版本</span><em>1.1.0</em></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section download" id="download">
+    <div class="wrap download-inner">
+      <p class="eyebrow">下载</p>
+      <h2>带上你自己的 API，<br />现在就开始。</h2>
+      <p class="lede">自签名 APK，Android 7.0 及以上。装好后填 API Key，或走一次 DeepSeek 账号授权。</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载最新 APK</a>
+        <a class="btn ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">GitHub 仓库</a>
+      </div>
+      <div class="install-card" role="img" aria-label="安装包信息：versionCode 6，1.1.0，约 2.9 MB">
+        <div class="install-icon">
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><path d="M8.5 20.5c3.8 3.6 11.2 3.6 15 0M10.5 13.5c1-2.8 4.6-4 7.4-2.4 1.8 1 2.9 2.8 3.8 4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="install-meta"><b>DeepSeek Chat Demo 1.1.0</b><span>Android 7.0+ · versionCode 6 · 约 2.9 MB</span></div>
+        <span class="install-badge">APK</span>
+        <svg class="install-code" viewBox="0 0 56 56" role="img" aria-label="安装包二维码示意">
+          <rect width="56" height="56" rx="8" fill="var(--brand-soft)" />
+          <g fill="var(--brand)"><rect x="10" y="10" width="12" height="12" rx="2"/><rect x="34" y="10" width="12" height="12" rx="2"/><rect x="10" y="34" width="12" height="12" rx="2"/><rect x="30" y="30" width="6" height="6"/><rect x="40" y="34" width="6" height="6"/><rect x="30" y="42" width="6" height="6"/></g>
+        </svg>
+      </div>
+      <p class="download-note">非官方客户端，与 DeepSeek 无隶属关系。API 调用按量计费，额度来自你自己的账号。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer closing">
+  <div class="wrap footer-inner">
+    <span>DeepSeek Chat Demo · MIT</span>
+    <span>基于 <a href="https://github.com/deepseek-ai/chat-demo">chat-demo</a> 网页内核</span>
+    <span>DeepSeek 名称与图标归深度求索所有</span>
+  </div>
+</footer>
+
+<script src="./demo.js"></script>
+</body>
+</html>
