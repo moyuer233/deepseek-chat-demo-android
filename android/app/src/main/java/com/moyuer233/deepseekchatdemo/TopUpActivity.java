@@ -273,8 +273,20 @@ public class TopUpActivity extends AppCompatActivity {
     }
 
     private class Bridge {
+        private boolean trusted() {
+            try {
+                String host = Uri.parse(webView == null ? "" : webView.getUrl()).getHost();
+                return host != null && ("deepseek.com".equals(host) || host.endsWith(".deepseek.com"));
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
         @JavascriptInterface
         public void onQrImage(String dataUrl, String text) {
+            if (!trusted()) {
+                return;
+            }
             main.post(() -> {
                 if (isFinishing() || isDestroyed() || dataUrl == null || text == null) {
                     return;
@@ -298,11 +310,17 @@ public class TopUpActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void diag(String text) {
+            if (!trusted()) {
+                return;
+            }
             android.util.Log.i("DSQR", String.valueOf(text));
         }
 
         @JavascriptInterface
         public void onQr(String text) {
+            if (!trusted()) {
+                return;
+            }
             android.util.Log.i("DSQR", "onQr " + String.valueOf(text).substring(0, Math.min(40, String.valueOf(text).length())));
             main.post(() -> {
                 if (isFinishing() || isDestroyed() || webView == null) {

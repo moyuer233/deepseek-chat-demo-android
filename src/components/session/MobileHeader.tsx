@@ -18,10 +18,12 @@ export const MobileHeader = ({ title }: { title?: string }) => {
         aria-label={t('expandSiderbarButton')}
         onClick={openMobileSider}
       />
-      <BalanceBadge />
-      {title === undefined ? null : (
+      {title === undefined ? (
+        <BalanceBadge />
+      ) : (
         <>
           <div className={styles.title}>{title}</div>
+          <BalanceBadge />
           <IconButton
             size="xl"
             tone="primary"

@@ -7,8 +7,9 @@
   report('[hook] installed ' + location.href);
   function interesting(url, body) {
     var s = String(body || '');
+    // 只记录命中类型，不把响应体（可能含订单号/金额/二维码内容）写进 logcat
     if (/pay|charge|order|qr|wechat|weixin/i.test(url) || s.indexOf('code_url') >= 0 || s.indexOf('weixin://') >= 0) {
-      report('[pay] ' + url + '\n' + s);
+      report('[pay] ' + url + ' hit=' + (s.indexOf('weixin://') >= 0 ? 'weixin' : s.indexOf('code_url') >= 0 ? 'code_url' : 'url'));
     }
     // 支付接口若返回 weixin:// 链接，直接交给原生拉起微信
     var m = s.match(/weixin:\/\/[^"'\\\s]+/);

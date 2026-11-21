@@ -39,6 +39,8 @@ import java.util.concurrent.Executors;
 @CapacitorPlugin(name = "DeepSeekAccount")
 public class DeepSeekAccountPlugin extends Plugin {
 
+    private static final int MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
     private static final String CHAT_ORIGIN = "https://chat.deepseek.com";
     private static final String PLATFORM_ORIGIN = "https://platform.deepseek.com";
     private static final String PREFS = "deepseek-account";
@@ -350,20 +352,32 @@ public class DeepSeekAccountPlugin extends Plugin {
     }
 
     private JSONObject readImageAsJson(Uri uri) {
-        try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
-            if (in == null) {
+        try {
+            long knownSize = -1;
+            try (android.database.Cursor cursor = getContext().getContentResolver()
+                    .query(uri, new String[]{android.provider.OpenableColumns.SIZE}, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    knownSize = cursor.getLong(0);
+                }
+            } catch (Exception ignored) {
+            }
+            if (knownSize > MAX_IMAGE_BYTES) {
                 return null;
             }
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] chunk = new byte[8192];
-            int read;
-            while ((read = in.read(chunk)) != -1) {
-                buffer.write(chunk, 0, read);
-            }
-            byte[] bytes = buffer.toByteArray();
-            if (bytes.length > 20 * 1024 * 1024) {
-                return null;
-            }
+            try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
+                if (in == null) {
+                    return null;
+                }
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                byte[] chunk = new byte[8192];
+                int read;
+                while ((read = in.read(chunk)) != -1) {
+                    buffer.write(chunk, 0, read);
+                    if (buffer.size() > MAX_IMAGE_BYTES) {
+                        return null;
+                    }
+                }
+                byte[] bytes = buffer.toByteArray();
             String mime = getContext().getContentResolver().getType(uri);
             if (mime == null) {
                 mime = "image/jpeg";
@@ -413,7 +427,13 @@ public class DeepSeekAccountPlugin extends Plugin {
             return;
         }
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme();
+            if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+                call.reject("只允许打开 http(s) 链接");
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getContext().startActivity(intent);
             call.resolve();
