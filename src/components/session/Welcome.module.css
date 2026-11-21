@@ -103,3 +103,13 @@
     user-select: none;
   }
 }
+
+
+.logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  user-select: none;
+  -webkit-user-drag: none;
+}

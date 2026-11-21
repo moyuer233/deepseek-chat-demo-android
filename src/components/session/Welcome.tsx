@@ -8,6 +8,7 @@ import { showToast } from '../base/toastState.js'
 import { ChatInput } from '../chatInput/ChatInput.js'
 import { MobileHeader } from './MobileHeader.js'
 import styles from './Welcome.module.css'
+import logo from '../../assets/deepseek-logo.svg'
 
 /** 新对话：问候语 + 输入框。桌面端居中；移动端输入框吸底 */
 export const Welcome = () => {
@@ -19,6 +20,7 @@ export const Welcome = () => {
     <div className={styles.container}>
       {isMobile ? <MobileHeader /> : null}
       <div className={styles.welcome}>
+        <img src={logo} alt="DeepSeek" className={styles.logo} />
         <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
         <ChatInput sessionId={null} />
         {!apiKey && !accountToken ? (
