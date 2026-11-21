@@ -20,8 +20,10 @@ export const Welcome = () => {
     <div className={styles.container}>
       {isMobile ? <MobileHeader /> : null}
       <div className={styles.welcome}>
-        <img src={logo} alt="DeepSeek" className={styles.logo} />
-        <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
+        <div className={styles.hero}>
+          <img src={logo} alt="DeepSeek" className={styles.logo} />
+          <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
+        </div>
         <ChatInput sessionId={null} />
         {!apiKey && !accountToken ? (
           <button

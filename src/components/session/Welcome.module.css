@@ -105,6 +105,17 @@
 }
 
 
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto 0;
+}
+
+.hero .greeting {
+  margin-top: 0;
+}
+
 .logo {
   display: block;
   width: 64px;
