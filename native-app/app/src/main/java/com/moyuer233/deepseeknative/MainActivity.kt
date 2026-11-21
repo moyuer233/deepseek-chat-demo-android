@@ -43,6 +43,9 @@ class MainActivity : ComponentActivity() {
     private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
     private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
     private var chatImportLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
+    private var cameraLauncher: androidx.activity.result.ActivityResultLauncher<android.net.Uri>? = null
+    private var cameraCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
+    private var cameraUri: android.net.Uri? = null
     private var siderBackCallback: Any? = null
     private var legacyBackCallback: androidx.activity.OnBackPressedCallback? = null
     private var pendingPermissionRequest: android.webkit.PermissionRequest? = null
@@ -94,6 +97,13 @@ class MainActivity : ComponentActivity() {
             pendingPermissionRequest = null
             if (request == null) return@registerForActivityResult
             if (grants.values.all { it }) request.grant(request.resources) else request.deny()
+        }
+        cameraLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
+            val cb = cameraCallback
+            val uri = cameraUri
+            cameraCallback = null
+            cameraUri = null
+            cb?.onReceiveValue(if (ok && uri != null) arrayOf(uri) else emptyArray())
         }
         fileChooserLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
             fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
@@ -307,6 +317,23 @@ class MainActivity : ComponentActivity() {
                 ): Boolean {
                     fileChooserCallback?.onReceiveValue(emptyArray())
                     fileChooserCallback = callback
+                    val capture = runCatching { params.isCaptureEnabled }.getOrDefault(false)
+                    if (capture) {
+                        try {
+                            val dir = java.io.File(cacheDir, "camera").apply { mkdirs() }
+                            val file = java.io.File(dir, "photo_" + System.currentTimeMillis() + ".jpg")
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                this@MainActivity,
+                                packageName + ".fileprovider",
+                                file,
+                            )
+                            cameraUri = uri
+                            cameraLauncher?.launch(uri)
+                            return true
+                        } catch (e: Exception) {
+                            android.util.Log.w("Camera", "capture failed", e)
+                        }
+                    }
                     val types = params.acceptTypes.filter { it.isNotBlank() }.toTypedArray()
                     fileChooserLauncher?.launch(if (types.isEmpty()) arrayOf("*/*") else types) ?: run {
                         callback.onReceiveValue(emptyArray())
