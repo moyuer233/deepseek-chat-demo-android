@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
+import { IconSettingsOutline16 } from '../base/icons.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
-import { getSession, newChat, removeSession, selectSession, useChatStore } from '../../services/chat/store.js'
+import { getSession, removeSession, selectSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
@@ -235,17 +235,6 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
           )}
         </div>
       </div>
-      <button
-        type="button"
-        className={styles.fab}
-        aria-label={t('newChat')}
-        onClick={() => {
-          newChat()
-          closeMobileSider()
-        }}
-      >
-        <NewChatIcon />
-      </button>
       <div className={styles.bottom}>
         <button type="button" className={styles.settings} onClick={() => openSettings('general')}>
           <span className={styles.settingsIcon}>
