@@ -1,7 +1,7 @@
 import { getSession, useChatStore } from './store.js'
 import { estimateTokens } from './tokens.js'
 import { CONTEXT_WINDOW } from './compaction.js'
-import type { Session } from './types.js'
+import type { AssistantMessage, Session } from './types.js'
 
 /** DeepSeek 官方价（CNY / 百万 token），2026-08-17 起；高峰价为基准 */
 const PRICE = { input: 2, cacheRead: 0.04, output: 8 }
@@ -96,8 +96,10 @@ export const totalUsage = (): UsageStats => {
  */
 export const contextPressure = (session: Session | null) => {
   let tokens = 0
-  const lastUsage = session
-    ? [...session.messages].reverse().find((message) => message.role === 'assistant' && message.usage)
+  const lastUsage: AssistantMessage | undefined = session
+    ? [...session.messages]
+        .reverse()
+        .find((message): message is AssistantMessage => message.role === 'assistant' && Boolean(message.usage))
     : undefined
   if (lastUsage?.usage) {
     const usage = lastUsage.usage
