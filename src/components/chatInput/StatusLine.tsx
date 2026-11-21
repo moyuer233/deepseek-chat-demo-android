@@ -19,6 +19,10 @@ export const StatusLine = ({ sessionId }: { sessionId: string | null }) => {
   const hasMessages = Boolean(session && session.messages.length > 0)
   const hasUsage = usage.requests > 0
   const percent = Math.round(pressure.ratio * 100)
+  // 新会话页（没有会话或一条消息都没有）不显示状态行，避免露出模型名和 0 用量
+  if (!session || session.messages.length === 0) {
+    return null
+  }
   return (
     <div className={styles.statusLine} aria-live="polite">
       <span className={styles.model}>
