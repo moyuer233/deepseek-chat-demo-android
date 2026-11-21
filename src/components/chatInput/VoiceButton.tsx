@@ -52,6 +52,7 @@ export const VoiceButton = ({
           onPointerDown={(event) => {
             // 对齐官方：按住说话，按下开始录音
             event.preventDefault()
+            event.currentTarget.setPointerCapture?.(event.pointerId)
             if (!disabled && status === 'idle') {
               onClick()
             }
@@ -62,6 +63,12 @@ export const VoiceButton = ({
             }
           }}
           onPointerCancel={() => {
+            if (!disabled && status === 'recording') {
+              onClick()
+            }
+          }}
+          onLostPointerCapture={() => {
+            // 指针被系统/拖出按钮释放时也要结束录音，避免一直占用麦克风
             if (!disabled && status === 'recording') {
               onClick()
             }

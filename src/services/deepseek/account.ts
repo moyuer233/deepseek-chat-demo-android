@@ -5,7 +5,7 @@ import { importHistory } from '../chat/backup.js'
 import { setAccountToken, setApiKey, useSettings } from '../settings.js'
 import { readArchivePreview, type ArchivePreview } from './archive.js'
 import { DeepSeekAccount } from './plugin.js'
-import { isNativeShell, nativeShell, readArchiveFile, requestChatArchive } from './shell.js'
+import { isNativeShell, nativeShell, openExternalUrl, readArchiveFile, requestChatArchive } from './shell.js'
 import { translate } from '../../i18n/index.js'
 
 /** 一步一次：chat 登录 → 导出 → 预览 → 导入 → platform 登录 → 建 Key。 */
@@ -75,7 +75,7 @@ export const startLoginAndImport = async () => {
         return
       }
       set({ phase: 'importing' })
-        const file = readArchiveFile(archive.path, archive.bytes, archive.name)
+        const file = await readArchiveFile(archive.path, archive.bytes, archive.name)
         const count = await importHistory(file, 'merge')
         nativeShell()?.deleteArchive?.(archive.path)
         archivePath = null
@@ -176,8 +176,8 @@ const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
 
 /** 充值入口：原生内置页（桌面 UA + 二维码）；Web 端直接开官方页；失败只提示，不污染账户状态机。 */
 export const openRecharge = async () => {
-  if (!Capacitor.isNativePlatform()) {
-    window.open(TOP_UP_URL, '_blank', 'noreferrer')
+  if (!isNativeShell()) {
+    openExternalUrl(TOP_UP_URL)
     return
   }
   try {

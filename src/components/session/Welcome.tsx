@@ -32,7 +32,7 @@ export const Welcome = () => {
             onClick={() => {
               if (isNativeShell()) {
                 void startPlatformOAuth()
-                  .then(() => showToast('已授权 DeepSeek 账号'))
+                  .then(() => showToast(t('accountAuthAccount')))
                   .catch((error: unknown) => showToast(error instanceof Error ? error.message : String(error)))
               } else {
                 openSettings('account')

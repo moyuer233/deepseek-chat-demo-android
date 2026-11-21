@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 import {
@@ -15,9 +14,10 @@ import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
 import { fetchBalance, currencySymbol, type Balance } from '../../services/deepseek/balance.js'
+import { verifyApiKey } from '../../services/api/client.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { useChatStore } from '../../services/chat/store.js'
-import { nativeShell, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
+import { isNativeShell, nativeShell, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import styles from './AccountPane.module.css'
 import nsStyles from './NativeSettings.module.css'
@@ -211,7 +211,7 @@ export const AccountPane = () => {
             }}
           />
         ) : null}
-        {Capacitor.isNativePlatform() ? (
+        {isNativeShell() ? (
           <SettingsRow
             icon={<DshIcon name="settings-outline" size={16} />}
             title={t('accountScanAssist')}
@@ -251,10 +251,21 @@ export const AccountPane = () => {
                 size="m"
                 onClick={() => {
                   const value = apiKeyInput.trim()
-                  setApiKey(value || null)
-                  setApiKeyOpen(false)
-                  showToast({ key: value ? 'apiKeySaved' : 'apiKeyCleared' })
-                  loadBalance()
+                  if (!value) {
+                    setApiKey(null)
+                    setApiKeyOpen(false)
+                    showToast({ key: 'apiKeyCleared' })
+                    loadBalance()
+                    return
+                  }
+                  void verifyApiKey(value)
+                    .then(() => {
+                      setApiKey(value)
+                      setApiKeyOpen(false)
+                      showToast({ key: 'apiKeySaved' })
+                      loadBalance()
+                    })
+                    .catch(() => showToast(t('replyInvalidApiKey')))
                 }}
               >
                 {t('apiKeySave')}
@@ -289,6 +300,7 @@ export const AccountPane = () => {
                 size="m"
                 onClick={() => {
                   setLogoutOpen(false)
+                  nativeShell()?.clearToken?.()
                   setApiKey(null)
                   setAccountToken(null)
                   setBalance(null)

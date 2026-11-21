@@ -278,17 +278,5 @@ export const en = {
   rateLimited: "Too many requests. Please try again later.",
   retry: "Retry",
   // ===== 未使用 =====
-  usageStats: "Usage & context",
-  usageCost: "Cost",
-  statusCache: "Cache",
-  statusFirstToken: "First token",
-  collapseSiderbarButton: "Close sidebar",
   appName: "API usage demo",
-  voiceInputTooLong: "Recording is too long. Please shorten it and try again.",
-  accountLoginButton: "Sign in and import",
-  accountTermsTitle: "Terms of Use",
-  accountTermsBody: "By continuing you confirm that you have read and agree to the DeepSeek Terms of Use and Privacy Policy. After signing in, the app imports your chats and chats through your DeepSeek account (no API key needed).",
-  accountTermsAgree: "Agree and continue",
-  accountReimportButton: "Import again",
-  accountDone: "Done",
 }

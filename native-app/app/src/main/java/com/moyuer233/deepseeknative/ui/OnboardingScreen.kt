@@ -58,14 +58,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import com.moyuer233.deepseeknative.R
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 
 
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
     val context = LocalContext.current
     var index by remember { mutableStateOf(0) }
-    var importedCount by remember { mutableStateOf(0) }
     var authorized by remember { mutableStateOf(DshAuth.token(context) != null) }
     var chatImportStatus by remember { mutableStateOf("") }
     var chatImporting by remember { mutableStateOf(false) }

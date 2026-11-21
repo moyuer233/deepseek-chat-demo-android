@@ -12,18 +12,29 @@ const DEFAULT_RETAIN_RATIO = 0.16
 /** 单次摘要请求最多送入字符数 */
 const MAX_TRANSCRIPT_CHARS = 400_000
 
-const renderTranscript = (messages: Message[]): string =>
-  messages
-    .map((message) => {
-      const who = message.role === 'user' ? '用户' : '助手'
-      const files =
-        message.role === 'user' && message.files.length > 0
-          ? `（附件：${message.files.map((file) => file.name).join('、')}）`
-          : ''
-      return `${who}：${plainText(message)}${files}`
-    })
-    .join('\n\n')
-    .slice(0, MAX_TRANSCRIPT_CHARS)
+const renderTranscript = (messages: Message[]): string => {
+  // 从最新往旧累积，超预算时丢掉最旧的部分（最近的消息对续写最重要）
+  const rendered = messages.map((message) => {
+    const who = message.role === 'user' ? '用户' : '助手'
+    const files =
+      message.role === 'user' && message.files.length > 0
+        ? `（附件：${message.files.map((file) => file.name).join('、')}）`
+        : ''
+    return `${who}：${plainText(message)}${files}`
+  })
+  const kept: string[] = []
+  let size = 0
+  for (let i = rendered.length - 1; i >= 0; i -= 1) {
+    const block = rendered[i]
+    if (size + block.length > MAX_TRANSCRIPT_CHARS && kept.length > 0) {
+      break
+    }
+    kept.push(block)
+    size += block.length
+  }
+  const text = kept.reverse().join('\n\n')
+  return size > MAX_TRANSCRIPT_CHARS ? text.slice(-MAX_TRANSCRIPT_CHARS) : text
+}
 
 /** DSH compaction-basic 的检查点结构（中文版） */
 const COMPACTION_INSTRUCTION = [

@@ -1,5 +1,10 @@
 import java.util.Properties
 
+/** 签名配置：release 构建必须有它，缺失时显式失败而不是产出未签名包。 */
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+/** 只有显式请求 release 任务时才要求签名，debug 构建不受影响。 */
+val wantsReleaseBuild = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,9 +25,8 @@ android {
 
     signingConfigs {
         create("release") {
-            val propsFile = rootProject.file("keystore.properties")
-            if (propsFile.exists()) {
-                val props = Properties().apply { propsFile.inputStream().use { load(it) } }
+            if (keystorePropertiesFile.exists()) {
+                val props = Properties().apply { keystorePropertiesFile.inputStream().use { load(it) } }
                 storeFile = rootProject.file(
                     requireNotNull(props.getProperty("storeFile")) { "keystore.properties 缺少 storeFile" }
                 )
@@ -37,7 +41,13 @@ android {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = if (rootProject.file("keystore.properties").exists()) signingConfigs.getByName("release") else null
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            } else if (wantsReleaseBuild) {
+                throw GradleException(
+                    "release 构建需要签名配置：缺少 " + keystorePropertiesFile.absolutePath + "（debug 构建不受影响）"
+                )
+            }
         }
     }
 
@@ -52,6 +62,20 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
+
+/** release 构建前的签名校验：覆盖 build/assemble 这类会顺带打出 release 的任务。 */
+val checkReleaseSigning = tasks.register("checkReleaseSigning") {
+    group = "verification"
+    description = "release 构建前校验签名配置是否存在"
+    doFirst {
+        if (!keystorePropertiesFile.exists()) {
+            throw GradleException(
+                "release 构建需要签名配置：缺少 " + keystorePropertiesFile.absolutePath + "（debug 构建不受影响）"
+            )
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(checkReleaseSigning) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.10.00")

@@ -1,4 +1,3 @@
-import { nativeShell } from './shell.js'
 import { setAccountToken, useSettings } from '../settings.js'
 
 export type Balance = {
@@ -13,7 +12,7 @@ export type Balance = {
 const CURRENCY_SYMBOL: Record<string, string> = { CNY: '¥', USD: '$' }
 
 export const fetchBalance = async (): Promise<Balance | null> => {
-  const token = nativeShell()?.getToken?.() ?? ''
+  const token = useSettings.getState().accountToken ?? ''
   const apiKey = useSettings.getState().apiKey ?? ''
   if (!token && !apiKey) {
     return null

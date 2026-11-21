@@ -1,5 +1,7 @@
 import { getSession, useChatStore } from './store.js'
 import { estimateTokens } from './tokens.js'
+import { getVisibleMessages } from './branches.js'
+import { readSessionUsage } from './usageTotals.js'
 import { CONTEXT_WINDOW } from './compaction.js'
 import type { AssistantMessage, Session } from './types.js'
 
@@ -9,12 +11,18 @@ const OFF_PEAK_MULTIPLIER = 0.5
 
 /** 北京时间工作日 09:00-12:00、14:00-18:00 为高峰，其余半价 */
 export const isPeakTime = (time: number): boolean => {
-  const date = new Date(time)
-  const day = date.getDay()
-  if (day === 0 || day === 6) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Shanghai',
+    weekday: 'short',
+    hour: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(new Date(time))
+  const weekday = parts.find((part) => part.type === 'weekday')?.value ?? ''
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0')
+  if (weekday === 'Sat' || weekday === 'Sun') {
     return false
   }
-  const hour = date.getHours() + date.getMinutes() / 60
   return (hour >= 9 && hour < 12) || (hour >= 14 && hour < 18)
 }
 
@@ -70,7 +78,17 @@ export const sessionUsage = (session: Session): UsageStats => {
 export const totalUsage = (): UsageStats => {
   const summaries = useChatStore.getState().sessions
   const total = emptyUsage()
+  const stored = readSessionUsage()
   for (const summary of summaries) {
+    const saved = stored[summary.id]
+    if (saved) {
+      total.input += saved.input
+      total.cacheRead += saved.cacheRead
+      total.cacheWrite += saved.cacheWrite
+      total.output += saved.output
+      total.requests += saved.requests
+      continue
+    }
     const session = getSession(summary.id)
     if (!session) {
       continue
@@ -80,8 +98,6 @@ export const totalUsage = (): UsageStats => {
     total.cacheRead += usage.cacheRead
     total.cacheWrite += usage.cacheWrite
     total.output += usage.output
-    total.peakCost += usage.peakCost
-    total.offPeakCost += usage.offPeakCost
     total.requests += usage.requests
   }
   total.totalCost = total.peakCost + total.offPeakCost
@@ -96,11 +112,10 @@ export const totalUsage = (): UsageStats => {
  */
 export const contextPressure = (session: Session | null) => {
   let tokens = 0
-  const lastUsage: AssistantMessage | undefined = session
-    ? [...session.messages]
-        .reverse()
-        .find((message): message is AssistantMessage => message.role === 'assistant' && Boolean(message.usage))
-    : undefined
+  const visible = session ? getVisibleMessages(session) : []
+  const lastUsage: AssistantMessage | undefined = [...visible]
+    .reverse()
+    .find((message): message is AssistantMessage => message.role === 'assistant' && Boolean(message.usage))
   if (lastUsage?.usage) {
     const usage = lastUsage.usage
     tokens =
@@ -108,14 +123,14 @@ export const contextPressure = (session: Session | null) => {
   } else if (session) {
     const compaction = session.compaction
     const cutoffIndex = compaction
-      ? session.messages.findIndex((message) => message.id === compaction.throughId)
+      ? visible.findIndex((message) => message.id === compaction.throughId)
       : -1
     if (compaction && cutoffIndex >= 0) {
       tokens =
         Math.ceil(compaction.summary.length / 2) +
-        estimateTokens(session.messages.slice(cutoffIndex + 1))
+        estimateTokens(visible.slice(cutoffIndex + 1))
     } else {
-      tokens = estimateTokens(session.messages)
+      tokens = estimateTokens(visible)
     }
   }
   return { tokens, window: CONTEXT_WINDOW, ratio: Math.min(1, tokens / CONTEXT_WINDOW) }

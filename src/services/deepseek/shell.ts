@@ -15,6 +15,7 @@ export type NativeShell = {
   pickImages?(): void
   makeApiKey?(token: string, name: string): string
   requestMic?(): void
+  clearToken?(): void
 }
 
 export const nativeShell = (): NativeShell | null => {
@@ -23,6 +24,16 @@ export const nativeShell = (): NativeShell | null => {
 }
 
 export const isNativeShell = (): boolean => nativeShell() !== null
+
+/** 外链：有原生壳走系统浏览器，否则新标签页打开。 */
+export const openExternalUrl = (url: string) => {
+  const shell = nativeShell()
+  if (shell?.openExternal) {
+    shell.openExternal(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 
 let authResolve: ((token: string) => void) | null = null
 let authReject: ((message: string) => void) | null = null
@@ -107,18 +118,15 @@ export const requestChatArchive = (): Promise<{ path: string; name: string; byte
   })
 
 /** 分块读取归档并直接拼成 File，避免再复制一份完整 Uint8Array。 */
-export const readArchiveFile = (
-  path: string,
-  bytes: number,
-  name: string,
-  chunkSize = 512 * 1024
-): File => {
+export const readArchiveFile = async (path: string, bytes: number, name: string): Promise<File> => {
   const shell = nativeShell()
   if (!shell?.readArchiveChunk) {
     throw new Error('读取归档失败')
   }
+  const chunkSize = 512 * 1024
   const parts: BlobPart[] = []
   let offset = 0
+  let sinceYield = 0
   while (offset < bytes) {
     const size = Math.min(chunkSize, bytes - offset)
     const b64 = shell.readArchiveChunk(path, offset, size)
@@ -135,6 +143,13 @@ export const readArchiveFile = (
     }
     parts.push(chunk)
     offset += size
+    // 每 8 块让出一次事件循环，避免 100MB+ 归档把所有帧都卡住
+    sinceYield += 1
+    if (sinceYield >= 8) {
+      sinceYield = 0
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
   }
-  return new File(parts, name || 'deepseek_data.zip', { type: 'application/zip' })
+  const blob = new Blob(parts, { type: 'application/zip' })
+  return new File([blob], name, { type: 'application/zip' })
 }

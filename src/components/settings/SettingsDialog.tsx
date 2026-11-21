@@ -128,7 +128,7 @@ const SettingsContent = () => {
                 <div className={styles.aboutTitle}>{t('aboutTitle')}</div>
                 <div className={styles.aboutRow}>
                   <span>{t('aboutVersion')}</span>
-                  <span>1.0.1</span>
+                  <span>{__APP_VERSION__}</span>
                 </div>
                 <a
                   className={styles.aboutRow}

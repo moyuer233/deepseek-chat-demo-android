@@ -65,18 +65,7 @@ const readErrorResponse = async (
   } catch {
     // 非 JSON 响应体直接展示原文
   }
-  const hint = message.includes('余额') || message.includes('balance')
-    ? ''
-    : response.status === 401
-      ? 'API Key 无效或授权已过期'
-      : response.status === 402
-        ? '账户余额不足，请充值'
-        : response.status === 429
-          ? '请求过于频繁，请稍后再试'
-          : response.status >= 500
-            ? '服务器繁忙，请稍后重试'
-            : ''
-  return new ApiError(kind, hint ? `${hint}（${message}）` : message, response.status)
+  return new ApiError(kind, message, response.status)
 }
 
 export const request = async (url: string, init: RequestInit): Promise<Response> => {
@@ -96,6 +85,8 @@ export const request = async (url: string, init: RequestInit): Promise<Response>
       const usedGrant = new Headers(init.headers).has('x-dsh-auth-token')
       if (accountToken && usedGrant) {
         setAccountToken(null)
+        // 原生保存的 grant 也要清，否则重启后又会被读回
+        void import('../deepseek/shell.js').then(({ nativeShell }) => nativeShell()?.clearToken?.())
       }
     }
     throw await readErrorResponse(response)

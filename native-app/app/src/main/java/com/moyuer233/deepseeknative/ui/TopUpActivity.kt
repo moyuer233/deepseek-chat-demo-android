@@ -37,9 +37,20 @@ class TopUpActivity : ComponentActivity() {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         view.addJavascriptInterface(Bridge(), "DSTopUp")
         view.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: android.webkit.WebResourceRequest): Boolean =
+                handleNavigation(request.url.toString())
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean = handleNavigation(url)
+
             override fun onPageFinished(v: WebView, url: String?) {
                 super.onPageFinished(v, url)
-                if (url != null && url.contains("sign_in") && !signInHinted) {
+                // 只在 DeepSeek 自己的页面上注入扫码脚本；外域一律不在本 WebView 里停留
+                val page = url ?: return
+                if (!isDeepSeekUrl(page)) {
+                    return
+                }
+                if (page.contains("sign_in") && !signInHinted) {
                     signInHinted = true
                     Toast.makeText(
                         this@TopUpActivity,
@@ -60,6 +71,26 @@ class TopUpActivity : ComponentActivity() {
         assets.open(name).use { it.readBytes().toString(Charsets.UTF_8) }
     } catch (e: Exception) {
         ""
+    }
+
+    /** 只认 deepseek.com 及其子域；页面内导航不能离开这些域。 */
+    private fun isDeepSeekUrl(url: String?): Boolean {
+        val host = runCatching { Uri.parse(url ?: "") }.getOrNull()?.host ?: return false
+        return host == "deepseek.com" || host.endsWith(".deepseek.com")
+    }
+
+    /** 允许的域在 WebView 内导航（返回 false），其余 http(s) 交给系统浏览器并拦截。 */
+    private fun handleNavigation(url: String): Boolean {
+        if (isDeepSeekUrl(url)) {
+            return false
+        }
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return true
+        if (uri.scheme == "https" || uri.scheme == "http") {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+        return true
     }
 
     private fun openWeChat() {

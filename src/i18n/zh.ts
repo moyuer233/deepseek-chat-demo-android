@@ -278,17 +278,5 @@ export const zh = {
   rateLimited: "操作过于频繁，请稍后再试",
   retry: "重试",
   // ===== 未使用 =====
-  usageStats: "用量与上下文",
-  usageCost: "费用",
-  statusCache: "缓存",
-  statusFirstToken: "首字",
-  collapseSiderbarButton: "收起边栏",
   appName: "API 使用 demo",
-  voiceInputTooLong: "录音过长，请缩短后重试",
-  accountLoginButton: "登录 DeepSeek 账号并导入",
-  accountTermsTitle: "使用条款",
-  accountTermsBody: "继续登录即表示你已阅读并同意 DeepSeek 的《使用条款》和《隐私政策》。登录成功后，App 会导入该账号的会话，并用账号授权直接聊天（不需要 API Key）。",
-  accountTermsAgree: "同意并继续",
-  accountReimportButton: "重新导入",
-  accountDone: "完成",
 }

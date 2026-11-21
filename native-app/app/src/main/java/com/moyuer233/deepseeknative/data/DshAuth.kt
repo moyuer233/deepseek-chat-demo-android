@@ -26,8 +26,9 @@ object DshAuth {
     fun token(context: Context): String? =
         SecurePrefs.get(context, PREFS, KEY_TOKEN)?.takeIf { it.isNotEmpty() }
 
+    /** 清掉 grant 与未用完的 PKCE 状态；登出或确认 grant 失效时调用。 */
     fun clear(context: Context) {
-        prefs(context).edit().remove(KEY_TOKEN).apply()
+        prefs(context).edit().remove(KEY_TOKEN).remove(KEY_VERIFIER).remove(KEY_STATE).apply()
     }
 
     private fun base64Url(bytes: ByteArray): String =

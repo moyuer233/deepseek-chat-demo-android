@@ -271,6 +271,13 @@ export const mergeStaging = async (mode: 'merge' | 'add'): Promise<SessionSummar
       if (existing) {
         if (mode === 'add') {
           next = null
+        } else if (
+          existing.rootMessageId &&
+          staged.rootMessageId &&
+          existing.rootMessageId !== staged.rootMessageId
+        ) {
+          // 两边消息树根不同：合并会产生不可达分支（界面永远看不到），保留本地版本
+          next = existing
         } else {
           const byId = new Map(existing.messages.map((message) => [message.id, message]))
           const merged = [...existing.messages]
@@ -347,10 +354,16 @@ export const diffStaging = async (): Promise<ImportDiff> => {
       added += 1
       continue
     }
-    const existingIds = new Set(existing.messages.map((message) => message.id))
+    const signature = (session: Session) =>
+      session.messages
+        .map((message) =>
+          message.role === 'user'
+            ? 'u:' + message.id + ':' + message.content + ':' + message.files.map((file) => file.id).join(',')
+            : 'a:' + message.id + ':' + message.blocks.map((block) => ('text' in block ? block.text : block.type === 'thinking' ? block.thinking : '')).join('|')
+        )
+        .join('\n')
     const sameMessages =
-      existing.messages.length === staged.messages.length &&
-      staged.messages.every((message) => existingIds.has(message.id))
+      existing.messages.length === staged.messages.length && signature(existing) === signature(staged)
     if (sameMessages && existing.updatedAt === staged.updatedAt && existing.title === staged.title) {
       identical += 1
     } else {

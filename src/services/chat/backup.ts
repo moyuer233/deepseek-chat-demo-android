@@ -1,6 +1,7 @@
 import { formatDate } from '../../utils/format.js'
 import * as db from './db.js'
 import { applyPreparedImport, importIntoHistory, replaceHistory, useChatStore } from './store.js'
+import { clearSessionUsage } from './usageTotals.js'
 import type { Session } from './types.js'
 
 export { BackupError } from './history/errors.js'
@@ -77,6 +78,7 @@ export const importHistory = (file: File, mode: ImportMode = 'overwrite'): Promi
     const { checkArchiveFormat, importArchive } = await import('./history/importArchive.js')
     await checkArchiveFormat(file)
     if (mode === 'overwrite') {
+      clearSessionUsage()
       return replaceHistory(() => importArchive(file))
     }
     return importIntoHistory(file, mode)
@@ -85,5 +87,6 @@ export const importHistory = (file: File, mode: ImportMode = 'overwrite'): Promi
 /** 确认删除后调用：以空历史原子替换全部本地会话与附件，保留 API Key 和其他设置。 */
 export const clearHistory = (): Promise<void> =>
   enqueueBackup(async () => {
+    clearSessionUsage()
     await replaceHistory(async () => {})
   })

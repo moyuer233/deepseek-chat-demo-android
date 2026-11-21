@@ -12,34 +12,55 @@ import java.util.TimeZone
 /** 用 chat.deepseek.com 的 userToken 触发官方导出、轮询并下载 ZIP。 */
 object ChatExport {
     private const val CHAT_ORIGIN = "https://chat.deepseek.com"
+    /** 导出任务轮询间隔 */
+    private const val POLL_INTERVAL_MS = 5000L
+    /** 等待官方导出完成的上限 */
+    private const val EXPORT_TIMEOUT_MS = 15 * 60 * 1000L
 
     data class Result(val file: File, val fileName: String, val bytes: Long)
 
     fun exportAndDownload(chatToken: String, cacheDir: File): Result {
-        request(CHAT_ORIGIN + "/api/v0/export_all", chatToken)
-        var downloadUrl: String? = null
-        val deadline = System.currentTimeMillis() + 15 * 60 * 1000L
+        val dir = File(cacheDir, "export").apply { mkdirs() }
+        val target = File(dir, "deepseek_data-" + System.currentTimeMillis() + ".zip")
+        try {
+            request(CHAT_ORIGIN + "/api/v0/export_all", chatToken)
+            val url = pollDownloadUrl(chatToken)
+            val bytes = download(url, target, chatToken)
+            return Result(target, "deepseek_data.zip", bytes)
+        } catch (e: Exception) {
+            // 失败时不留半个 ZIP，避免 cache/export 越积越大
+            target.delete()
+            throw e
+        }
+    }
+
+    /**
+     * 轮询导出任务直到拿到下载地址。
+     * EMPTY / FAILED 立即报错，不空等满 15 分钟。
+     */
+    private fun pollDownloadUrl(chatToken: String): String {
+        val deadline = System.currentTimeMillis() + EXPORT_TIMEOUT_MS
         while (System.currentTimeMillis() < deadline) {
             val text = request(CHAT_ORIGIN + "/api/v0/download_export_history", chatToken)
             val json = JSONObject(text)
-            val data = json.optJSONObject("data")
-            val biz = data?.optJSONObject("biz_data")
+            val biz = json.optJSONObject("data")?.optJSONObject("biz_data")
             val status = biz?.optString("status", "").orEmpty()
             if (status == "FINISHED") {
                 var url = biz?.optString("history_download_url", "").orEmpty()
-                if (url.isEmpty()) url = biz?.optString("legacy_history_download_url", "").orEmpty()
-                if (url.isNotEmpty()) {
-                    downloadUrl = url
-                    break
+                if (url.isEmpty()) {
+                    url = biz?.optString("legacy_history_download_url", "").orEmpty()
                 }
+                if (url.isNotEmpty()) {
+                    return url
+                }
+            } else if (status == "EMPTY") {
+                throw IllegalStateException("账号内没有可导出的会话")
+            } else if (status == "FAILED") {
+                throw IllegalStateException("导出失败，请稍后重试")
             }
-            Thread.sleep(5000)
+            Thread.sleep(POLL_INTERVAL_MS)
         }
-        val url = downloadUrl ?: throw IllegalStateException("导出超时，请稍后重试")
-        val dir = File(cacheDir, "export").apply { mkdirs() }
-        val target = File(dir, "deepseek_data-" + System.currentTimeMillis() + ".zip")
-        val bytes = download(url, target, chatToken)
-        return Result(target, "deepseek_data.zip", bytes)
+        throw IllegalStateException("导出超时，请稍后重试")
     }
 
     private fun request(url: String, token: String): String {

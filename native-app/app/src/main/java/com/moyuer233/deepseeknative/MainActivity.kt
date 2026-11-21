@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
     private var cameraUri: Uri? = null
     private var permissionsLauncher: ActivityResultLauncher<Array<String>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
+    /** 这次录音权限请求是否由 JS 的 NativeShell.requestMic 发起（决定是否回写 __onMicPermission）。 */
+    private var micRequestFromBridge = false
     private var siderBackCallback: Any? = null
     private var backPending = false
     private var legacyBackCallback: OnBackPressedCallback? = null
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         registerLaunchers()
         setupBackHandling()
+        cleanupExportCache()
 
         if (!SessionStore.isOnboarded(this)) {
             setContent {
@@ -87,10 +90,14 @@ class MainActivity : ComponentActivity() {
         }
         permissionsLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
             val granted = grants[android.Manifest.permission.RECORD_AUDIO] == true
-            webViewRef?.evaluateJavascript(
-                "window.__onMicPermission && window.__onMicPermission(" + granted + ")",
-                null,
-            )
+            // 只有 Bridge.requestMic 发起的请求才回写 JS；WebRTC 的 onPermissionRequest 走 grant/deny
+            if (micRequestFromBridge) {
+                micRequestFromBridge = false
+                webViewRef?.evaluateJavascript(
+                    "window.__onMicPermission && window.__onMicPermission(" + granted + ")",
+                    null,
+                )
+            }
             val request = pendingPermissionRequest
             pendingPermissionRequest = null
             if (request == null) return@registerForActivityResult
@@ -239,6 +246,12 @@ class MainActivity : ComponentActivity() {
                         android.widget.Toast.makeText(this@MainActivity, NativeCopy.cameraFallback, android.widget.Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         android.util.Log.w("Camera", "capture failed", e)
+                        // 相机没起来：把 callback 还给文件选择器，避免 <input type=file> 永远等不到结果
+                        cameraCallback = null
+                        cameraUri = null
+                        if (fileChooserCallback == null) {
+                            fileChooserCallback = callback
+                        }
                     }
                 }
                 val types = params.acceptTypes.filter { it.isNotBlank() }.flatMap { accept ->
@@ -320,6 +333,42 @@ class MainActivity : ComponentActivity() {
         siderBackCallback = null
     }
 
+    /** 导出/分享共用的临时目录。 */
+    private fun exportDir() = java.io.File(cacheDir, "export")
+
+    /**
+     * 把 path 解析成 export 目录内的文件；不在目录内（含目录本身）返回 null。
+     * 先取 canonicalPath 再比较，软链与 .. 都会被解析，防止路径穿越。
+     */
+    private fun resolveInExportDir(path: String): java.io.File? = try {
+        val expected = exportDir().canonicalPath
+        val file = java.io.File(path)
+        if (file.canonicalPath.startsWith(expected + java.io.File.separator)) file else null
+    } catch (e: Exception) {
+        null
+    }
+
+    /** 启动时清理 6 小时前的导出残留，避免 cache/export 长期占用空间。 */
+    private fun cleanupExportCache() {
+        Thread {
+            runCatching {
+                val dir = exportDir()
+                if (!dir.isDirectory) return@runCatching
+                val cutoff = System.currentTimeMillis() - EXPORT_CACHE_MAX_AGE_MS
+                dir.listFiles()?.forEach { file ->
+                    if (file.isFile && file.lastModified() < cutoff) {
+                        file.delete()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private companion object {
+        /** 导出临时文件最长保留 6 小时。 */
+        const val EXPORT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000L
+    }
+
     inner class Bridge {
         /** Web 录音前先申请麦克风权限，结果通过 window.__onMicPermission 回传。 */
         @JavascriptInterface
@@ -327,15 +376,24 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     webViewRef?.evaluateJavascript("window.__onMicPermission && window.__onMicPermission(true)", null)
-                } else {
+                } else if (permissionsLauncher != null) {
+                    // 标记来源：结果回调里只有这个标记才会回写 __onMicPermission
+                    micRequestFromBridge = true
                     permissionsLauncher?.launch(arrayOf(android.Manifest.permission.RECORD_AUDIO))
-                        ?: webViewRef?.evaluateJavascript("window.__onMicPermission && window.__onMicPermission(false)", null)
+                } else {
+                    webViewRef?.evaluateJavascript("window.__onMicPermission && window.__onMicPermission(false)", null)
                 }
             }
         }
 
         @JavascriptInterface
         fun getToken(): String = DshAuth.token(this@MainActivity) ?: ""
+
+        /** 登出或确认 grant 失效时调用：删掉原生保存的授权，避免下次启动又被读回来。 */
+        @JavascriptInterface
+        fun clearToken() {
+            DshAuth.clear(this@MainActivity)
+        }
 
         @JavascriptInterface
         fun peekPendingArchive(): String = com.moyuer233.deepseeknative.data.PendingArchive.peek(this@MainActivity)
@@ -397,9 +455,7 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun readArchiveChunk(path: String, offset: Int, size: Int): String {
             return try {
-                val expected = java.io.File(cacheDir, "export").canonicalPath
-                val file = java.io.File(path)
-                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return ""
+                val file = resolveInExportDir(path) ?: return ""
                 java.io.RandomAccessFile(file, "r").use { raf ->
                     raf.seek(offset.toLong())
                     val len = minOf(size, (file.length() - offset).toInt().coerceAtLeast(0))
@@ -414,41 +470,33 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun deleteArchive(path: String) {
-            runCatching {
-                val expected = java.io.File(cacheDir, "export").canonicalPath
-                val file = java.io.File(path)
-                if (file.canonicalPath != expected && file.canonicalPath.startsWith(expected + java.io.File.separator)) file.delete()
-            }
+            resolveInExportDir(path)?.delete()
         }
 
         @JavascriptInterface
         fun beginExport(name: String): String {
-            val dir = java.io.File(cacheDir, "export").apply { mkdirs() }
+            val dir = exportDir().apply { mkdirs() }
             val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }
             return java.io.File(dir, safe).apply { outputStream().use { } }.absolutePath
         }
 
         @JavascriptInterface
-        fun appendExport(path: String, base64: String): Int {
+        fun appendExport(path: String, base64: String): Long {
+            val file = resolveInExportDir(path) ?: return -1L
             return try {
-                val expected = java.io.File(cacheDir, "export").canonicalPath
-                val file = java.io.File(path)
-                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return -1
                 val bytes = Base64.decode(base64, Base64.DEFAULT)
                 java.io.FileOutputStream(file, true).use { it.write(bytes) }
-                file.length().toInt()
+                file.length()
             } catch (e: Exception) {
-                -1
+                -1L
             }
         }
 
         @JavascriptInterface
         fun finishExport(path: String, mime: String, name: String) {
             try {
-                val expected = java.io.File(cacheDir, "export").canonicalPath
-                val file = java.io.File(path)
+                val file = resolveInExportDir(path) ?: return
                 if (!file.exists()) return
-                if (file.canonicalPath != expected && !file.canonicalPath.startsWith(expected + java.io.File.separator)) return
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
                     val dir = java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "DeepSeekNative").apply { mkdirs() }
                     val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }

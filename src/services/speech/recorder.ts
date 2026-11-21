@@ -76,7 +76,7 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
       }
       chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)))
       length += BUFFER_SIZE
-      if (length >= MAX_SECONDS * SAMPLE_RATE) {
+      if (length >= MAX_SECONDS * contextRate) {
         limited = true
         onLimit()
       }

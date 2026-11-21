@@ -324,8 +324,9 @@ export const toRequestMessages = (
       { role: 'assistant', content: [{ type: 'text', text: '好的，我已经记住了这些上下文。' }] }
     )
   }
+  const historyIndex = new Map(history.map((message, index) => [message.id, index]))
   for (const [user, reply] of getContextRounds(history)) {
-    if (cutoffIndex >= 0 && history.indexOf(user) <= cutoffIndex) {
+    if (cutoffIndex >= 0 && (historyIndex.get(user.id) ?? 0) <= cutoffIndex) {
       continue
     }
     // 历史提问没有文字、附件也都没有 serverId 时，提问为空，连同回答一起省略。

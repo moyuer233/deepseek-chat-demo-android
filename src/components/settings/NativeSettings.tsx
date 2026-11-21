@@ -3,7 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
-import { applyImport, clearHistory, discardImport, exportHistory, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
+import { applyImport, BackupError, clearHistory, discardImport, exportHistory, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
@@ -66,8 +66,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         return
       }
       setPendingPreflight(diff)
-    } catch {
-      showToast({ key: 'historyImportFailed', type: 'error' })
+    } catch (error) {
+      showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
     }
@@ -82,8 +82,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       const count = await applyImport(mode)
       showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
       setPendingPreflight(null)
-    } catch {
-      showToast({ key: 'historyImportFailed', type: 'error' })
+    } catch (error) {
+      showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
     }
@@ -98,8 +98,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     try {
       const { name, blob } = await exportHistory()
       await shareBlob(name, blob)
-    } catch {
-      showToast({ key: 'historyExportFailed', type: 'error' })
+    } catch (error) {
+      showToast({ key: error instanceof BackupError ? error.key : 'historyExportFailed', type: 'error' })
     }
   }
 
@@ -107,7 +107,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     setChatImportBusy(true)
     try {
       const archive = await requestChatArchive()
-      const file = readArchiveFile(archive.path, archive.bytes, archive.name)
+      const file = await readArchiveFile(archive.path, archive.bytes, archive.name)
       nativeShell()?.deleteArchive?.(archive.path)
       await startPrepare(file)
     } catch (error) {
@@ -127,7 +127,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       }
       const data = (await response.json()) as { tag_name?: string; html_url?: string }
       const latest = String(data.tag_name ?? '').replace(/^v/, '')
-      if (latest && latest !== '1.0.1') {
+      if (latest && latest !== __APP_VERSION__) {
         showToast(t('updateAvailable') + ' ' + latest)
         if (data.html_url) {
           nativeShell()?.openExternal?.(data.html_url)
@@ -311,7 +311,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
         <div className={styles.section}>{t('nativeSettingsAbout')}</div>
         <div className={styles.card}>
-          <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value="1.0.1" />
+          <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value={__APP_VERSION__} />
           <Row icon={<IconDownloadOutline16 />} title={t('checkUpdate')} onClick={checkUpdate} />
           <Row
             icon={(

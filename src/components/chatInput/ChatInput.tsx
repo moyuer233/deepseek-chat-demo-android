@@ -53,6 +53,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const importingHistory = useChatStore((state) => state.importingHistory)
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
+  const hasCredential = useSettings((state) => Boolean(state.apiKey || state.accountToken))
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -195,8 +196,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           <button
             type="button"
             className={styles.voiceBar}
-            disabled={!voice.available || importingHistory}
+            disabled={!voice.available || importingHistory || !hasCredential}
             onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture?.(event.pointerId)
               voiceStartY.current = event.clientY
               voiceCancelRef.current = false
               autoSendRef.current = false
@@ -231,6 +233,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             }}
             onPointerCancel={() => {
               if (voice.status === 'recording') {
+                voice.cancel()
+              }
+            }}
+            onLostPointerCapture={() => {
+              if (voice.status === 'recording') {
+                autoSendRef.current = false
                 voice.cancel()
               }
             }}
@@ -366,7 +374,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           ) : (
             <VoiceButton
               status={voice.status}
-              disabled={!voice.available}
+              disabled={!voice.available || !hasCredential}
               seconds={voice.seconds}
               onClick={() => {
                 if (voice.status !== 'idle' || ensureApiKey()) {

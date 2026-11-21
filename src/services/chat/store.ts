@@ -14,6 +14,7 @@ import { useSettings } from '../settings.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
 import { compactSession, maybeCompact } from './compaction.js'
 import * as db from './db.js'
+import { recordSessionUsage, removeSessionUsage } from './usageTotals.js'
 import {
   clearAllDrafts,
   clearDraft,
@@ -189,6 +190,7 @@ const updateReply = (sessionId: string, reply: AssistantMessage) =>
 const persist = (sessionId: string) => {
   const session = getSession(sessionId)
   if (session) {
+    recordSessionUsage(session)
     unsavedSessions.add(sessionId)
     if (deletingSessions.has(sessionId)) {
       return
@@ -508,6 +510,7 @@ const removeSessionData = async (id: string): Promise<boolean> => {
       return false
     }
     await db.deleteSession(id)
+    removeSessionUsage(id)
     if (epoch !== historyEpoch) {
       return true
     }
