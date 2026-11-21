@@ -125,15 +125,6 @@ export const AccountPane = () => {
           />
         )}
         <SettingsRow
-          icon={<DshIcon name="settings-outline" size={16} />}
-          title={t('apiKeyLabel')}
-          value={apiKey ? t('apiKeySetTail', { tail: apiKey.slice(-4) }) : t('apiKeyNotSet')}
-          onClick={() => {
-            setApiKeyInput(apiKey ?? '')
-            setApiKeyOpen(true)
-          }}
-        />
-        <SettingsRow
           icon={<DshIcon name="layers-outline" size={16} />}
           title={t('accountRecharge')}
           onClick={() => void openRecharge()}
@@ -143,14 +134,6 @@ export const AccountPane = () => {
           title={t('accountMoreInfo')}
           onClick={() => nativeShell()?.openExternal?.('https://platform.deepseek.com/usage')}
         />
-        {signedIn ? (
-          <SettingsRow
-            icon={<DshIcon name="close-outline" size={16} />}
-            title={t('accountLogout')}
-            danger
-            onClick={() => setLogoutOpen(true)}
-          />
-        ) : null}
         {isNativeShell() ? (
           <button
             type="button"
@@ -170,6 +153,23 @@ export const AccountPane = () => {
               <span className={styles.toggleKnob} />
             </span>
           </button>
+        ) : null}
+        <SettingsRow
+          icon={<DshIcon name="settings-outline" size={16} />}
+          title={t('apiKeyLabel')}
+          value={apiKey ? t('apiKeySetTail', { tail: apiKey.slice(-4) }) : t('apiKeyNotSet')}
+          onClick={() => {
+            setApiKeyInput(apiKey ?? '')
+            setApiKeyOpen(true)
+          }}
+        />
+        {signedIn ? (
+          <SettingsRow
+            icon={<DshIcon name="close-outline" size={16} />}
+            title={t('accountLogout')}
+            danger
+            onClick={() => setLogoutOpen(true)}
+          />
         ) : null}
       </div>
       <div className={styles.hint}>{t('accountRechargeHint')}</div>
