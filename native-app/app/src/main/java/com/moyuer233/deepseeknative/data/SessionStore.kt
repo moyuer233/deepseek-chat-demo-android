@@ -13,6 +13,7 @@ object SessionStore {
     private const val KEY_TTS_VOICE = "tts_voice"
     private const val KEY_THINK = "think_enabled"
     private const val KEY_SEARCH = "search_enabled"
+    private const val KEY_THEME = "theme_mode"
 
     fun token(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TOKEN, null)
@@ -64,6 +65,13 @@ object SessionStore {
     fun saveToggles(context: Context, think: Boolean, search: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_THINK, think).putBoolean(KEY_SEARCH, search).apply()
+    }
+
+    fun themeMode(context: Context): Int =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_THEME, 0)
+
+    fun saveThemeMode(context: Context, mode: Int) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt(KEY_THEME, mode).apply()
     }
 
     fun isOnboarded(context: Context): Boolean =

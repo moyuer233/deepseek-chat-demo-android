@@ -60,6 +60,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+import com.moyuer233.deepseeknative.ui.theme.ThemeState
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
@@ -73,11 +75,13 @@ fun SettingsScreen(
     onLogout: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val c = LocalAppColors.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showLogout by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
     var showVoiceDialog by remember { mutableStateOf(false) }
     var voices by remember { mutableStateOf<List<String>>(emptyList()) }
     val ttsHolder = remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
@@ -88,19 +92,19 @@ fun SettingsScreen(
             voices = engine.voices?.filter { it.locale.language == "zh" }?.map { it.name }?.sorted().orEmpty()
         }
     }
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(c.grouped).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Surface(shape = CircleShape, color = Color(0xFFEDEEF0), modifier = Modifier.size(36.dp)) {
+            Surface(shape = CircleShape, color = c.field, modifier = Modifier.size(36.dp)) {
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = c.textPrimary)
                 }
             }
             Text(
                 "设置",
-                color = TextPrimary,
+                color = c.textPrimary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f),
@@ -123,7 +127,12 @@ fun SettingsScreen(
             SettingsCard {
                 SettingsRow("语言", Icons.Filled.Language, value = "中文（简体中文）")
                 Divider()
-                SettingsRow("外观", Icons.Filled.DarkMode, value = "系统")
+                SettingsRow(
+                    "外观",
+                    Icons.Filled.DarkMode,
+                    value = listOf("系统", "浅色", "深色").getOrElse(ThemeState.mode) { "系统" },
+                    onClick = { showThemeDialog = true },
+                )
                 Divider()
                 SettingsRow(
                     "字体大小",
@@ -178,7 +187,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(20.dp))
             Text(
                 "模型名称：Deepseek Chat\n备案号：Beijing-DeepseekChat-202404280016",
-                color = Color(0xFF9AA0A9),
+                color = LocalAppColors.current.textSecondary,
                 fontSize = 12.sp,
                 lineHeight = 18.sp,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -203,6 +212,26 @@ fun SettingsScreen(
                 }
             },
             confirmButton = { TextButton(onClick = { showVoiceDialog = false }) { Text("取消") } },
+        )
+    }
+
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("外观") },
+            text = {
+                Column {
+                    listOf("系统", "浅色", "深色").forEachIndexed { index, label ->
+                        val selected = ThemeState.mode == index
+                        TextButton(onClick = {
+                            ThemeState.mode = index
+                            SessionStore.saveThemeMode(context, index)
+                            showThemeDialog = false
+                        }) { Text((if (selected) "✓ " else "   ") + label) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } },
         )
     }
 
@@ -276,9 +305,10 @@ fun SettingsScreen(
 
 @Composable
 private fun SectionLabel(text: String) {
+    val c = LocalAppColors.current
     Text(
         text,
-        color = Color(0xFF8A9099),
+        color = c.textSecondary,
         fontSize = 13.sp,
         modifier = Modifier.padding(start = 28.dp, top = 18.dp, bottom = 8.dp),
     )
@@ -286,9 +316,10 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun SettingsCard(content: @Composable () -> Unit) {
+    val c = LocalAppColors.current
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = c.surface,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Column { content() }
@@ -301,22 +332,25 @@ private fun SettingsRow(title: String, icon: ImageVector, value: String? = null,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(22.dp))
+        val c = LocalAppColors.current
+    Icon(icon, contentDescription = null, tint = c.textPrimary, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(14.dp))
-        Text(title, color = TextPrimary, fontSize = 16.sp)
+        val c2 = LocalAppColors.current
+        Text(title, color = c2.textPrimary, fontSize = 16.sp)
         Spacer(Modifier.weight(1f))
         if (value != null) {
-            Text(value, color = TextSecondary, fontSize = 14.sp)
+            val c3 = LocalAppColors.current
+            Text(value, color = c3.textSecondary, fontSize = 14.sp)
             Spacer(Modifier.width(6.dp))
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFFC7CBD1), modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = LocalAppColors.current.border, modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable
 private fun Divider() {
     androidx.compose.material3.HorizontalDivider(
-        color = Color(0xFFF0F1F3),
+        color = LocalAppColors.current.border,
         modifier = Modifier.fillMaxWidth().padding(start = 54.dp),
     )
 }

@@ -77,6 +77,7 @@ import com.moyuer233.deepseeknative.data.LocalStore
 import com.moyuer233.deepseeknative.data.PcmPlayer
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 import kotlinx.coroutines.Dispatchers
@@ -138,6 +139,7 @@ fun ChatScreen(
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val appColors = LocalAppColors.current
     val fontScale = remember { listOf(0.85f, 1f, 1.15f, 1.3f).getOrElse(SessionStore.fontStep(context)) { 1f } }
     var input by remember { mutableStateOf("") }
     var ttsReady by remember { mutableStateOf(false) }
@@ -531,7 +533,7 @@ fun ChatScreen(
         regenerateAt(currentId)
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(appColors.background).statusBarsPadding()) {
         Row(
             modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -559,7 +561,7 @@ fun ChatScreen(
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                 )
                 IconButton(onClick = { }) {
-                    Icon(Icons.Filled.MoreHoriz, contentDescription = "更多", tint = TextPrimary)
+                    Icon(Icons.Filled.MoreHoriz, contentDescription = "更多", tint = appColors.textPrimary)
                 }
             }
         }
@@ -581,7 +583,7 @@ fun ChatScreen(
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.End) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFEAF0FE),
+                            color = appColors.bubble,
                             modifier = Modifier
                                 .widthIn(max = 300.dp)
                                 .combinedClickable(
@@ -611,7 +613,7 @@ fun ChatScreen(
                                         Text(message.fileName.ifEmpty { "附件" }, color = TextPrimary, fontSize = 13.sp)
                                     }
                                 }
-                                if (message.content.isNotEmpty()) Text(message.content, color = TextPrimary, fontSize = (16 * fontScale).sp)
+                                if (message.content.isNotEmpty()) Text(message.content, color = appColors.textPrimary, fontSize = (16 * fontScale).sp)
                             }
                         }
                     }
@@ -657,7 +659,7 @@ fun ChatScreen(
                                 onClick = { if (selectMode) { if (!selectedIds.remove(message.id)) selectedIds.add(message.id) } },
                                 onLongClick = { if (!selectMode) menuTarget = message },
                             )) {
-                                MarkdownText(cleanSafety(message.content), scale = fontScale)
+                                MarkdownText(cleanSafety(message.content), color = appColors.textPrimary, scale = fontScale)
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -776,7 +778,7 @@ fun ChatScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Surface(shape = RoundedCornerShape(24.dp), color = Color(0xFFF7F8FA), modifier = Modifier.weight(1f)) {
+            Surface(shape = RoundedCornerShape(24.dp), color = appColors.field, modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                     quoted?.let { q ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -803,13 +805,13 @@ fun ChatScreen(
                     BasicTextField(
                         value = input,
                         onValueChange = { input = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = (16 * fontScale).sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = appColors.textPrimary, fontSize = (16 * fontScale).sp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = { send() }),
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (input.isEmpty()) {
-                                Text("发消息或按住说话", color = Color(0xFF9AA0A9), fontSize = 15.sp)
+                                Text("发消息或按住说话", color = appColors.textSecondary, fontSize = 15.sp)
                             }
                             inner()
                         },
