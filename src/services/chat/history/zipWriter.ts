@@ -39,8 +39,14 @@ const entryName = (name: string) => {
 }
 
 /** Android WebView 里从 content:// 取到的 File 可能 size 为 0，但流有数据；以实际读取长度为准。 */
-const resolveSize = async (blob: Blob): Promise<number> =>
-  blob.size > 0 ? blob.size : (await blob.arrayBuffer()).byteLength
+const resolveSize = async (blob: Blob): Promise<{ size: number; buffer?: ArrayBuffer }> => {
+  if (blob.size > 0) {
+    return { size: blob.size }
+  }
+  // size=0 的 blob 只读一次，缓存 buffer 供写入阶段复用，避免重复整块读入内存
+  const buffer = await blob.arrayBuffer()
+  return { size: buffer.byteLength, buffer }
+}
 
 /** STORE 流式写入；成品必须能再次导入。 */
 export const writeArchive = async (entries: { name: string; blob: Blob }[]): Promise<Blob> => {
@@ -48,14 +54,15 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
     throw new ArchiveLimitError()
   }
   // 串行测量 size=0 的 blob，避免同时把多个大图读进内存。
-  const resolved: { name: string; blob: Blob; size: number }[] = []
+  const resolved: { name: string; blob: Blob; size: number; buffer?: ArrayBuffer }[] = []
   for (const entry of entries) {
-    resolved.push({ ...entry, size: await resolveSize(entry.blob) })
+    const { size, buffer } = await resolveSize(entry.blob)
+    resolved.push({ ...entry, size, buffer })
   }
   const names = new Set<string>()
   let dataSize = 0
   let directorySize = 0
-  const prepared = resolved.map(({ name, blob, size }) => {
+  const prepared = resolved.map(({ name, blob, size, buffer }) => {
     const normalized = entryName(name)
     if (names.has(normalized.name)) {
       invalid()
@@ -69,7 +76,7 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
     if (dataSize >= ZIP64_SIZE || directorySize >= ZIP64_SIZE) {
       throw new ArchiveLimitError()
     }
-    return { name: normalized.name, blob, size }
+    return { name: normalized.name, blob, size, buffer }
   })
 
   const expectedSize = dataSize + directorySize + 22
@@ -92,27 +99,34 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
       const entry = new ZipPassThrough(name)
       entry.mtime = new Date(1980, 0, 1)
       zip.add(entry)
-      const reader = blob.stream().getReader()
-      let written = 0
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) {
-            break
-          }
-          written += value.byteLength
-          if (written > blobSize) {
-            invalid()
-          }
-          entry.push(value)
-        }
-        if (written !== blobSize) {
+      if (buffer) {
+        if (buffer.byteLength !== blobSize) {
           invalid()
         }
-        entry.push(new Uint8Array(), true)
-      } finally {
-        await reader.cancel().catch(() => {})
-        reader.releaseLock()
+        entry.push(new Uint8Array(buffer), true)
+      } else {
+        const reader = blob.stream().getReader()
+        let written = 0
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              break
+            }
+            written += value.byteLength
+            if (written > blobSize) {
+              invalid()
+            }
+            entry.push(value)
+          }
+          if (written !== blobSize) {
+            invalid()
+          }
+          entry.push(new Uint8Array(), true)
+        } finally {
+          await reader.cancel().catch(() => {})
+          reader.releaseLock()
+        }
       }
     }
     zip.end()
