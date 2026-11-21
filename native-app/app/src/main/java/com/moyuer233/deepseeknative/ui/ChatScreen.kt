@@ -166,6 +166,7 @@ fun ChatScreen(
     }
     var currentSessionId by remember { mutableStateOf(initial?.id ?: sessionId) }
     var session by remember { mutableStateOf(initial) }
+    var displayTitle by remember { mutableStateOf(title) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
     fun rebuildFromTree() {
         val tree = session ?: return
@@ -273,8 +274,8 @@ fun ChatScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf("") }
-    var thinkingEnabled by remember { mutableStateOf(true) }
-    var searchEnabled by remember { mutableStateOf(false) }
+    var thinkingEnabled by remember { mutableStateOf(SessionStore.thinkEnabled(context)) }
+    var searchEnabled by remember { mutableStateOf(SessionStore.searchEnabled(context)) }
     val listState = rememberLazyListState()
     androidx.compose.runtime.LaunchedEffect(messages.size, messages.lastOrNull()?.content?.length) {
         if (messages.isNotEmpty()) {
@@ -408,6 +409,16 @@ fun ChatScreen(
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; error = msg; persistSession() } } },
                         onThinking = { t -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(thinking = t) } } },
                         onSearch = { count, text -> scope.launch { if (mySeq == sendSeq) searchResults[assistantId] = count to text } },
+                        onTitle = { t ->
+                            scope.launch {
+                                val tree = session
+                                if (tree != null && (tree.title.isBlank() || tree.title == "新对话")) {
+                                    tree.title = t
+                                    displayTitle = t
+                                    persistSession()
+                                }
+                            }
+                        },
                     )
                 }
                 apiKey != null -> withContext(Dispatchers.IO) {
@@ -814,7 +825,10 @@ fun ChatScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .background(if (thinkingEnabled) Color(0xFFEAF0FE) else Color.Transparent, RoundedCornerShape(14.dp))
-                                .clickable { thinkingEnabled = !thinkingEnabled }
+                                .clickable {
+                                    thinkingEnabled = !thinkingEnabled
+                                    SessionStore.saveToggles(context, thinkingEnabled, searchEnabled)
+                                }
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                         ) {
                             Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = if (thinkingEnabled) Color(0xFF426EFE) else TextPrimary, modifier = Modifier.size(16.dp))
@@ -826,7 +840,10 @@ fun ChatScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .background(if (searchEnabled) Color(0xFFEAF0FE) else Color.Transparent, RoundedCornerShape(14.dp))
-                                .clickable { searchEnabled = !searchEnabled }
+                                .clickable {
+                                    searchEnabled = !searchEnabled
+                                    SessionStore.saveToggles(context, thinkingEnabled, searchEnabled)
+                                }
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                         ) {
                             Icon(Icons.Filled.Public, contentDescription = null, tint = if (searchEnabled) Color(0xFF426EFE) else TextPrimary, modifier = Modifier.size(16.dp))

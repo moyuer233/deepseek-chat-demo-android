@@ -152,8 +152,9 @@ fun ChatHomeScreen(
 
 @Composable
 private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = {}) {
-    var think by remember { mutableStateOf(false) }
-    var search by remember { mutableStateOf(false) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var think by remember { mutableStateOf(com.moyuer233.deepseeknative.data.SessionStore.thinkEnabled(ctx)) }
+    var search by remember { mutableStateOf(com.moyuer233.deepseeknative.data.SessionStore.searchEnabled(ctx)) }
     var text by remember { mutableStateOf("") }
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -183,9 +184,15 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
             )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ToggleChip("深度思考", think, Icons.Filled.GraphicEq) { think = !think }
+                ToggleChip("深度思考", think, Icons.Filled.GraphicEq) {
+                    think = !think
+                    com.moyuer233.deepseeknative.data.SessionStore.saveToggles(ctx, think, search)
+                }
                 Spacer(Modifier.width(8.dp))
-                ToggleChip("智能搜索", search, Icons.Filled.Public) { search = !search }
+                ToggleChip("智能搜索", search, Icons.Filled.Public) {
+                    search = !search
+                    com.moyuer233.deepseeknative.data.SessionStore.saveToggles(ctx, think, search)
+                }
                 Spacer(Modifier.weight(1f))
                 if (text.isNotEmpty()) {
                     Surface(

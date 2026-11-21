@@ -271,6 +271,7 @@ object ApiClient {
         onThinking: (String) -> Unit = {},
         onCitations: (List<Pair<String, String>>) -> Unit = {},
         onSearch: (Int, String) -> Unit = { _, _ -> },
+        onTitle: (String) -> Unit = {},
     ) {
         stopRequested = false
         try {
@@ -309,6 +310,10 @@ object ApiClient {
                     val deltaType = deltaObj?.optString("type").orEmpty()
                     val textPiece = if (type == "content_block_delta" && deltaType == "text_delta") (deltaObj?.optString("text", "") ?: "") else ""
                     val thinkPiece = if (type == "content_block_delta" && deltaType == "thinking_delta") (deltaObj?.optString("thinking", "") ?: "") else ""
+                    if (type == "message_delta") {
+                        val t = deltaObj?.optString("title", "").orEmpty()
+                        if (t.isNotBlank()) onTitle(t)
+                    }
                     if (type == "content_block_start") {
                         val block = obj.optJSONObject("content_block")
                         val bt = block?.optString("type").orEmpty()
@@ -428,6 +433,7 @@ object ApiClient {
         onError: (String) -> Unit,
         onThinking: (String) -> Unit = {},
         onSearch: (Int, String) -> Unit = { _, _ -> },
+        onTitle: (String) -> Unit = {},
     ) {
         val content: Any = if (attachments.isNotEmpty()) {
             val arr = org.json.JSONArray()
