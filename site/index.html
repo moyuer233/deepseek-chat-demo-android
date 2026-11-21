@@ -34,6 +34,7 @@
       <a href="#mechanism">机制</a>
       <a href="#history">历史</a>
       <a href="#context">上下文</a>
+      <a href="#compaction">压缩</a>
       <a href="#download">下载</a>
     </nav>
     <a class="btn primary small" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载 APK</a>
@@ -187,6 +188,48 @@
   </section>
 
   
+
+  <section class="section" id="compaction">
+    <div class="wrap split reverse">
+      <div class="split-copy">
+        <p class="eyebrow">上下文压缩</p>
+        <h2>快到 1M，也不从头再来。</h2>
+        <p class="lede">上下文快满时，App 只在本机把较早的对话压成摘要：摘要参与下一次请求，最近消息保持原样，本机完整记录一条不删。手动点「压缩」或到阈值自动压，都能接着聊。</p>
+        <ul class="ticks">
+          <li><span></span>手动「立即压缩」，随时可点</li>
+          <li><span></span>接近上限自动压缩，不用管</li>
+          <li><span></span>压缩只改发出去的内容，本机原文保留</li>
+        </ul>
+      </div>
+      <div class="split-visual">
+        <div class="compact-card">
+          <div class="compact-beforeafter">
+            <div class="compact-line">
+              <div class="compact-line-head"><span>压缩前</span><b>826K / 1M</b></div>
+              <div class="compact-bar"><i style="width:79%"></i></div>
+            </div>
+            <div class="compact-line after">
+              <div class="compact-line-head"><span>压缩后</span><b>42K / 1M</b></div>
+              <div class="compact-bar"><i style="width:4%"></i></div>
+            </div>
+          </div>
+          <div class="dialog compact-dialog">
+            <div class="dialog-head">
+              <span class="dialog-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9h16M4 15h16M12 3v18"/></svg></span>
+              <b>压缩上下文</b>
+            </div>
+            <p class="dialog-lead">把较早的 24 条对话整理成摘要</p>
+            <ul class="compact-points">
+              <li>保留最近消息</li>
+              <li>旧对话 → 摘要</li>
+              <li>本机原文不删</li>
+            </ul>
+            <div class="dialog-foot"><span class="btn small ghost">取消</span><span class="btn small primary">压缩</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="section dark" id="native">
     <div class="wrap split">
