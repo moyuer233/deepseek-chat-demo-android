@@ -27,6 +27,7 @@ import com.moyuer233.deepseeknative.data.ChatExport
 import com.moyuer233.deepseeknative.data.DshAuth
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.ChatLoginActivity
+import com.moyuer233.deepseeknative.ui.NativeCopy
 import com.moyuer233.deepseeknative.ui.OAuthActivity
 import com.moyuer233.deepseeknative.ui.OnboardingScreen
 import com.moyuer233.deepseeknative.ui.TopUpActivity
@@ -97,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 "window.__onNativeAuth && window.__onNativeAuth(" + JSONObject.quote(token) + ")"
             } else {
                 "window.__onNativeAuthError && window.__onNativeAuthError(" + JSONObject.quote(
-                    result.data?.getStringExtra(OAuthActivity.EXTRA_ERROR) ?: "已取消授权"
+                    result.data?.getStringExtra(OAuthActivity.EXTRA_ERROR) ?: NativeCopy.authCancelled
                 ) + ")"
             }
             webViewRef?.evaluateJavascript(script, null)
@@ -120,7 +121,7 @@ class MainActivity : ComponentActivity() {
                     runOnUiThread {
                         webViewRef?.evaluateJavascript(
                             "window.__onChatArchiveError && window.__onChatArchiveError(" +
-                                JSONObject.quote(e.message ?: "导出失败") + ")",
+                                JSONObject.quote(e.message ?: NativeCopy.exportFailed) + ")",
                             null,
                         )
                     }
@@ -192,8 +193,8 @@ class MainActivity : ComponentActivity() {
             override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: android.webkit.JsResult?): Boolean {
                 android.app.AlertDialog.Builder(this@MainActivity)
                     .setMessage(message ?: "")
-                    .setPositiveButton("确定") { _, _ -> result?.confirm() }
-                    .setNegativeButton("取消") { _, _ -> result?.cancel() }
+                    .setPositiveButton(NativeCopy.confirm) { _, _ -> result?.confirm() }
+                    .setNegativeButton(NativeCopy.cancel) { _, _ -> result?.cancel() }
                     .setOnCancelListener { result?.cancel() }
                     .show()
                 return true
@@ -227,7 +228,7 @@ class MainActivity : ComponentActivity() {
                             launcher.launch(uri)
                             return true
                         }
-                        android.widget.Toast.makeText(this@MainActivity, "无法打开相机，改用文件选择", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(this@MainActivity, NativeCopy.cameraFallback, android.widget.Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         android.util.Log.w("Camera", "capture failed", e)
                     }
@@ -334,7 +335,7 @@ class MainActivity : ComponentActivity() {
                 } catch (e: Exception) {
                     runOnUiThread {
                         webViewRef?.evaluateJavascript(
-                            "window.__onNativeAuthError && window.__onNativeAuthError(" + JSONObject.quote(e.message ?: "授权初始化失败") + ")",
+                            "window.__onNativeAuthError && window.__onNativeAuthError(" + JSONObject.quote(e.message ?: NativeCopy.authInitFailed) + ")",
                             null,
                         )
                     }
@@ -433,7 +434,7 @@ class MainActivity : ComponentActivity() {
                     val target = java.io.File(dir, safeName)
                     file.inputStream().use { input -> target.outputStream().use { input.copyTo(it) } }
                     runOnUiThread {
-                        android.widget.Toast.makeText(this@MainActivity, "已导出到 " + target.absolutePath, android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(this@MainActivity, NativeCopy.exportedToPrefix + target.absolutePath, android.widget.Toast.LENGTH_LONG).show()
                     }
                     return
                 }
@@ -444,29 +445,29 @@ class MainActivity : ComponentActivity() {
                     put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
                 }
                 val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                    ?: throw IllegalStateException("无法创建下载文件")
+                    ?: throw IllegalStateException(NativeCopy.cannotCreateDownload)
                 values.clear()
                 values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
                 // 100MB+ 拷贝放后台线程，避免阻塞 WebView 的 JS 线程
                 Thread {
                     try {
                         contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-                            ?: throw IllegalStateException("无法写入下载文件")
+                            ?: throw IllegalStateException(NativeCopy.cannotWriteDownload)
                         contentResolver.update(uri, values, null, null)
                         runOnUiThread {
-                            android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(this@MainActivity, NativeCopy.exportedToDownloads, android.widget.Toast.LENGTH_LONG).show()
                         }
                     } catch (e: Exception) {
                         runCatching { contentResolver.delete(uri, null, null) }
                         runOnUiThread {
-                            android.widget.Toast.makeText(this@MainActivity, "导出失败：" + (e.message ?: "未知错误"), android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(this@MainActivity, NativeCopy.exportFailedPrefix + (e.message ?: NativeCopy.unknownError), android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 }.start()
             } catch (e: Exception) {
                 android.util.Log.w("NativeShell", "finishExport failed", e)
                 runOnUiThread {
-                    android.widget.Toast.makeText(this@MainActivity, "导出失败：" + (e.message ?: "未知错误"), android.widget.Toast.LENGTH_LONG).show()
+                    android.widget.Toast.makeText(this@MainActivity, NativeCopy.exportFailedPrefix + (e.message ?: NativeCopy.unknownError), android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }

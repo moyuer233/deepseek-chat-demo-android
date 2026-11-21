@@ -61,7 +61,7 @@ class ChatLoginActivity : ComponentActivity() {
             insets
         }
         val bar = TextView(this).apply {
-            text = "登录 DeepSeek（完成登录后自动返回）"
+            text = NativeCopy.chatLoginTitle
             textSize = 15f
             setTextColor(android.graphics.Color.parseColor("#111111"))
             gravity = android.view.Gravity.CENTER_VERTICAL

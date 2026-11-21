@@ -75,7 +75,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         } else null
         if (token.isNullOrEmpty()) {
             chatImporting = false
-            chatImportStatus = "已取消导入"
+            chatImportStatus = NativeCopy.importCancelled
             return@rememberLauncherForActivityResult
         }
         chatImporting = true
@@ -85,13 +85,13 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 PendingArchive.save(context, exported.file.absolutePath, exported.fileName, exported.bytes)
                 (context as? Activity)?.runOnUiThread {
                     chatImporting = false
-                    chatImportStatus = "已获取归档，进入 chat-demo 后自动导入"
-                    Toast.makeText(context, "导出完成，完成后会自动导入", Toast.LENGTH_LONG).show()
+                    chatImportStatus = NativeCopy.importReady
+                    Toast.makeText(context, NativeCopy.importDoneToast, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 (context as? Activity)?.runOnUiThread {
                     chatImporting = false
-                    chatImportStatus = "导出失败：" + (e.message ?: "")
+                    chatImportStatus = NativeCopy.importFailedPrefix + (e.message ?: "")
                 }
             }
         }.start()
@@ -100,10 +100,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
     val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         authorized = result.resultCode == Activity.RESULT_OK
         if (authorized) {
-            Toast.makeText(context, "授权成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, NativeCopy.authSuccessToast, Toast.LENGTH_SHORT).show()
         } else {
             val error = result.data?.getStringExtra(OAuthActivity.EXTRA_ERROR)
-            Toast.makeText(context, "授权失败：" + (error ?: "已取消"), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, NativeCopy.authFailedPrefix + (error ?: NativeCopy.authCancel), Toast.LENGTH_LONG).show()
         }
     }
     fun startOauth() {
@@ -115,16 +115,16 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 }
             } catch (e: Exception) {
                 (context as? Activity)?.runOnUiThread {
-                    Toast.makeText(context, "授权初始化失败：" + (e.message ?: ""), Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, NativeCopy.authInitFailedPrefix + (e.message ?: ""), Toast.LENGTH_LONG).show()
                 }
             }
         }.start()
     }
     val pages = listOf(
-        Triple("欢迎使用 DeepSeek Chat Demo", "和官方 App 一样的外观，聊天与数据都由你自己掌控。", 0),
-        Triple("导入历史会话", "从 chat.deepseek.com 登录并导出全部会话；进入 chat-demo 后自动导入。", 1),
-        Triple("连接聊天内核", "用 DeepSeek 账号授权或 API Key 即可聊天，无需验证码。", 2),
-        Triple("准备就绪", "随时可以在设置里更换主题、字体和授权方式。", 3),
+        Triple(NativeCopy.onboardingTitle1, NativeCopy.onboardingDesc1, 0),
+        Triple(NativeCopy.onboardingTitle2, NativeCopy.onboardingDesc2, 1),
+        Triple(NativeCopy.onboardingTitle3, NativeCopy.onboardingDesc3, 2),
+        Triple(NativeCopy.onboardingTitle4, NativeCopy.onboardingDesc4, 3),
     )
     Column(
         modifier = Modifier.fillMaxSize().background(LocalAppColors.current.background).statusBarsPadding(),
@@ -186,9 +186,9 @@ fun OnboardingScreen(onDone: () -> Unit) {
             ) {
                 Text(
                     when {
-                        chatImporting -> "正在从 chat.deepseek.com 导出…"
+                        chatImporting -> NativeCopy.importingFromChat
                         chatImportStatus.isNotEmpty() -> chatImportStatus
-                        else -> "从 chat.deepseek.com 导入会话"
+                        else -> NativeCopy.importChats
                     }
                 )
             }
@@ -197,7 +197,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
             OutlinedButton(
                 onClick = { startOauth() },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
-            ) { Text(if (authorized) "已授权" else "使用 DeepSeek 账号授权") }
+            ) { Text(if (authorized) NativeCopy.authorized else NativeCopy.authorize) }
         }
         val primaryInteraction = remember { MutableInteractionSource() }
         val primaryPressed by primaryInteraction.collectIsPressedAsState()
@@ -209,10 +209,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp).scale(primaryScale),
         ) {
-            Text(if (index < pages.lastIndex) "下一步" else "开始使用", fontSize = 16.sp)
+            Text(if (index < pages.lastIndex) NativeCopy.next else NativeCopy.start, fontSize = 16.sp)
         }
         TextButton(onClick = onDone, modifier = Modifier.navigationBarsPadding().padding(bottom = 24.dp)) {
-            Text("跳过", color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
+            Text(NativeCopy.skip, color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
         }
     }
 }

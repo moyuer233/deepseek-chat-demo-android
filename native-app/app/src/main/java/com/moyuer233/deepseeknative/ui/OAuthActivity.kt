@@ -53,7 +53,7 @@ class OAuthActivity : ComponentActivity() {
         val code = uri.getQueryParameter("code")
         val state = uri.getQueryParameter("state")
         if (code == null) {
-            setResult(RESULT_CANCELED, Intent().putExtra(EXTRA_ERROR, "授权被取消"))
+            setResult(RESULT_CANCELED, Intent().putExtra(EXTRA_ERROR, NativeCopy.oauthCancelled))
             finish()
             return true
         }
@@ -66,7 +66,7 @@ class OAuthActivity : ComponentActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    setResult(RESULT_CANCELED, Intent().putExtra(EXTRA_ERROR, e.message ?: "授权失败"))
+                    setResult(RESULT_CANCELED, Intent().putExtra(EXTRA_ERROR, e.message ?: NativeCopy.oauthFailed))
                     finish()
                 }
             }
