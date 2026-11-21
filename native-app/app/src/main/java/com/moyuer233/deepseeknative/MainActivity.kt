@@ -43,6 +43,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // 默认启动：直接展示 chat-demo 界面（WebView 套壳）；带 screen/native 参数时才进原生调试页。
         if (!intent.hasExtra("screen") && !intent.hasExtra("native") && !intent.hasExtra("importLocal")) {
+            if (!SessionStore.isOnboarded(this)) {
+                // 首次启动：先走 4 步引导，完成后进入 chat-demo 界面
+                setContent {
+                    DeepSeekTheme {
+                        OnboardingScreen(onDone = {
+                            SessionStore.setOnboarded(this)
+                            recreate()
+                        })
+                    }
+                }
+                return
+            }
             val web = WebView(this)
             web.settings.javaScriptEnabled = true
             web.settings.domStorageEnabled = true
