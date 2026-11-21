@@ -28,7 +28,7 @@ export const StatusLine = ({ sessionId }: { sessionId: string | null }) => {
       {hasMessages ? (
         <span>
           <DshIcon name="context-injection-outline" size={12} />
-          {t('statusContext')} {formatTokens(pressure.tokens)} / {formatTokens(pressure.window)} ({percent}%)
+          {t('statusContext')} {formatTokens(pressure.tokens)} tokens / {formatTokens(pressure.window)} ({percent}%)
         </span>
       ) : null}
       {hasUsage ? (
