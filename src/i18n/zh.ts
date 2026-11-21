@@ -13,6 +13,7 @@ export const zh = {
   usageContext: '上下文占用',
   usageSession: '本会话',
   usageTotal: '全部会话',
+  modelSetting: '模型',
   statusContext: '上下文',
   statusCache: '缓存',
   statusFirstToken: '首字',

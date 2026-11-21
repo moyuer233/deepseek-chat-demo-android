@@ -15,6 +15,7 @@ export const en = {
   usageContext: 'Context usage',
   usageSession: 'This session',
   usageTotal: 'All sessions',
+  modelSetting: 'Model',
   statusContext: 'Context',
   statusCache: 'Cache',
   statusFirstToken: 'First token',

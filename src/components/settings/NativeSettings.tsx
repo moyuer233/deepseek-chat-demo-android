@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { useSettings, setAutoCompact, setLocale, setThemePreference, setTtsVoice } from '../../services/settings.js'
+import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { openRecharge } from '../../services/deepseek/account.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
@@ -53,6 +53,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const theme = useSettings((s) => s.themePreference)
   const voice = useSettings((s) => s.ttsVoice)
   const autoCompact = useSettings((s) => s.autoCompact)
+  const model = useSettings((s) => s.model)
   const activeId = useChatStore((state) => state.activeId)
   const [page, setPage] = useState<'main' | 'account' | 'data' | 'usage'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -251,6 +252,12 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
         <div className={styles.section}>{t('nativeSettingsApp')}</div>
         <div className={styles.card}>
+          <Row
+            icon={<IconDataOutline16 />}
+            title={t('modelSetting')}
+            value={model === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash'}
+            onClick={() => setModel(model === 'deepseek-flash' ? 'deepseek-v4-pro' : 'deepseek-flash')}
+          />
           <Row icon={<IconGlobeLanguageOutline14 />} title={t('settingsLocalePreference')} value={locale === 'zh-CN' ? '中文' : 'English'} onClick={cycleLocale} />
           <Row icon={<IconDarkOutline16 />} title={t('avatarMenuSettingsDialogThemeItemLabel')} value={themeLabel} onClick={cycleTheme} />
           <Row

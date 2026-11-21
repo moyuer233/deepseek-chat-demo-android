@@ -20,6 +20,7 @@ type Settings = {
   search: boolean
   siderCollapsed: boolean
   /** 上下文压缩：超过阈值后把旧对话总结成摘要 */
+  model: 'deepseek-flash' | 'deepseek-v4-pro'
   autoCompact: boolean
   compactThresholdTokens: number
 }
@@ -33,6 +34,7 @@ const KEYS = {
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
+  model: 'chat-demo:model',
   autoCompact: 'chat-demo:auto-compact',
   compactThreshold: 'chat-demo:compact-threshold',
 } as const
@@ -104,6 +106,7 @@ export const useSettings = create<Settings>(() => ({
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+  model: read(KEYS.model) === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : 'deepseek-flash',
   autoCompact: read(KEYS.autoCompact) !== 'false',
   compactThresholdTokens: Number(read(KEYS.compactThreshold)) || 102_400,
 }))
@@ -161,4 +164,9 @@ export const setAutoCompact = (autoCompact: boolean) => {
 export const setCompactThresholdTokens = (compactThresholdTokens: number) => {
   write(KEYS.compactThreshold, String(compactThresholdTokens))
   useSettings.setState({ compactThresholdTokens })
+}
+
+export const setModel = (model: 'deepseek-flash' | 'deepseek-v4-pro') => {
+  write(KEYS.model, model)
+  useSettings.setState({ model })
 }
