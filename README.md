@@ -6,7 +6,7 @@
 
 <h1 align="center">DeepSeek Chat Demo</h1>
 
-<p align="center"><i>DeepSeek in your pocket: 1M context, chat import/export, sign-in without an API key — no queue behind the official app.</i></p>
+<p align="center"><i>When the official app makes you wait, this one keeps talking.</i></p>
 
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
@@ -19,37 +19,65 @@
 
 > An **unofficial** Android client built on [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT). Not affiliated with, endorsed by, or sponsored by DeepSeek.
 
-## No queue behind the official app
+## When the official app makes you wait
 
-| Official app: wait for the quota | This app: 1M context, keep chatting |
+| Official app: quota reached, wait it out | This app: 1M context, keep chatting |
 | --- | --- |
-| <img src="docs/assets/screens-official-limit.jpg" width="260" alt="Official app quota message" /> | <img src="docs/assets/screens-chat-1m.png" width="260" alt="This app: context 8.2K / 1M" /> |
+| <img src="docs/assets/screens-official-limit.jpg" width="270" alt="Official app: server busy, usage limit reached" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="This app: context 8.2K / 1M" /> |
 
-The official app shows "server busy, usage limit reached" when its quota runs out (left). This app talks to `api.deepseek.com` directly with your own account grant or API key, with a **1M-token context window**; the status line under the composer shows "context 8.2K / 1M" as you go. Near the limit it only compacts older turns into a summary **on your device** — recent messages stay as they are, and your local chat history is never deleted.
+When the official app's free quota runs out it says the server is busy and the usage limit has been reached. This app takes a different route: it calls `api.deepseek.com` with **your own DeepSeek account grant or API key**, with a **1M-token context window**, and shows "context 8.2K / 1M" plus total tokens right under the composer.
+
+Near the limit it only compacts older turns into a summary **on your device** — recent messages stay untouched and your local chat history is never deleted.
 
 Calls still count against your own API quota: no queue, but not unlimited free usage.
 
+## Screens
+
+<p align="center">
+  <img src="docs/assets/screens-attach.png" width="300" alt="Attachment menu: camera, gallery, files" />
+  <img src="docs/assets/screens-settings.png" width="300" alt="Settings: account, data, language, theme, voice" />
+</p>
+
 ## Features
 
-- **Sign in, no API key**: sign in to chat.deepseek.com once, import every conversation, then chat with the account grant. A manual API key still works as a fallback.
-- **1M context + on-device compaction**: older turns are summarized near the limit; only what is sent to the model changes, local history stays complete.
-- **Chat**: DeepThink, web search, image/file upload, read-aloud, voice input, Markdown (code, tables, math, diagrams).
-- **Sessions**: message tree with branch switching, rename/delete, search, export to `deepseek_data-*.zip` (importable again).
-- **Top-up**: the desktop top-up page detects the payment QR and opens the WeChat or Alipay app you picked; the optional Scan assist jumps to Scan → Album within 20 seconds.
-- **Native shell**: plain WebView plus `window.NativeShell`, no Capacitor bridge. Release builds use R8 and resource shrinking; the APK is about 2.9 MB.
+**Chat**
+- DeepThink, web search, image and file upload, read-aloud, voice input.
+- Markdown: code, tables, math, Mermaid diagrams, citations.
+- Message tree and branch switching, regenerate, edit and resend, continue, copy, vote, share.
 
-<p align="center"><img src="docs/assets/screens-attach.png" width="520" alt="Attachment menu: camera, gallery, files" /></p>
+**Sessions**
+- New, rename, delete, search; grouped as Today / Yesterday / 7 Days / 30 Days.
+- Export to `deepseek_data-*.zip` and import it again; a diff preview (added / updated / local-only) comes first.
+- Context compaction, manual or automatic: older turns become a summary, local originals stay.
+
+**Account and top-up**
+- Sign in to chat.deepseek.com once and import every conversation; chat with the account grant, no API key needed, and a manual key still works.
+- Balance and bonus shown in the account page. The built-in top-up page detects the payment QR and opens the **WeChat or Alipay** app you picked.
+- Optional Scan assist: an accessibility service that taps "Scan → Album" for you within 20 seconds. Off by default, can be turned off in Android settings.
+
+**Native shell**
+- Plain WebView plus `window.NativeShell`, no Capacitor bridge. Back goes up one level at a time, right-swipe opens the sidebar anywhere, left-swipe closes it.
+- Camera, gallery, files and microphone use the system UI. Release builds use R8 and resource shrinking; the APK is about 2.9 MB.
+
+## Moving over from the official app
+
+1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and export your chats to a ZIP.
+2. Install this app from [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (or build it below).
+3. Settings → Data → Import chat history, pick the ZIP, check the diff preview and import.
+4. Settings → Account → sign in with your DeepSeek account (account grant) or paste an API key. Then just chat.
+
+Local data stays on the device (IndexedDB); exported ZIP files are yours to keep.
 
 ## Download
 
 Grab the APK from [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases). Self-signed, Android 7.0+.
 
-- **1.1.0 (current, native)** — the Jetpack Compose shell in `native-app/` around the chat-demo web core, with native bridges for account grant, chat import/export, camera/files and the optional accessibility scan assist.
+- **1.1.0 (current, native)** — the Compose shell in `native-app/` around the chat-demo web core, with native bridges for account grant, import/export, camera/files and the optional accessibility scan assist.
 - **0.2.x (legacy)** — the early Capacitor wrapper, kept for history.
 
 ## Build
 
-Node.js, pnpm, JDK 21 and Android SDK 36 are required. From the repository root:
+Node.js, pnpm, JDK 21 and Android SDK 36. From the repository root:
 
 ```bash
 pnpm install
@@ -61,7 +89,7 @@ mkdir -p native-app/app/src/main/assets/web
 cp -r dist/. native-app/app/src/main/assets/web/
 
 cd native-app
-./gradlew assembleRelease   # signing config lives in native-app/keystore.properties
+./gradlew assembleRelease   # signing config: native-app/keystore.properties
 ```
 
 Debug build: `cd native-app && ./gradlew assembleDebug`, output in `app/build/outputs/apk/debug/`.
@@ -73,10 +101,10 @@ Debug build: `cd native-app && ./gradlew assembleDebug`, output in `app/build/ou
 - `copy/文案.mjs` — the single source of UI copy for web and native; run `node scripts/gen-copy.mjs`.
 - `docs/` — screenshots and research notes.
 
-## Licence
+## Licence and privacy
 
-MIT, with the upstream LICENSE and attribution kept. The DeepSeek name and logo belong to DeepSeek; this project only uses them for an unofficial client.
+MIT, with the upstream LICENSE and attribution kept. The DeepSeek name and logo belong to DeepSeek; this project uses them only for an unofficial client.
 
-- Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay. It does not read or store chats or payment details.
+- Scan assist is an optional accessibility service, off by default. It is active only for 20 seconds after the top-up flow opens WeChat/Alipay and does not read or store chats or payment details.
 - Voice input needs microphone permission; images and files use the system pickers.
-- Chats live in the local IndexedDB only; exported ZIP files are yours to keep.
+- Chats stay on the device; no account password is uploaded, and the grant token is encrypted with Android Keystore.
