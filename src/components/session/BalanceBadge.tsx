@@ -43,10 +43,13 @@ export const BalanceBadge = () => {
         window.clearInterval(timer)
       }
     }
+    const onRefresh = () => start()
+    window.addEventListener('deepseek-balance-refresh', onRefresh)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       cancelled = true
       window.clearInterval(timer)
+      window.removeEventListener('deepseek-balance-refresh', onRefresh)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])

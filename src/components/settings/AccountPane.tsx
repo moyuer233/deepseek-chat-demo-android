@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   cancelPreview,
   confirmImportAndCreateKey,
@@ -12,10 +12,14 @@ import {
 } from '../../services/deepseek/account.js'
 import type { ArchivePreview } from '../../services/deepseek/archive.js'
 import { DeepSeekAccount } from '../../services/deepseek/plugin.js'
-import { useSettings } from '../../services/settings.js'
+import { setAccountToken, setApiKey, useSettings } from '../../services/settings.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
+import { fetchBalance, currencySymbol, type Balance } from '../../services/deepseek/balance.js'
+import { DshIcon } from '../chatInput/StatusIcons.js'
+import { useChatStore } from '../../services/chat/store.js'
+import { nativeShell } from '../../services/deepseek/shell.js'
 import styles from './AccountPane.module.css'
 
 /** 预览清单先渲染的条数，避免几千条一次性插进 DOM。 */
@@ -50,6 +54,37 @@ export const AccountPane = () => {
   const preview = useAccount((state) => state.preview)
   const importedCount = useAccount((state) => state.importedCount)
   const [termsOpen, setTermsOpen] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [balance, setBalance] = useState<Balance | null>(null)
+  const [balanceFailed, setBalanceFailed] = useState(false)
+  const streaming = useChatStore((state) => Object.keys(state.streaming).length > 0)
+
+  const loadBalance = () => {
+    setBalanceFailed(false)
+    void fetchBalance()
+      .then((data) => {
+        setBalance(data)
+        setBalanceFailed(!data)
+      })
+      .catch(() => setBalanceFailed(true))
+  }
+
+  useEffect(() => {
+    loadBalance()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadBalance()
+        // 通知头部余额一起刷新（充值返回等场景）
+        window.dispatchEvent(new Event('deepseek-balance-refresh'))
+      }
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
   const progressKey = progressKeys[phase]
   // 预览清单挂在弹窗上，下面的按钮同样要停住
   const busy = Boolean(progressKey) || phase === 'preview'
@@ -70,13 +105,57 @@ export const AccountPane = () => {
 
   return (
     <div className={styles.pane} aria-busy={busy}>
-      <div
-        className={clsx(styles.status, phase === 'error' && styles.error)}
-        role={phase === 'error' ? 'alert' : 'status'}
-        aria-live="polite"
-      >
-        {status}
+      <div className={styles.card}>
+        <span className={styles.avatar}>
+          <DshIcon name="user-outline" size={20} />
+        </span>
+        <span className={styles.identity}>
+          <span className={styles.identityName}>
+            {accountToken
+              ? t('accountAuthAccount')
+              : apiKey
+                ? t('accountAuthApiKey')
+                : t('accountNotLoggedIn')}
+          </span>
+          <span className={styles.identitySub}>
+            {accountToken
+              ? t('accountAuthAccountLabel')
+              : apiKey
+                ? t('accountAuthApiKeyLabel')
+                : t('accountLoginHint')}
+          </span>
+        </span>
       </div>
+
+      <div className={styles.balanceCard}>
+        <span className={styles.balanceLabel}>
+          <DshIcon name="layers-outline" size={14} />
+          {t('accountBalance')}
+        </span>
+        {balanceFailed ? (
+          <button type="button" className={styles.balanceRetry} onClick={loadBalance}>
+            {t('accountBalanceRetry')}
+          </button>
+        ) : (
+          <span className={styles.balanceValue}>
+            <span className={balance && balance.available && balance.total > 0.005 ? styles.dotOk : styles.dotError} />
+            {balance ? currencySymbol(balance.currency) + balance.total.toFixed(2) : '—'}
+            {balance && balance.granted > 0
+              ? `（${t('balanceBonus')} ${currencySymbol(balance.currency)}${balance.granted.toFixed(2)}）`
+              : null}
+          </span>
+        )}
+      </div>
+
+      {progressKey || phase === 'error' || phase === 'done' ? (
+        <div
+          className={clsx(styles.status, phase === 'error' && styles.error)}
+          role={phase === 'error' ? 'alert' : 'status'}
+          aria-live="polite"
+        >
+          {status}
+        </div>
+      ) : null}
       <div className={styles.actions}>
         {phase === 'done' ? (
           <Button size="m" onClick={resetAccountFlow}>
@@ -94,6 +173,19 @@ export const AccountPane = () => {
             <Button size="m" variant="outlined" disabled={busy} onClick={() => void openRecharge()}>
               {t('accountRecharge')}
             </Button>
+            <Button
+              size="m"
+              variant="outlined"
+              disabled={busy}
+              onClick={() => nativeShell()?.openExternal?.('https://platform.deepseek.com/usage')}
+            >
+              {t('accountMoreInfo')}
+            </Button>
+            {signedIn ? (
+              <Button size="m" variant="outlined" disabled={busy} onClick={() => setLogoutOpen(true)}>
+                {t('accountLogout')}
+              </Button>
+            ) : null}
             {Capacitor.isNativePlatform() ? (
               <Button
                 size="m"
@@ -111,6 +203,35 @@ export const AccountPane = () => {
         <div className={styles.hint}>{t('accountRechargeHint')}</div>
       )}
       {phase === 'preview' && preview ? <PreviewDialog preview={preview} /> : null}
+      {logoutOpen ? (
+        <Modal
+          title={t('accountLogout')}
+          onClose={() => setLogoutOpen(false)}
+          footer={
+            <>
+              <Button variant="outlined" size="m" onClick={() => setLogoutOpen(false)}>
+                {t('cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                size="m"
+                onClick={() => {
+                  setLogoutOpen(false)
+                  setApiKey(null)
+                  setAccountToken(null)
+                  setBalance(null)
+                }}
+              >
+                {t('accountLogoutConfirm')}
+              </Button>
+            </>
+          }
+        >
+          <div className={styles.terms}>
+            {streaming ? t('accountLogoutActive') : t('accountLogoutBody')}
+          </div>
+        </Modal>
+      ) : null}
       {termsOpen ? (
         <Modal
           title={t('accountTermsTitle')}
