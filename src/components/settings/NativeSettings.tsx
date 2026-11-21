@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
@@ -11,6 +11,7 @@ import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
 import { SettingsRow as Row } from './SettingsRow.js'
 import { Modal } from '../base/Modal.js'
+import { pushBackHandler } from '../../services/backHandlers.js'
 import { ConfirmDialog } from '../base/ConfirmDialog.js'
 import { Button } from '../base/Button.js'
 import styles from './NativeSettings.module.css'
@@ -168,6 +169,29 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       setDeleteBusy(false)
     }
   }
+
+  // 系统返回：先关弹窗，再从设置子页回到设置主页
+  useEffect(() => {
+    if (page === 'main' && !pendingPreflight && !deleteOpen) {
+      return
+    }
+    return pushBackHandler(() => {
+      if (deleteOpen) {
+        setDeleteOpen(false)
+        return true
+      }
+      if (pendingPreflight) {
+        setPendingPreflight(null)
+        void discardImport()
+        return true
+      }
+      if (page !== 'main') {
+        setPage('main')
+        return true
+      }
+      return false
+    })
+  }, [page, pendingPreflight, deleteOpen])
 
   const header = (title: string, onBack: () => void) => (
     <div className={styles.header}>

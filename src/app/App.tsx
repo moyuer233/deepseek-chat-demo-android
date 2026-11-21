@@ -13,6 +13,7 @@ import {
   useChatStore,
 } from '../services/chat/store.js'
 import { loadAccountToken } from '../services/deepseek/auth.js'
+import { runBackHandler } from '../services/backHandlers.js'
 import { nativeShell } from '../services/deepseek/shell.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
@@ -127,6 +128,10 @@ export const App = () => {
   useEffect(() => {
     // 原生壳返回键：网页按「预览 → 设置 → 抽屉 → 搜索面板 → 会话」逐级后退，返回 false 才退出 App
     const handler = () => {
+      // 先让设置子页、弹窗这些页面内状态消费返回
+      if (runBackHandler()) {
+        return true
+      }
       if (useSettingsDialog.getState().open) {
         closeSettings()
         return true

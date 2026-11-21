@@ -11,6 +11,7 @@ import { DshIcon } from '../chatInput/StatusIcons.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { isNativeShell, nativeShell, openExternalUrl, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
+import { pushBackHandler } from '../../services/backHandlers.js'
 import styles from './AccountPane.module.css'
 import nsStyles from './NativeSettings.module.css'
 import { SettingsRow } from './SettingsRow.js'
@@ -37,6 +38,21 @@ export const AccountPane = () => {
       })
       .catch(() => setBalanceFailed(true))
   }
+
+  // 系统返回：先关 API Key / 退出登录弹窗
+  useEffect(() => {
+    if (!apiKeyOpen && !logoutOpen) {
+      return
+    }
+    return pushBackHandler(() => {
+      if (logoutOpen) {
+        setLogoutOpen(false)
+        return true
+      }
+      setApiKeyOpen(false)
+      return true
+    })
+  }, [apiKeyOpen, logoutOpen])
 
   const refreshScanAssist = () => {
     void DeepSeekAccount.isScanAssistEnabled()
