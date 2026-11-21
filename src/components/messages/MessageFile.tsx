@@ -44,7 +44,7 @@ export const MessageFile = ({
 
   const retry = retryable ? onRetry : null
 
-  if (image && url !== null) {
+  if (image && url != null) {
     const preview = url ? (
       failedUrl === url ? (
         <span className={styles.failedIcon} role="img" aria-label={file.name}>

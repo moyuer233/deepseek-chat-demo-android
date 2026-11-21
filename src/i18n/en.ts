@@ -1,6 +1,9 @@
 import type { zh } from './zh.js'
 
 export const en = {
+  balanceTooltip: 'DeepSeek account balance',
+  balanceBonus: 'bonus',
+  balanceFailed: 'Failed to load balance',
   welcomeMessageChat250808: 'How can I help you?',
   contentCaveat: 'AI-generated, for reference only',
   expandSiderbarButton: 'Open sidebar',

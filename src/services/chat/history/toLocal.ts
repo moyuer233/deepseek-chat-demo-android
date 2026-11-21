@@ -237,7 +237,7 @@ const toAssistant = (message: ChatMessage): AssistantMessage => {
  * current_message_id 到根的路径为当前分支；缺失/无效时回退到 id 最大的叶子（同 DSH）。
  */
 const buildTree = (file: SessionFile): Pick<Session, 'messages' | 'rootMessageId'> => {
-  const sorted = file.messages.toSorted((a, b) => a.id - b.id)
+  const sorted = file.messages.slice().sort((a, b) => a.id - b.id)
   const byId = new Map<number, Message>()
   const messages: Message[] = []
   for (const message of sorted) {

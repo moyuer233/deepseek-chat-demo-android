@@ -216,16 +216,16 @@ export const cancelUpload = (id: string) => {
 /** 检查旧图片的 file_id。超限返回 null 以触发补传，无法读取原件时保留原 ID。 */
 export const checkImageFileIds = async (files: FileAttachment[], signal: AbortSignal) => {
   const checked = new Map<string, string | null>()
-  for (const file of files) {
-    if (!file.isImage || !file.serverId || file.imageSizeChecked || checked.has(file.id)) {
-      continue
-    }
+  const targets = files.filter(
+    (file) => file.isImage && file.serverId && !file.imageSizeChecked && !checked.has(file.id)
+  )
+  const checkOne = async (file: FileAttachment) => {
     signal.throwIfAborted()
     const oversized = await loadFile(file.id)
       .then((blob) => blob && isUploadImageOversized(blob))
       .catch(() => undefined)
     if (oversized === undefined) {
-      continue
+      return
     }
     signal.throwIfAborted()
     const task = useUploads.getState().tasks[file.id]
@@ -233,6 +233,10 @@ export const checkImageFileIds = async (files: FileAttachment[], signal: AbortSi
       cancelUpload(file.id)
     }
     checked.set(file.id, oversized ? null : file.serverId)
+  }
+  // 限并发 4，避免大图同时解码占满内存
+  for (let i = 0; i < targets.length; i += 4) {
+    await Promise.all(targets.slice(i, i + 4).map(checkOne))
   }
   return checked
 }

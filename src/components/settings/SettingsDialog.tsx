@@ -36,7 +36,7 @@ import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { AccountPane } from './AccountPane.js'
 import { NativeSettings } from './NativeSettings.js'
-import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
+import { ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
 
@@ -168,7 +168,6 @@ const SettingsContent = () => {
                   </Button>
                 }
               />
-              {isMobile ? <ApiKeyConfirm editor={apiKeyEditor} /> : null}
             </>
           )}
         </div>
@@ -502,6 +501,7 @@ const useHistoryImport = () => {
       const count = await importHistory(file)
       setStatus({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
     } catch {
+      setFile(file)
       setStatus({ key: 'historyImportFailed', error: true })
     } finally {
       importing.current = false

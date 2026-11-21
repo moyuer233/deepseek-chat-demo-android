@@ -46,6 +46,6 @@ export const readArchivePreview = (bytes: Uint8Array, fileName: string): Archive
       messageCount: Number(item.message_count) || 0,
       updatedAt: String(item.updated_at ?? ''),
     }))
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0))
   return { fileName, bytes: bytes.byteLength, sessions }
 }

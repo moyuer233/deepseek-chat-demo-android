@@ -22,7 +22,7 @@ export const installNativeSiderGesture = () => {
     }
   }
   w.__siderClose = () => closeMobileSider()
-  useMobileSider.subscribe((state) => {
+  return useMobileSider.subscribe((state) => {
     w.NativeShell?.setSiderOpen?.(state.open)
   })
 }

@@ -1,0 +1,38 @@
+.balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 6px;
+  margin-left: auto;
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary);
+  white-space: nowrap;
+}
+
+.dotOk,
+.dotError {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotOk {
+  background: var(--dsw-alias-state-success-primary, #22a06b);
+}
+
+.dotError {
+  background: var(--dsw-alias-state-error-primary, #d93025);
+}
+
+.value {
+  font-weight: 500;
+}
+
+.bonus {
+  color: var(--dsw-alias-brand-primary, var(--dsw-alias-accent, currentColor));
+}

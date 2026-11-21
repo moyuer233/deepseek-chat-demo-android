@@ -60,7 +60,7 @@ const AttachmentItem = ({
   // 「上传失败」只显示重试图标，其余原因写在图片上：可重试时在图标下方，不可重试时贴底
   const showReason = failed && error !== undefined && error !== t('uploadFileStatusFailed')
   const preview = url ? <img src={url} alt={item.file.name} /> : null
-  return image && url !== null ? (
+  return image && url != null ? (
     <div
       className={clsx(styles.attachment, failed && styles.attachmentFailed)}
       title={error ?? item.file.name}

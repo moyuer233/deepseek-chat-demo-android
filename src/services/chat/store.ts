@@ -836,6 +836,10 @@ const prepareFiles = async (sessionId: string, request: Request, signal: AbortSi
   const serverIds = new Map<string, string>()
   // 停止生成立即生效；上传本身不取消（输入框与其他消息可能共用同一任务），完成后照常写回 serverId
   const aborted = new Promise<never>((_, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason)
+      return
+    }
     signal.addEventListener('abort', () => reject(signal.reason), { once: true })
   })
   // 旧图片超限时先清除 ID，交给下方已有的附件补传流程。
@@ -868,24 +872,28 @@ const prepareFiles = async (sessionId: string, request: Request, signal: AbortSi
   }
 
   const pending = new Map<string, FileAttachment>()
-  for (const [user] of getContextRounds(request.history).toReversed()) {
+  for (const [user] of getContextRounds(request.history).slice().reverse()) {
     for (const file of user.files) {
       if (!file.serverId && !serverIds.has(file.id) && !pending.has(file.id)) {
         pending.set(file.id, file)
       }
     }
   }
+  let backfilled = false
   for (const file of pending.values()) {
     signal.throwIfAborted()
     try {
       const serverId = await Promise.race([ensureServerId(apiKey, file), aborted])
       if (serverId) {
         serverIds.set(file.id, serverId)
-        saveServerIds(sessionId, new Map([[file.id, serverId]]))
+        backfilled = true
       }
     } catch {
       signal.throwIfAborted()
     }
+  }
+  if (backfilled) {
+    saveServerIds(sessionId, serverIds)
   }
 
   // 用补齐后的会话重新取历史与提问，保证请求里都是 serverId
@@ -964,6 +972,10 @@ const reuploadInvalidatedFiles = (sessionId: string, request: Request, error: un
 /** 重传前的退避等待；停止生成时立即返回，由调用方按已停止收尾 */
 const waitForRetry = (attempt: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
+    if (signal.aborted) {
+      resolve()
+      return
+    }
     function onAbort() {
       clearTimeout(timer)
       resolve()

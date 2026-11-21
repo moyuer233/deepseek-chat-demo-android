@@ -309,10 +309,10 @@ const OpenRow = ({
   isLast: boolean
 }) => {
   const t = useTranslate()
-  const allFailed = step.pages.every((page) => page.status === 'failed')
+  const allFailed = step.pages.length > 0 && step.pages.every((page) => page.status === 'failed')
   const count = step.pages.length
   const intro = t(count === 1 ? 'toolOpenOneIntro' : 'toolOpensIntro', { count })
-  const panelEntry = `open-${step.pages[0]?.id}`
+  const panelEntry = step.pages[0] ? `open-${step.pages[0].id}` : ''
   return (
     <ToolRow
       icon={allFailed ? <IconBrowseWarningOutline16 /> : <IconBrowseOutline16 />}

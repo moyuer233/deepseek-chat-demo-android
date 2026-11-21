@@ -34,6 +34,10 @@ const number: Read<number> = (value) =>
 const count: Read<number> = (value) =>
   Number.isSafeInteger(value) && (value as number) >= 0 ? (value as number) : invalid()
 
+/** 可选的非负整数：格式不对时忽略该字段，而不是丢弃整段搜索结果 */
+const optionalCount: Read<number | undefined> = (value) =>
+  Number.isSafeInteger(value) && (value as number) >= 0 ? (value as number) : undefined
+
 const time: Read<string> = (value) => {
   if (typeof value !== 'string') {
     return invalid()
@@ -74,8 +78,8 @@ const oneOf =
 const tipStyle = oneOf('INFO', 'WARNING', 'CAUTION')
 const searchStatus = oneOf('WIP', 'FINISHED', 'FAILED')
 const toolMetadata = (item: Record<string, unknown>) => ({
-  ...('stage_id' in item ? { stage_id: count(item.stage_id) } : {}),
-  ...('group_id' in item ? { group_id: count(item.group_id) } : {}),
+  ...('stage_id' in item ? { stage_id: optionalCount(item.stage_id) } : {}),
+  ...('group_id' in item ? { group_id: optionalCount(item.group_id) } : {}),
 })
 
 const searchResult: Read<SearchResult> = (value) => {

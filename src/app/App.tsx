@@ -148,9 +148,41 @@ export const App = () => {
   }, [])
 
   useEffect(() => {
+    // 原生壳返回键：网页按「预览 → 设置 → 抽屉 → 搜索面板 → 会话」逐级后退，返回 false 才退出 App
+    const handler = () => {
+      if (useAccount.getState().phase === 'preview') {
+        cancelPreview()
+        return true
+      }
+      if (useSettingsDialog.getState().open) {
+        closeSettings()
+        return true
+      }
+      if (useMobileSider.getState().open) {
+        closeMobileSider()
+        return true
+      }
+      if (useSearchPanel.getState().entry !== null) {
+        closeSearchPanel()
+        return true
+      }
+      if (useChatStore.getState().activeId !== null) {
+        newChat()
+        return true
+      }
+      return false
+    }
+    ;(window as unknown as { __onBack?: () => boolean }).__onBack = handler
+    return () => {
+      delete (window as unknown as { __onBack?: () => boolean }).__onBack
+    }
+  }, [])
+
+  useEffect(() => {
     registerShellAuthCallbacks()
-    installNativeSiderGesture()
+    const disposeGesture = installNativeSiderGesture()
     void importPendingArchive()
+    return () => disposeGesture?.()
   }, [])
 
   useEffect(() => {

@@ -190,6 +190,7 @@ export const buildReplyView = (reply: AssistantMessage, streaming: boolean): Rep
 
   const registry = new SourceRegistry()
   const searchResults: Source[] = []
+  const seenSources = new Set<string>()
   const steps: Step[] = []
   const mergedSearch = new Map<ServerToolKind, SearchStep>()
   let mergedThinking: ThinkingStep | null = null
@@ -205,7 +206,8 @@ export const buildReplyView = (reply: AssistantMessage, streaming: boolean): Rep
       for (const item of result.content) {
         if (item.type === 'web_search_result') {
           const source = registry.add(item.url, item.title, item.page_age, item)
-          if (source && !searchResults.includes(source)) {
+          if (source && !seenSources.has(source.url)) {
+            seenSources.add(source.url)
             searchResults.push(source)
           }
         }
@@ -292,7 +294,8 @@ export const buildReplyView = (reply: AssistantMessage, streaming: boolean): Rep
         : mergedSearch.get(kind)
       if (target) {
         target.queries.push(...queries)
-        target.results.push(...found.filter((source) => !target.results.includes(source)))
+        const existing = new Set(target.results)
+          target.results.push(...found.filter((source) => !existing.has(source)))
         target.status = mergeStatus([target.status, status])
       } else {
         const step: SearchStep = {
