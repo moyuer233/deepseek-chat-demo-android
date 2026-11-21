@@ -427,9 +427,10 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           {attachMenu ? (
             <div className={styles.attachSheet}>
               {[
-                { key: 'camera', label: t('attachCamera'), icon: 'M4 8h3l2-2h6l2 2h3v11H4z M12 12a3 3 0 100 6 3 3 0 000-6z' },
-                { key: 'gallery', label: t('attachGallery'), icon: 'M4 5h16v14H4z M8 11l3 3 2-2 3 3' },
-                { key: 'file', label: t('attachFile'), icon: 'M6 3h8l4 4v14H6z M14 3v5h5' },
+                // 安卓原生（Material）图标
+                { key: 'camera', label: t('attachCamera'), icon: 'M9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z' },
+                { key: 'gallery', label: t('attachGallery'), icon: 'M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4 2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z' },
+                { key: 'file', label: t('attachFile'), icon: 'M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z' },
               ].map((item) => (
                 <button
                   key={item.key}
@@ -446,7 +447,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
                     }
                   }}
                 >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                     <path d={item.icon} />
                   </svg>
                   <span>{item.label}</span>
