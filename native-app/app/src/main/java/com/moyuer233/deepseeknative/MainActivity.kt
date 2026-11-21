@@ -150,23 +150,26 @@ class MainActivity : ComponentActivity() {
         val legacy = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val web = webViewRef
+                // 侧边栏打开时先收抽屉（原生直接处理，不等网页回包）
                 if (web != null && web.siderOpen) {
                     web.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
                     return
                 }
                 if (backPending) return
+                if (web == null) {
+                    finish()
+                    return
+                }
                 backPending = true
-                android.os.Handler(mainLooper).postDelayed({ backPending = false }, 1000)
-                webViewRef?.evaluateJavascript("window.__onBack ? window.__onBack() : false") { value ->
+                // 防抖：网页回包慢时避免连按触发两次后退
+                android.os.Handler(mainLooper).postDelayed({ backPending = false }, 400)
+                web.evaluateJavascript("window.__onBack ? window.__onBack() : false") { value ->
                     backPending = false
+                    // 只有网页明确表示「已到最底层」才退出；不再用 isEnabled=false 关掉回调，
+                    // 否则一次异常回包会让返回键永久失效，只能靠系统把 Activity 杀掉。
                     if (value?.trim('"') != "true" && !isFinishing) {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
+                        finish()
                     }
-                } ?: run {
-                    backPending = false
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
                 }
             }
         }
@@ -303,7 +306,10 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    @Suppress("unused")
     private fun registerSiderBack() {
+        // 已停用：见 setSiderOpen 的注释（与 OnBackPressedDispatcher 冲突）。
+        if (true) return
         if (android.os.Build.VERSION.SDK_INT < 34 || siderBackCallback != null) return
         val cb = object : android.window.OnBackAnimationCallback {
             override fun onBackStarted(backEvent: android.window.BackEvent) {
@@ -428,11 +434,10 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun setSiderOpen(open: Boolean) {
+            // 只记录状态：返回事件统一由 setupBackHandling 里的 OnBackPressedCallback 处理。
+            // 这里绝不能再注册 OnBackInvokedCallback——它和 OnBackPressedDispatcher 抢同一个
+            // PRIORITY_DEFAULT，抽屉开合一次后返回事件会落到已注销的回调上，表现为「按返回直接退出 App」。
             webViewRef?.siderOpen = open
-            if (android.os.Build.VERSION.SDK_INT >= 34) {
-                legacyBackCallback?.isEnabled = !open
-            }
-            if (open) registerSiderBack() else unregisterSiderBack()
         }
 
         /** 返回 false 表示没打开（供 Web 侧提示，避免静默失败）。 */
