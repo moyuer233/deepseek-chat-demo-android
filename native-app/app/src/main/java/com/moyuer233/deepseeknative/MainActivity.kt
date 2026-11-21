@@ -229,6 +229,9 @@ class MainActivity : ComponentActivity() {
                         val uri = FileProvider.getUriForFile(this@MainActivity, packageName + ".fileprovider", file)
                         val launcher = cameraLauncher
                         if (launcher != null) {
+                            // 相机结果要回给这次 file chooser，必须把 callback 交给相机分支
+                            cameraCallback = callback
+                            fileChooserCallback = null
                             cameraUri = uri
                             launcher.launch(uri)
                             return true
