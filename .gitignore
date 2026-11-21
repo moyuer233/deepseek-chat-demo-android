@@ -24,6 +24,7 @@ android/build/
 .samples/
 
 .android-skills-src/
+.taste-skill/
 native-app/.gradle/
 native-app/build/
 native-app/app/build/
