@@ -13,12 +13,12 @@
 <meta property="og:image" content="https://moyuer233.github.io/deepseek-chat-demo-android/icon.png" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="DeepSeek Chat Demo Android — 用你自己的 API 聊天" />
-<meta name="twitter:description" content="非官方安卓客户端：自己的 API Key 或账号授权，额度归你；可导入 chat.deepseek.com 历史。" />
+<meta name="twitter:description" content="非官方安卓客户端：导入 chat.deepseek.com 导出的会话 ZIP，用你自己的 API Key 或账号授权接着聊。" />
 <meta name="twitter:image" content="https://moyuer233.github.io/deepseek-chat-demo-android/icon.png" />
 <link rel="icon" type="image/png" href="./icon.png" />
 <link rel="apple-touch-icon" href="./icon.png" />
 <meta name="theme-color" content="#f7f8fb" />
-<link rel="stylesheet" href="./styles.css?v=20261122-5" />
+<link rel="stylesheet" href="./styles.css?v=20261122-6" />
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -66,23 +66,22 @@
           <div class="phone-chat">
             <p class="msg-user">用一句话解释 1M 上下文意味着什么？</p>
             <p class="msg-think">已思考 2 秒 ›</p>
-            <p class="msg-ai">1M 上下文约等于一次读完《三体》三部曲，或者 3000 页技术文档——对话再长，也不用从头再来。</p>
-            <p class="msg-source">已搜索 3 个网页 · 查看来源</p>
+            <p class="msg-ai">1M 上下文大约是读完一部长篇小说的体量，或者 3000 页技术文档——对话再长，也不用从头再来。</p>
             <p class="msg-user second">那再压缩成三条。</p>
-            <p class="msg-ai">1. 一次读完《三体》；2. 或 3000 页文档；3. 对话不用重开。</p>
+            <p class="msg-ai">1. 一部长篇小说；2. 或 3000 页文档；3. 对话不用重开。</p>
           </div>
           <div class="phone-input">
             <div class="phone-box">
               <p class="phone-placeholder">请输入消息</p>
               <div class="phone-row">
-                <span class="phone-chip">深度思考</span>
+                <span class="phone-chip active">深度思考</span>
                 <span class="phone-chip">智能搜索</span>
                 <span class="phone-gap"></span>
                 <span class="phone-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
                 <span class="phone-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
               </div>
             </div>
-            <p class="phone-status"><span>✧ deepseek-flash</span><span>上下文 <b>826K</b> / 1M (79%)</span><span>12.4K tokens</span></p>
+            <p class="phone-status"><span>✧ deepseek-flash</span><span>上下文 <b>826K</b> / 1M (79%)</span><span>1.2M tokens</span></p>
             <p class="phone-caveat">内容由 AI 生成，请仔细甄别</p>
           </div>
         </div>
@@ -101,7 +100,7 @@
         <article class="card">
           <span class="card-num">01</span>
           <h3>授权账号，或填 API Key</h3>
-          <p>用 DeepSeek 账号授权，或填自己的 API Key；账号登录在官方授权页完成，App 不接触密码，token 只存本机。</p>
+          <p>用 DeepSeek 账号授权，或填自己的 API Key；账号登录在 DeepSeek 官方授权页完成，App 不接触密码，token 只存本机。</p>
         </article>
         <article class="card">
           <span class="card-num">02</span>
@@ -163,7 +162,7 @@
           <p class="meter-kicker">当前上下文</p>
           <p class="meter-big">826K<em>/ 1M</em></p>
           <div class="meter-bar"><i></i></div>
-          <div class="meter-legend"><span>deepseek-flash</span><span>79% · 12.4K tokens</span></div>
+          <div class="meter-legend"><span>deepseek-flash</span><span>79% · 1.2M tokens</span></div>
         </div>
         <dl class="meter-rows">
           <div><dt>上下文窗口</dt><dd>1,048,576</dd></div>
@@ -200,7 +199,7 @@
             <h2>快到 1M，也不从头再来。</h2>
             <p class="sec-lede">上下文快满时，App 只在本机把较早的对话压成摘要：摘要参与下一次请求，最近消息保持原样，本机完整记录一条不删。手动点「压缩」或到阈值自动压，都能接着聊。</p>
             <ul class="ticks">
-              <li>手动「立即压缩」，随时可点</li>
+              <li>手动「压缩上下文」，随时可点</li>
               <li>接近上限自动压缩，不用管</li>
               <li>压缩只改发出去的内容，本机原文保留</li>
             </ul>
@@ -218,7 +217,7 @@
         <h2>原生外壳，2.9 MB。</h2>
         <p class="sec-lede">相机、相册、文件、麦克风走系统能力；返回键逐级后退，右滑开侧栏。Android 7.0 起，MIT 开源。</p>
         <ul class="ticks">
-          <li>相机、相册、文件、麦克风走系统选择器</li>
+          <li>相机、相册、文件走系统选择器；麦克风用系统权限录制</li>
           <li>返回键与手势逐级后退</li>
           <li>自签名 APK，GitHub Releases 直接装</li>
         </ul>
@@ -257,7 +256,7 @@
       <div class="faq">
         <details><summary>收费吗？</summary><p>App 免费、MIT 开源。聊天按你自己账号的 API 用量计费，本项目不加价、不代收。</p></details>
         <details><summary>和官方是什么关系？</summary><p>非官方客户端，与深度求索无隶属关系；复用 chat-demo（MIT）网页内核，保留署名与 LICENSE。</p></details>
-        <details><summary>数据存在哪？</summary><p>会话和导入的历史存在手机本地；聊天请求只发给你自己的 DeepSeek 账号，作者没有服务器。</p></details>
+        <details><summary>数据存在哪？</summary><p>会话和导入的历史存在手机本地；聊天请求直连 DeepSeek 官方 API，不经过作者的中转服务器。</p></details>
       </div>
     </div>
   </section>

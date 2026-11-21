@@ -78,6 +78,7 @@ h1 { margin-top: 18px; font-size: clamp(38px, 4.4vw, 56px); line-height: 1.12; l
 .phone-placeholder { font-size: 12px; color: #646a78; }
 .phone-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .phone-chip { display: inline-flex; align-items: center; height: 23px; padding: 0 8px; border: 1px solid #e4e7ee; border-radius: 999px; font-size: 9.5px; color: #4a5060; }
+.phone-chip.active { border-color: rgba(57, 100, 254, 0.35); background: var(--brand-soft); color: var(--brand); }
 .phone-gap { flex: 1; }
 .phone-status { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px 9px; margin-top: 6px; font-size: 9px; line-height: 14px; color: #565c6b; font-variant-numeric: tabular-nums; }
 .phone-status b { color: #3a3f4b; font-weight: 600; }
@@ -186,8 +187,8 @@ h2 { margin-top: 14px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.15; l
 .account-row em { font-style: normal; font-size: 12px; color: #8b93a6; }
 .account-row i { font-style: normal; color: #59627a; }
 .account-row.danger { color: #ff8a8a; }
-.switch { position: relative; width: 34px; height: 20px; border-radius: 999px; background: rgba(77, 107, 254, 0.5); }
-.switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.switch { position: relative; width: 34px; height: 20px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
 
 /* download */
 .download { display: flex; flex-direction: column; align-items: center; }
