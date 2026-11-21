@@ -469,12 +469,12 @@ fun ChatScreen(
         }
     }
 
-    fun regenerate() {
+    fun regenerateAt(messageDbId: Int) {
         if (streaming) return
         val tree = session ?: return
-        val current = tree.messages.firstOrNull { it.id == tree.currentMessageId } ?: return
-        if (current.role != "assistant") return
-        val parentId = current.parentId ?: return
+        val target = tree.messages.firstOrNull { it.id == messageDbId } ?: return
+        if (target.role != "assistant") return
+        val parentId = target.parentId ?: return
         var cursor = parentId
         var prompt = ""
         while (true) {
@@ -505,14 +505,6 @@ fun ChatScreen(
                         }
                     }
                 }
-                val onThinking: (String) -> Unit = { t ->
-                    scope.launch {
-                        if (mySeq == sendSeq) {
-                            val i = messages.indexOfFirst { it.id == assistantId }
-                            if (i >= 0) messages[i] = messages[i].copy(thinking = t)
-                        }
-                    }
-                }
                 val onDone: () -> Unit = {
                     scope.launch {
                         if (mySeq == sendSeq) {
@@ -523,17 +515,20 @@ fun ChatScreen(
                         }
                     }
                 }
-                val onError: (String) -> Unit = { msg ->
-                    scope.launch { if (mySeq == sendSeq) { error = msg; streaming = false } }
-                }
+                val onError: (String) -> Unit = { msg -> scope.launch { if (mySeq == sendSeq) { error = msg; streaming = false } } }
                 if (grant != null) {
-                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, attachments = emptyList(), searchEnabled = searchEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
+                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, attachments = emptyList(), searchEnabled = searchEnabled, onContent = onContent, onDone = onDone, onError = onError)
                 } else if (apiKey != null) {
-                    ApiClient.streamApiChat(apiKey = apiKey, prompt = prompt, thinking = thinkingEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
+                    ApiClient.streamApiChat(apiKey = apiKey, prompt = prompt, thinking = thinkingEnabled, onContent = onContent, onDone = onDone, onError = onError)
                 }
             }
             streaming = false
         }
+    }
+
+    fun regenerate() {
+        val currentId = session?.currentMessageId ?: return
+        regenerateAt(currentId)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
@@ -980,6 +975,9 @@ fun ChatScreen(
             title = { Text("消息操作") },
             text = {
                 Column {
+                    if (target.role == "assistant" && target.dbId != 0) {
+                        TextButton(onClick = { menuTarget = null; regenerateAt(target.dbId) }) { Text("重新生成") }
+                    }
                     TextButton(onClick = { quoted = cleanSafety(target.content).take(200); menuTarget = null }) { Text("引用") }
                     TextButton(onClick = { selectMode = true; selectedIds.clear(); selectedIds.add(target.id); menuTarget = null }) { Text("多选") }
                     TextButton(onClick = { clipboard.setText(AnnotatedString(cleanSafety(target.content))); menuTarget = null }) { Text("复制") }
