@@ -1,4 +1,4 @@
-# DeepSeek Chat Demo 项目规范
+# DeepSeek Chat Demo Android 项目规范
 
 > 本文件是工作区级规范，每次会话自动注入。目标与决策变了就改这里，别只留在聊天里。
 
@@ -36,7 +36,7 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 > 2026-11-21 起当前实现是 `native-app/`：Kotlin + Compose 外壳，WebView 加载 `assets/web` 的 chat-demo 构建产物，桥接层是 `window.NativeShell`（授权/导入导出/充值/相机/麦克风/侧滑/返回）。下面的 Capacitor 段落是历史路线，不要再按它改。
 
 - Android 优先，Capacitor 8 套壳（WebView 装现有 dist），不重写 UI；iOS 暂不做。
-- 应用 id：当前 `com.moyuer233.deepseeknative`（历史 Capacitor 版为 `com.moyuer233.deepseekchatdemo`）；显示名：DeepSeek Chat Demo。
+- 应用 id：当前 `com.moyuer233.deepseeknative`（历史 Capacitor 版为 `com.moyuer233.deepseekchatdemo`）；显示名：DeepSeek Chat Demo Android。
 - 聊天请求走 api.deepseek.com：账号模式下 `x-dsh-auth-token`（grant），无 grant 时回退 API Key；登录/导出走原生 HTTP，绕开 CORS。
 - 改动尽量少：新增 `capacitor.config.ts`、`android/`、登录插件、导入服务；上游文件只在必要处补 Android 适配
   （返回键、安全区/edge-to-edge、外链用系统浏览器、历史导出改系统分享保存）。

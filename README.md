@@ -1,10 +1,10 @@
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android">
-    <img src="docs/assets/icon.png" width="96" alt="DeepSeek Chat Demo" />
+    <img src="docs/assets/icon.png" width="96" alt="DeepSeek Chat Demo Android" />
   </a>
 </p>
 
-<h1 align="center">DeepSeek Chat Demo</h1>
+<h1 align="center">DeepSeek Chat Demo Android</h1>
 
 <p align="center"><i>A “free-tier” DeepSeek on your own API: no throttling, and your history comes along.</i></p>
 
