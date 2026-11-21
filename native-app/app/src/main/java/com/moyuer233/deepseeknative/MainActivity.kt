@@ -1,60 +1,133 @@
 package com.moyuer233.deepseeknative
 
-import android.os.Bundle
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.webkit.WebChromeClient
-import androidx.webkit.WebViewAssetLoader
-import com.moyuer233.deepseeknative.data.SessionStore
-import com.moyuer233.deepseeknative.data.LocalSession
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
+import android.net.Uri
+import android.os.Bundle
+import android.util.Base64
+import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.core.content.FileProvider
+import androidx.webkit.WebViewAssetLoader
+import com.moyuer233.deepseeknative.data.ChatExport
+import com.moyuer233.deepseeknative.data.DshAuth
+import com.moyuer233.deepseeknative.data.SessionStore
+import com.moyuer233.deepseeknative.ui.ChatLoginActivity
 import com.moyuer233.deepseeknative.ui.OAuthActivity
 import com.moyuer233.deepseeknative.ui.OnboardingScreen
-import com.moyuer233.deepseeknative.data.DshAuth
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.moyuer233.deepseeknative.ui.ChatHomeScreen
-import com.moyuer233.deepseeknative.ui.ChatScreen
-import com.moyuer233.deepseeknative.ui.AccountManageScreen
-import com.moyuer233.deepseeknative.ui.AgreementScreen
-import com.moyuer233.deepseeknative.ui.DataManageScreen
-import com.moyuer233.deepseeknative.ui.DeviceManageScreen
-import com.moyuer233.deepseeknative.ui.MinorModeScreen
-import com.moyuer233.deepseeknative.ui.SettingsScreen
-import com.moyuer233.deepseeknative.ui.PasswordLoginScreen
-import com.moyuer233.deepseeknative.ui.PhoneLoginScreen
-import com.moyuer233.deepseeknative.ui.WelcomeScreen
+import com.moyuer233.deepseeknative.ui.TopUpActivity
 import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
+import org.json.JSONObject
 
-private enum class Screen { Onboarding, Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
-
+/** 只保留 chat-demo WebView 壳与必要原生桥（登录授权/导入导出/充值/相机/麦克风）。 */
 class MainActivity : ComponentActivity() {
     private var webViewRef: SwipeWebView? = null
-    private var authLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
-    private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
-    private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
-    private var chatImportLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
-    private var cameraLauncher: androidx.activity.result.ActivityResultLauncher<android.net.Uri>? = null
-    private var cameraCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
-    private var cameraUri: android.net.Uri? = null
+    private var authLauncher: ActivityResultLauncher<Intent>? = null
+    private var chatImportLauncher: ActivityResultLauncher<Intent>? = null
+    private var fileChooserLauncher: ActivityResultLauncher<Array<String>>? = null
+    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    private var cameraLauncher: ActivityResultLauncher<Uri>? = null
+    private var cameraCallback: ValueCallback<Array<Uri>>? = null
+    private var cameraUri: Uri? = null
+    private var permissionsLauncher: ActivityResultLauncher<Array<String>>? = null
+    private var pendingPermissionRequest: PermissionRequest? = null
     private var siderBackCallback: Any? = null
-    private var legacyBackCallback: androidx.activity.OnBackPressedCallback? = null
-    private var pendingPermissionRequest: android.webkit.PermissionRequest? = null
-    private var permissionsLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
+    private var legacyBackCallback: OnBackPressedCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val legacyBack = object : androidx.activity.OnBackPressedCallback(true) {
+        registerLaunchers()
+        setupBackHandling()
+
+        if (!SessionStore.isOnboarded(this)) {
+            setContent {
+                DeepSeekTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                        OnboardingScreen(onDone = {
+                            SessionStore.setOnboarded(this)
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        })
+                    }
+                }
+            }
+            return
+        }
+        showChatDemo()
+    }
+
+    private fun registerLaunchers() {
+        fileChooserLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
+            fileChooserCallback = null
+        }
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+            val cb = cameraCallback
+            val uri = cameraUri
+            cameraCallback = null
+            cameraUri = null
+            cb?.onReceiveValue(if (ok && uri != null) arrayOf(uri) else emptyArray())
+        }
+        permissionsLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+            val request = pendingPermissionRequest
+            pendingPermissionRequest = null
+            if (request == null) return@registerForActivityResult
+            if (grants.values.all { it }) request.grant(request.resources) else request.deny()
+        }
+        authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val ok = result.resultCode == Activity.RESULT_OK
+            val token = if (ok) DshAuth.token(this) ?: "" else ""
+            val script = if (ok && token.isNotEmpty()) {
+                "window.__onNativeAuth && window.__onNativeAuth(" + JSONObject.quote(token) + ")"
+            } else {
+                "window.__onNativeAuthError && window.__onNativeAuthError(" + JSONObject.quote(
+                    result.data?.getStringExtra(OAuthActivity.EXTRA_ERROR) ?: "已取消授权"
+                ) + ")"
+            }
+            webViewRef?.evaluateJavascript(script, null)
+        }
+        chatImportLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val token = if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.getStringExtra(ChatLoginActivity.EXTRA_TOKEN)
+            } else null
+            if (token.isNullOrEmpty()) {
+                webViewRef?.evaluateJavascript("window.__onChatArchiveError && window.__onChatArchiveError('已取消登录')", null)
+                return@registerForActivityResult
+            }
+            Thread {
+                try {
+                    val r = ChatExport.exportAndDownload(token, cacheDir)
+                    val js = "window.__onChatArchiveReady && window.__onChatArchiveReady(" +
+                        JSONObject.quote(r.file.absolutePath) + "," + JSONObject.quote(r.fileName) + "," + r.bytes + ")"
+                    webViewRef?.evaluateJavascript(js, null)
+                } catch (e: Exception) {
+                    webViewRef?.evaluateJavascript(
+                        "window.__onChatArchiveError && window.__onChatArchiveError(" +
+                            JSONObject.quote(e.message ?: "导出失败") + ")",
+                        null,
+                    )
+                }
+            }.start()
+        }
+    }
+
+    private fun setupBackHandling() {
+        val legacy = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val web = webViewRef
                 if (web != null && web.siderOpen) {
@@ -65,475 +138,83 @@ class MainActivity : ComponentActivity() {
                 onBackPressedDispatcher.onBackPressed()
             }
         }
-        legacyBackCallback = legacyBack
-        onBackPressedDispatcher.addCallback(this, legacyBack)
-        chatImportLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-            val token = if (result.resultCode == android.app.Activity.RESULT_OK) {
-                result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.ChatLoginActivity.EXTRA_TOKEN)
-            } else null
-            if (token.isNullOrEmpty()) {
-                webViewRef?.evaluateJavascript(
-                    "window.__onChatArchiveError && window.__onChatArchiveError('已取消登录')", null,
-                )
-                return@registerForActivityResult
+        legacyBackCallback = legacy
+        onBackPressedDispatcher.addCallback(this, legacy)
+    }
+
+    private fun showChatDemo() {
+        WebView.setWebContentsDebuggingEnabled(true)
+        val web = SwipeWebView(this)
+        webViewRef = web
+        web.settings.javaScriptEnabled = true
+        web.settings.domStorageEnabled = true
+        web.settings.allowFileAccess = true
+        web.settings.mediaPlaybackRequiresUserGesture = false
+        web.settings.userAgentString = web.settings.userAgentString
+        web.addJavascriptInterface(Bridge(), "NativeShell")
+        val loader = WebViewAssetLoader.Builder()
+            .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+        web.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: android.webkit.WebResourceRequest): android.webkit.WebResourceResponse? =
+                loader.shouldInterceptRequest(request.url)
+        }
+        web.webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(msg: android.webkit.ConsoleMessage?): Boolean {
+                android.util.Log.d("WebConsole", (msg?.message() ?: "") + " @" + (msg?.lineNumber() ?: 0))
+                return true
             }
-            Thread {
-                try {
-                    val r = com.moyuer233.deepseeknative.data.ChatExport.exportAndDownload(token, cacheDir)
-                    val js = "window.__onChatArchiveReady && window.__onChatArchiveReady(" +
-                        org.json.JSONObject.quote(r.file.absolutePath) + "," +
-                        org.json.JSONObject.quote(r.fileName) + "," + r.bytes + ")"
-                    webViewRef?.evaluateJavascript(js, null)
-                } catch (e: Exception) {
-                    webViewRef?.evaluateJavascript(
-                        "window.__onChatArchiveError && window.__onChatArchiveError(" +
-                            org.json.JSONObject.quote(e.message ?: "导出失败") + ")", null,
-                    )
+
+            override fun onPermissionRequest(request: PermissionRequest) {
+                if (!request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                    request.deny()
+                    return
                 }
-            }.start()
-        }
-        permissionsLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-            val request = pendingPermissionRequest
-            pendingPermissionRequest = null
-            if (request == null) return@registerForActivityResult
-            if (grants.values.all { it }) request.grant(request.resources) else request.deny()
-        }
-        cameraLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
-            val cb = cameraCallback
-            val uri = cameraUri
-            cameraCallback = null
-            cameraUri = null
-            cb?.onReceiveValue(if (ok && uri != null) arrayOf(uri) else emptyArray())
-        }
-        fileChooserLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
-            fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else emptyArray())
-            fileChooserCallback = null
-        }
-        authLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-            val ok = result.resultCode == android.app.Activity.RESULT_OK
-            val token = if (ok) com.moyuer233.deepseeknative.data.DshAuth.token(this) ?: "" else ""
-            val script = if (ok && token.isNotEmpty()) {
-                "window.__onNativeAuth && window.__onNativeAuth(" + org.json.JSONObject.quote(token) + ")"
-            } else {
-                "window.__onNativeAuthError && window.__onNativeAuthError(" + org.json.JSONObject.quote(
-                    result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.OAuthActivity.EXTRA_ERROR) ?: "已取消授权"
-                ) + ")"
+                if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    request.grant(request.resources)
+                } else {
+                    pendingPermissionRequest = request
+                    permissionsLauncher?.launch(arrayOf(android.Manifest.permission.RECORD_AUDIO)) ?: request.deny()
+                }
             }
-            webViewRef?.evaluateJavascript(script, null)
-        }
-        // 默认启动：直接展示 chat-demo 界面（WebView 套壳）；带 screen/native 参数时才进原生调试页。
-        if (!intent.hasExtra("screen") && !intent.hasExtra("native") && !intent.hasExtra("importLocal")) {
-            if (!SessionStore.isOnboarded(this)) {
-                // 首次启动：先走 4 步引导，完成后进入 chat-demo 界面
-                setContent {
-                    DeepSeekTheme {
-                        OnboardingScreen(onDone = {
-                            SessionStore.setOnboarded(this)
-                            // 用全新 Activity 进入 chat-demo，避免原地重建时 WebView 初始化卡加载
-                            startActivity(Intent(this, MainActivity::class.java))
-                            finish()
-                        })
-                    }
-                }
-                return
-            }
-            android.webkit.WebView.setWebContentsDebuggingEnabled(true)
-            val web = SwipeWebView(this)
-            web.settings.javaScriptEnabled = true
-            web.settings.domStorageEnabled = true
-            web.settings.allowFileAccess = true
-            web.settings.mediaPlaybackRequiresUserGesture = false
-            val assetLoader = WebViewAssetLoader.Builder()
-                .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
-                .build()
-            webViewRef = web
-            web.addJavascriptInterface(object {
-                @android.webkit.JavascriptInterface
-                fun getToken(): String = com.moyuer233.deepseeknative.data.DshAuth.token(this@MainActivity) ?: ""
 
-                @android.webkit.JavascriptInterface
-                fun startAuth() {
-                    Thread {
-                        try {
-                            val url = com.moyuer233.deepseeknative.data.DshAuth.init(this@MainActivity).getString("authorizeUrl")
-                            runOnUiThread {
-                                authLauncher?.launch(
-                                    Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.OAuthActivity::class.java)
-                                        .putExtra(com.moyuer233.deepseeknative.ui.OAuthActivity.EXTRA_URL, url)
-                                )
-                            }
-                        } catch (e: Exception) {
-                            runOnUiThread {
-                                webViewRef?.evaluateJavascript(
-                                    "window.__onNativeAuthError && window.__onNativeAuthError(" +
-                                        org.json.JSONObject.quote(e.message ?: "授权初始化失败") + ")",
-                                    null,
-                                )
-                            }
-                        }
-                    }.start()
-                }
-
-                @android.webkit.JavascriptInterface
-                fun openTopUp() {
-                    startActivity(Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.TopUpActivity::class.java))
-                }
-
-                @android.webkit.JavascriptInterface
-                fun setSiderOpen(open: Boolean) {
-                    webViewRef?.siderOpen = open
-                    if (android.os.Build.VERSION.SDK_INT >= 34) {
-                        legacyBackCallback?.isEnabled = !open
-                    }
-                    if (open) registerSiderBack() else unregisterSiderBack()
-                }
-
-                @android.webkit.JavascriptInterface
-                fun openExternal(url: String) {
-                    runCatching {
-                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                }
-
-                @android.webkit.JavascriptInterface
-                fun startChatImport() {
-                    runOnUiThread {
-                        chatImportLauncher?.launch(
-                            Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.ChatLoginActivity::class.java)
-                        )
-                    }
-                }
-
-                @android.webkit.JavascriptInterface
-                fun readArchiveChunk(path: String, offset: Int, size: Int): String {
-                    return try {
-                        val expected = java.io.File(cacheDir, "export").canonicalPath
-                        val file = java.io.File(path)
-                        if (!file.canonicalPath.startsWith(expected)) return ""
-                        java.io.RandomAccessFile(file, "r").use { raf ->
-                            raf.seek(offset.toLong())
-                            val len = minOf(size, (file.length() - offset).toInt().coerceAtLeast(0))
-                            val buf = ByteArray(len)
-                            raf.readFully(buf, 0, len)
-                            android.util.Base64.encodeToString(buf, android.util.Base64.NO_WRAP)
-                        }
-                    } catch (e: Exception) {
-                        ""
-                    }
-                }
-
-                @android.webkit.JavascriptInterface
-                fun deleteArchive(path: String) {
-                    runCatching {
-                        val expected = java.io.File(cacheDir, "export").canonicalPath
-                        val file = java.io.File(path)
-                        if (file.canonicalPath.startsWith(expected)) file.delete()
-                    }
-                }
-
-                @android.webkit.JavascriptInterface
-                fun beginExport(name: String): String {
-                    val dir = java.io.File(cacheDir, "export").apply { mkdirs() }
-                    val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }
-                    val file = java.io.File(dir, safe)
-                    file.outputStream().use { }
-                    return file.absolutePath
-                }
-
-                @android.webkit.JavascriptInterface
-                fun appendExport(path: String, base64: String): Int {
-                    return try {
-                        val expected = java.io.File(cacheDir, "export").canonicalPath
-                        val file = java.io.File(path)
-                        if (!file.canonicalPath.startsWith(expected)) return -1
-                        val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
-                        java.io.FileOutputStream(file, true).use { it.write(bytes) }
-                        file.length().toInt()
-                    } catch (e: Exception) {
-                        -1
-                    }
-                }
-
-                @android.webkit.JavascriptInterface
-                fun finishExport(path: String, mime: String, name: String) {
+            override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
+                fileChooserCallback?.onReceiveValue(emptyArray())
+                fileChooserCallback = callback
+                val capture = runCatching { params.isCaptureEnabled }.getOrDefault(false)
+                if (capture) {
                     try {
-                        val expected = java.io.File(cacheDir, "export").canonicalPath
-                        val file = java.io.File(path)
-                        if (!file.canonicalPath.startsWith(expected) || !file.exists()) return
-                        val values = android.content.ContentValues().apply {
-                            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
-                            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime.ifBlank { "application/zip" })
-                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/DeepSeekNative")
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
-                            }
-                        }
-                        val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                        uri?.let { u ->
-                            contentResolver.openOutputStream(u)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                values.clear()
-                                values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
-                                contentResolver.update(u, values, null, null)
-                            }
-                        }
-                        runOnUiThread {
-                            android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
-                        }
+                        val dir = java.io.File(cacheDir, "camera").apply { mkdirs() }
+                        val file = java.io.File(dir, "photo_" + System.currentTimeMillis() + ".jpg")
+                        val uri = FileProvider.getUriForFile(this@MainActivity, packageName + ".fileprovider", file)
+                        cameraUri = uri
+                        cameraLauncher?.launch(uri)
+                        return true
                     } catch (e: Exception) {
-                        android.util.Log.w("NativeShell", "finishExport failed", e)
+                        android.util.Log.w("Camera", "capture failed", e)
                     }
                 }
-            }, "NativeShell")
-            web.webViewClient = object : WebViewClient() {
-                override fun shouldInterceptRequest(
-                    view: WebView,
-                    request: android.webkit.WebResourceRequest,
-                ): android.webkit.WebResourceResponse? = assetLoader.shouldInterceptRequest(request.url)
-            }
-            web.webChromeClient = object : WebChromeClient() {
-                override fun onConsoleMessage(msg: android.webkit.ConsoleMessage?): Boolean {
-                    android.util.Log.d("WebConsole", (msg?.message() ?: "") + " @" + (msg?.lineNumber() ?: 0))
-                    return true
-                }
-
-                override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
-                    if (!request.resources.contains(android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
-                        request.deny()
-                        return
-                    }
-                    if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        request.grant(request.resources)
-                    } else {
-                        pendingPermissionRequest = request
-                        permissionsLauncher?.launch(arrayOf(android.Manifest.permission.RECORD_AUDIO)) ?: request.deny()
-                    }
-                }
-
-                override fun onShowFileChooser(
-                    view: WebView,
-                    callback: android.webkit.ValueCallback<Array<android.net.Uri>>,
-                    params: FileChooserParams,
-                ): Boolean {
-                    fileChooserCallback?.onReceiveValue(emptyArray())
-                    fileChooserCallback = callback
-                    val capture = runCatching { params.isCaptureEnabled }.getOrDefault(false)
-                    if (capture) {
-                        try {
-                            val dir = java.io.File(cacheDir, "camera").apply { mkdirs() }
-                            val file = java.io.File(dir, "photo_" + System.currentTimeMillis() + ".jpg")
-                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                this@MainActivity,
-                                packageName + ".fileprovider",
-                                file,
-                            )
-                            cameraUri = uri
-                            cameraLauncher?.launch(uri)
-                            return true
-                        } catch (e: Exception) {
-                            android.util.Log.w("Camera", "capture failed", e)
-                        }
-                    }
-                    val types = params.acceptTypes.filter { it.isNotBlank() }.toTypedArray()
-                    fileChooserLauncher?.launch(if (types.isEmpty()) arrayOf("*/*") else types) ?: run {
-                        callback.onReceiveValue(emptyArray())
-                        return false
-                    }
-                    return true
-                }
-            }
-            val rootView = android.widget.FrameLayout(this)
-            val res = resources
-            val statusId = res.getIdentifier("status_bar_height", "dimen", "android")
-            val navId = res.getIdentifier("navigation_bar_height", "dimen", "android")
-            val top = if (statusId > 0) res.getDimensionPixelSize(statusId) else 0
-            val bottom = if (navId > 0) res.getDimensionPixelSize(navId) else 0
-            rootView.setPadding(0, top, 0, bottom)
-            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
-                val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-                val ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
-                view.setPadding(0, bars.top, 0, maxOf(bars.bottom, ime.bottom))
-                insets
-            }
-            rootView.addView(
-                web,
-                android.widget.FrameLayout.LayoutParams(
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            setContentView(rootView)
-            web.loadUrl("https://appassets.androidplatform.net/web/index.html")
-            return
-        }
-        val debugScreen = intent.getStringExtra("screen")
-        val importLocal = intent.getStringExtra("importLocal")
-        if (importLocal != null) {
-            Thread {
-                try {
-                    val result = com.moyuer233.deepseeknative.data.ArchiveImporter.import(this, android.net.Uri.fromFile(java.io.File(importLocal)))
-                    if (result.error == null) {
-                        com.moyuer233.deepseeknative.data.LocalStore.save(this, result.sessions)
-                    }
-                } catch (_: Exception) {}
-            }.start()
-        }
-        val testApiKey = intent.getStringExtra("testApiKey")
-        if (testApiKey != null) {
-            Thread {
-                com.moyuer233.deepseeknative.data.ApiClient.streamApiChat(
-                    apiKey = testApiKey,
-                    prompt = "say hi",
-                    thinking = false,
-                    onContent = { android.util.Log.d("ChatTest", "delta: " + it.take(120)) },
-                    onDone = { android.util.Log.d("ChatTest", "done") },
-                    onError = { android.util.Log.d("ChatTest", "error: " + it) },
-                )
-            }.start()
-        }
-        if (intent.hasExtra("testTts")) {
-            Thread {
-                val grant = com.moyuer233.deepseeknative.data.DshAuth.token(this)
-                val bytes = com.moyuer233.deepseeknative.data.ApiClient.synthesizeTts(grant, null, "你好，这是朗读测试。", "stella")
-                android.util.Log.d("TtsTest", "grant=" + (grant != null) + " bytes=" + (bytes?.size ?: -1))
-                val ok = if (bytes != null) com.moyuer233.deepseeknative.data.PcmPlayer.play(bytes) else false
-                android.util.Log.d("TtsTest", "play=" + ok)
-            }.start()
-        }
-        if (intent.hasExtra("testGrant")) {
-            Thread {
-                val token = com.moyuer233.deepseeknative.data.DshAuth.token(this)
-                android.util.Log.d("ChatTest", "grant token? " + (token != null))
-                if (token != null) {
-                    com.moyuer233.deepseeknative.data.ApiClient.streamGrantChat(
-                        grant = token,
-                        prompt = "say hi",
-                        thinking = false,
-                        onContent = { android.util.Log.d("ChatTest", "delta: " + it.take(120)) },
-                        onDone = { android.util.Log.d("ChatTest", "done") },
-                        onError = { android.util.Log.d("ChatTest", "error: " + it.take(300)) },
-                    )
-                }
-            }.start()
-        }
-        com.moyuer233.deepseeknative.ui.theme.ThemeState.mode = SessionStore.themeMode(this)
-        com.moyuer233.deepseeknative.ui.theme.LangState.english = SessionStore.langEnglish(this)
-        val hasToken = SessionStore.token(this) != null || com.moyuer233.deepseeknative.data.DshAuth.token(this) != null || SessionStore.apiKey(this) != null
-        val onboarded = SessionStore.isOnboarded(this)
-        setContent {
-            DeepSeekTheme {
-                var screen by remember {
-                    mutableStateOf(
-                        when (debugScreen) {
-                            "settings" -> Screen.Settings
-                            "account" -> Screen.AccountManage
-                            "data" -> Screen.DataManage
-                            "agreement" -> Screen.Agreement
-                            "devices" -> Screen.Devices
-                            "minor" -> Screen.MinorMode
-                            "onboarding" -> Screen.Onboarding
-                            "welcome" -> Screen.Welcome
-                            "phone" -> Screen.PhoneLogin
-                            "password" -> Screen.PasswordLogin
-                            "session" -> Screen.Session
-                            "chat" -> Screen.Chat
-                            else -> when {
-                                !onboarded -> Screen.Onboarding
-                                hasToken -> Screen.Chat
-                                else -> Screen.Welcome
-                            }
-                        }
-                    )
-                }
-                var sessionTitle by remember { mutableStateOf(if (debugScreen == "session") "Hello greeting" else "") }
-                var selectedSession by remember { mutableStateOf<LocalSession?>(null) }
-                var pendingPrompt by remember { mutableStateOf<String?>(null) }
-                val context = LocalContext.current
-                val oauthLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    if (result.resultCode == Activity.RESULT_OK) {
-                        screen = Screen.Chat
-                    }
-                }
-                fun startGrantLogin() {
-                    Thread {
-                        try {
-                            val url = DshAuth.init(context).getString("authorizeUrl")
-                            runOnUiThread {
-                                oauthLauncher.launch(
-                                    Intent(context, OAuthActivity::class.java).putExtra(OAuthActivity.EXTRA_URL, url)
-                                )
-                            }
-                        } catch (e: Exception) {
-                            runOnUiThread { android.widget.Toast.makeText(context, "授权初始化失败：" + (e.message ?: ""), android.widget.Toast.LENGTH_LONG).show() }
-                        }
-                    }.start()
-                }
-                when (screen) {
-                    Screen.Onboarding -> OnboardingScreen(onDone = {
-                        SessionStore.setOnboarded(context)
-                        screen = if (hasToken) Screen.Chat else Screen.Welcome
-                    })
-                    Screen.Welcome -> WelcomeScreen(
-                        onPhone = { screen = Screen.PhoneLogin },
-                        onPassword = { screen = Screen.PasswordLogin },
-                        onGrantLogin = { startGrantLogin() },
-                    )
-                    Screen.PhoneLogin -> PhoneLoginScreen(
-                        onBack = { screen = Screen.Welcome },
-                        onLoggedIn = { screen = Screen.Chat },
-                    )
-                    Screen.PasswordLogin -> PasswordLoginScreen(
-                        onBack = { screen = Screen.Welcome },
-                        onPhoneLogin = { screen = Screen.PhoneLogin },
-                        onLoggedIn = { screen = Screen.Chat },
-                    )
-                    Screen.Chat -> ChatHomeScreen(
-                        onOpenSession = {
-                            selectedSession = it
-                            sessionTitle = it.title
-                            screen = Screen.Session
-                        },
-                        onOpenSettings = { screen = Screen.Settings },
-                        onStartNewChat = { prompt ->
-                            val session = LocalSession(
-                                id = java.util.UUID.randomUUID().toString(),
-                                title = "新对话",
-                                updatedAt = System.currentTimeMillis(),
-                            )
-                            val list = com.moyuer233.deepseeknative.data.LocalStore.load(context)
-                            list.add(session)
-                            com.moyuer233.deepseeknative.data.LocalStore.save(context, list)
-                            selectedSession = session
-                            sessionTitle = session.title
-                            pendingPrompt = prompt.ifBlank { null }
-                            screen = Screen.Session
-                        },
-                    )
-                    Screen.Session -> ChatScreen(
-                        title = sessionTitle,
-                        initial = selectedSession,
-                        initialPrompt = pendingPrompt,
-                        onBack = { pendingPrompt = null; screen = Screen.Chat },
-                    )
-                    Screen.Settings -> SettingsScreen(
-                        onBack = { screen = Screen.Chat },
-                        onLogout = { screen = Screen.Welcome },
-                        onOpenAccount = { screen = Screen.AccountManage },
-                        onOpenData = { screen = Screen.DataManage },
-                        onOpenAgreement = { screen = Screen.Agreement },
-                    )
-                    Screen.AccountManage -> AccountManageScreen(
-                        onBack = { screen = Screen.Settings },
-                        onOpenDevices = { screen = Screen.Devices },
-                        onOpenMinor = { screen = Screen.MinorMode },
-                    )
-                    Screen.Devices -> DeviceManageScreen(onBack = { screen = Screen.AccountManage })
-                    Screen.MinorMode -> MinorModeScreen(onBack = { screen = Screen.AccountManage })
-                    Screen.DataManage -> DataManageScreen(onBack = { screen = Screen.Settings })
-                    Screen.Agreement -> AgreementScreen(onBack = { screen = Screen.Settings })
-                }
+                val types = params.acceptTypes.filter { it.isNotBlank() }.toTypedArray()
+                fileChooserLauncher?.launch(if (types.isEmpty()) arrayOf("*/*") else types)
+                return true
             }
         }
+        val rootView = android.widget.FrameLayout(this)
+        val res = resources
+        val statusId = res.getIdentifier("status_bar_height", "dimen", "android")
+        val navId = res.getIdentifier("navigation_bar_height", "dimen", "android")
+        val top = if (statusId > 0) res.getDimensionPixelSize(statusId) else 0
+        val bottom = if (navId > 0) res.getDimensionPixelSize(navId) else 0
+        rootView.setPadding(0, top, 0, bottom)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
+            view.setPadding(0, bars.top, 0, maxOf(bars.bottom, ime.bottom))
+            insets
+        }
+        rootView.addView(web, android.widget.FrameLayout.LayoutParams(-1, -1))
+        setContentView(rootView)
+        web.loadUrl("https://appassets.androidplatform.net/web/index.html")
     }
 
     private fun registerSiderBack() {
@@ -558,9 +239,7 @@ class MainActivity : ComponentActivity() {
                 unregisterSiderBack()
             }
         }
-        onBackInvokedDispatcher.registerOnBackInvokedCallback(
-            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb,
-        )
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb)
         siderBackCallback = cb
     }
 
@@ -572,4 +251,134 @@ class MainActivity : ComponentActivity() {
         siderBackCallback = null
     }
 
+    inner class Bridge {
+        @JavascriptInterface
+        fun getToken(): String = DshAuth.token(this@MainActivity) ?: ""
+
+        @JavascriptInterface
+        fun startAuth() {
+            Thread {
+                try {
+                    val url = DshAuth.init(this@MainActivity).getString("authorizeUrl")
+                    runOnUiThread {
+                        authLauncher?.launch(Intent(this@MainActivity, OAuthActivity::class.java).putExtra(OAuthActivity.EXTRA_URL, url))
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        webViewRef?.evaluateJavascript(
+                            "window.__onNativeAuthError && window.__onNativeAuthError(" + JSONObject.quote(e.message ?: "授权初始化失败") + ")",
+                            null,
+                        )
+                    }
+                }
+            }.start()
+        }
+
+        @JavascriptInterface
+        fun setSiderOpen(open: Boolean) {
+            webViewRef?.siderOpen = open
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                legacyBackCallback?.isEnabled = !open
+            }
+            if (open) registerSiderBack() else unregisterSiderBack()
+        }
+
+        @JavascriptInterface
+        fun openTopUp() {
+            startActivity(Intent(this@MainActivity, TopUpActivity::class.java))
+        }
+
+        @JavascriptInterface
+        fun openExternal(url: String) {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+
+        @JavascriptInterface
+        fun startChatImport() {
+            runOnUiThread {
+                chatImportLauncher?.launch(Intent(this@MainActivity, ChatLoginActivity::class.java))
+            }
+        }
+
+        @JavascriptInterface
+        fun readArchiveChunk(path: String, offset: Int, size: Int): String {
+            return try {
+                val expected = java.io.File(cacheDir, "export").canonicalPath
+                val file = java.io.File(path)
+                if (!file.canonicalPath.startsWith(expected)) return ""
+                java.io.RandomAccessFile(file, "r").use { raf ->
+                    raf.seek(offset.toLong())
+                    val len = minOf(size, (file.length() - offset).toInt().coerceAtLeast(0))
+                    val buf = ByteArray(len)
+                    raf.readFully(buf, 0, len)
+                    Base64.encodeToString(buf, Base64.NO_WRAP)
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        @JavascriptInterface
+        fun deleteArchive(path: String) {
+            runCatching {
+                val expected = java.io.File(cacheDir, "export").canonicalPath
+                val file = java.io.File(path)
+                if (file.canonicalPath.startsWith(expected)) file.delete()
+            }
+        }
+
+        @JavascriptInterface
+        fun beginExport(name: String): String {
+            val dir = java.io.File(cacheDir, "export").apply { mkdirs() }
+            val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "deepseek_export.zip" }
+            return java.io.File(dir, safe).apply { outputStream().use { } }.absolutePath
+        }
+
+        @JavascriptInterface
+        fun appendExport(path: String, base64: String): Int {
+            return try {
+                val expected = java.io.File(cacheDir, "export").canonicalPath
+                val file = java.io.File(path)
+                if (!file.canonicalPath.startsWith(expected)) return -1
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                java.io.FileOutputStream(file, true).use { it.write(bytes) }
+                file.length().toInt()
+            } catch (e: Exception) {
+                -1
+            }
+        }
+
+        @JavascriptInterface
+        fun finishExport(path: String, mime: String, name: String) {
+            try {
+                val expected = java.io.File(cacheDir, "export").canonicalPath
+                val file = java.io.File(path)
+                if (!file.canonicalPath.startsWith(expected) || !file.exists()) return
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime.ifBlank { "application/zip" })
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/DeepSeekNative")
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+                }
+                val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                uri?.let { u ->
+                    contentResolver.openOutputStream(u)?.use { out -> file.inputStream().use { it.copyTo(out) } }
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        values.clear()
+                        values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                        contentResolver.update(u, values, null, null)
+                    }
+                }
+                runOnUiThread {
+                    android.widget.Toast.makeText(this@MainActivity, "已导出到 下载/DeepSeekNative", android.widget.Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("NativeShell", "finishExport failed", e)
+            }
+        }
+    }
 }
