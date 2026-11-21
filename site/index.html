@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DeepSeek Chat Demo Android — 用 API 跑的「免费版 DeepSeek」</title>
 <meta name="description" content="独立安卓客户端：用自己的 API Key 或 DeepSeek 账号授权聊天，不受免费版限流；从 chat.deepseek.com 导入全部历史。基于 chat-demo（MIT）。" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234D6BFE'/%3E%3Cpath d='M8 20c4 4 12 4 16 0M10 13c1-3 5-4 8-2 2 1 3 3 4 5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="icon" type="image/png" href="./icon.png" />
+<link rel="apple-touch-icon" href="./icon.png" />
+<meta name="theme-color" content="#3964fe" />
 <link rel="stylesheet" href="./styles.css" />
 <script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
 </head>
@@ -13,7 +15,7 @@
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="brand" href="#top" aria-label="DeepSeek Chat Demo Android 首页">
-      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><path d="M8.5 20.5c3.8 3.6 11.2 3.6 15 0M10.5 13.5c1-2.8 4.6-4 7.4-2.4 1.8 1 2.9 2.8 3.8 4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <img class="brand-icon" src="./icon.png" width="28" height="28" alt="" />
       <span>DeepSeek Chat Demo Android</span>
     </a>
     <nav class="nav-links" aria-label="页面导航">
@@ -263,9 +265,7 @@
         <a class="btn ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">GitHub 仓库</a>
       </div>
       <div class="install-card" role="img" aria-label="安装包信息：versionCode 6，1.1.0，约 2.9 MB">
-        <div class="install-icon">
-          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><path d="M8.5 20.5c3.8 3.6 11.2 3.6 15 0M10.5 13.5c1-2.8 4.6-4 7.4-2.4 1.8 1 2.9 2.8 3.8 4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-        </div>
+        <div class="install-icon"><img src="./icon.png" width="28" height="28" alt="" /></div>
         <div class="install-meta"><b>DeepSeek Chat Demo Android 1.1.0</b><span>Android 7.0+ · versionCode 6 · 约 2.9 MB</span></div>
         <span class="install-badge">APK</span>
         <svg class="install-code" viewBox="0 0 56 56" role="img" aria-label="安装包二维码示意">
