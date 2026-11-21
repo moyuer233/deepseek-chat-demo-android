@@ -109,11 +109,12 @@ export const contextPressure = (session: Session | null) => {
 }
 
 export const formatTokens = (value: number): string => {
+  const trim = (scaled: number) => scaled.toFixed(1).replace(/\.0$/, '')
   if (value >= 1_000_000) {
-    return (value / 1_000_000).toFixed(1) + 'M'
+    return trim(value / 1_000_000) + 'M'
   }
   if (value >= 1_000) {
-    return (value / 1_000).toFixed(1) + 'K'
+    return trim(value / 1_000) + 'K'
   }
   return String(value)
 }
