@@ -132,7 +132,7 @@ export const AccountPane = () => {
         <SettingsRow
           icon={<DshIcon name="link-outline" size={16} />}
           title={t('accountMoreInfo')}
-          onClick={() => nativeShell()?.openExternal?.('https://platform.deepseek.com/usage')}
+          onClick={() => void DeepSeekAccount.openPlatformPage({ url: 'https://platform.deepseek.com/usage' })}
         />
         {isNativeShell() ? (
           <button

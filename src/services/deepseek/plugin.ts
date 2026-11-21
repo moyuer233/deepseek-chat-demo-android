@@ -11,6 +11,8 @@ export interface DeepSeekAccountPlugin {
   openTopUp(): Promise<void>
   /** 用系统浏览器打开外部链接 */
   openExternal(options: { url: string }): Promise<void>
+  /** 应用内打开 DeepSeek 平台页面（用量/账单等） */
+  openPlatformPage(options: { url: string }): Promise<void>
   /** 打开系统无障碍设置，让用户开启扫码辅助 */
   openAccessibilitySettings(): Promise<void>
   /** 扫码辅助的无障碍服务是否已在系统设置里开启 */
@@ -23,6 +25,7 @@ const shellAccount: DeepSeekAccountPlugin = {
   platformAuthToken: () => Promise.resolve({ token: nativeShell()?.getToken() ?? '' }),
   openTopUp: () => Promise.resolve(nativeShell()?.openTopUp()),
   openExternal: ({ url }) => Promise.resolve(nativeShell()?.openExternal(url)),
+  openPlatformPage: ({ url }) => Promise.resolve(nativeShell()?.openPlatformPage?.(url)),
   openAccessibilitySettings: () => Promise.resolve(nativeShell()?.openAccessibilitySettings?.()),
   isScanAssistEnabled: () => Promise.resolve(nativeShell()?.isScanAssistEnabled?.() ?? false),
 }

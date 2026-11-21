@@ -457,6 +457,17 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun openPlatformPage(url: String) {
+            val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
+            val host = uri.host ?: return
+            if (uri.scheme != "https" || (host != "deepseek.com" && !host.endsWith(".deepseek.com"))) return
+            startActivity(
+                Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.PlatformPageActivity::class.java)
+                    .putExtra(com.moyuer233.deepseeknative.ui.PlatformPageActivity.EXTRA_URL, url),
+            )
+        }
+
+        @JavascriptInterface
         fun openExternal(url: String) {
             val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
             if (uri.scheme != "https" && uri.scheme != "http") return

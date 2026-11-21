@@ -45,7 +45,7 @@
   }, true);
 
   function currentMethod() {
-    return detectMethod() || chosenMethod;
+    return window.__dsPayMethod || detectMethod() || chosenMethod;
   }
 
   /** 读页面上当前选中的支付方式：微信支付 / 支付宝；读不到返回空串。 */

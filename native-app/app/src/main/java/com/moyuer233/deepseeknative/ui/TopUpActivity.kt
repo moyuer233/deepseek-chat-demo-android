@@ -115,15 +115,15 @@ class TopUpActivity : ComponentActivity() {
             Toast.makeText(this, tip, Toast.LENGTH_LONG).show()
             return
         }
-        if (channel == "wechat") {
-            try {
-                val fallback = Intent(Intent.ACTION_VIEW, Uri.parse("weixin://"))
-                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(fallback)
-                return
-            } catch (e: Exception) {
-                // 走下面的提示
-            }
+        // 没有 launch intent 时用 scheme 兜底（支付宝：alipays://；微信：weixin://）
+        val scheme = if (channel == "alipay") "alipays://" else "weixin://"
+        try {
+            val fallback = Intent(Intent.ACTION_VIEW, Uri.parse(scheme))
+            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(fallback)
+            return
+        } catch (e: Exception) {
+            // 走下面的提示
         }
         val missing = if (channel == "alipay") NativeCopy.topupNoAlipay else NativeCopy.topupNoWeChat
         Toast.makeText(this, missing, Toast.LENGTH_LONG).show()

@@ -28,7 +28,18 @@
     xhr.addEventListener('load', function () {
       try {
         if (xhr.__dsUrl && /pay/i.test(xhr.__dsUrl)) {
-          report('[payreq] ' + xhr.__dsUrl + ' ' + String(xhr.__dsBody || '').slice(0, 300));
+          var body = String(xhr.__dsBody || '');
+          report('[payreq] ' + xhr.__dsUrl + ' ' + body.slice(0, 300));
+          // 支付渠道就在请求体里：fallback_method_type = WECHAT / ALIPAY
+          var fm = /"fallback_method_type"\s*:\s*"([A-Za-z_]+)"/.exec(body);
+          if (fm) {
+            var v = fm[1].toUpperCase();
+            var method = v === 'ALIPAY' ? 'alipay' : (v === 'WECHAT' ? 'wechat' : '');
+            if (method) {
+              window.__dsPayMethod = method;
+              report('[paymethod] ' + method);
+            }
+          }
           interesting(xhr.__dsUrl, xhr.responseText);
         }
       } catch (e) {}
@@ -47,6 +58,15 @@
             var url = String(res && res.url || '');
             if (/pay/i.test(url) && res.clone) {
               report('[payreq] ' + url + ' ' + reqBody.slice(0, 300));
+              var fm = /"fallback_method_type"\s*:\s*"([A-Za-z_]+)"/.exec(reqBody);
+              if (fm) {
+                var v = fm[1].toUpperCase();
+                var method = v === 'ALIPAY' ? 'alipay' : (v === 'WECHAT' ? 'wechat' : '');
+                if (method) {
+                  window.__dsPayMethod = method;
+                  report('[paymethod] ' + method);
+                }
+              }
               res.clone().text().then(function (t) { interesting(url, t); }).catch(function () {});
             }
           } catch (e) {}
