@@ -7,7 +7,6 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, var(--overlay-opacity));
-  backdrop-filter: blur(2px);
 
   [data-ds-dark-theme] & {
     --overlay-opacity: 0.6;

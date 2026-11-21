@@ -1,5 +1,5 @@
 .item {
-  transition: background-color 0.15s ease, transform 0.12s ease;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
   position: relative;
   display: flex;
   align-items: center;
@@ -29,10 +29,6 @@
       }
     }
   }
-}
-
-.item:active {
-  transform: scale(0.985);
 }
 
 .title {

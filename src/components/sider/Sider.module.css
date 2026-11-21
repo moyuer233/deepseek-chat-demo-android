@@ -35,7 +35,7 @@
 }
 
 .newChat {
-  transition: transform 0.12s ease, background-color 0.15s ease;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out), opacity var(--ds-transition-duration) var(--ds-ease-in-out);
   position: relative;
   display: flex;
   align-items: center;
@@ -249,10 +249,6 @@
 }
 
 
-.newChat:active,
-.settings:active {
-  transform: scale(0.985);
-}
 
 
 .search {

@@ -22,6 +22,8 @@ body {
     system-ui;
 
   --ds-transition-duration: 0.2s;
+  --ds-transition-duration-fast: 0.1s;
+  --dsh-hairline-width: 0.5px;
   --ds-transition-duration-slow: 0.3s;
 }
 

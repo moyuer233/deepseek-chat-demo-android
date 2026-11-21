@@ -10,7 +10,7 @@
   font-size: 16px;
   line-height: var(--line-height);
   border-radius: 24px;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
+  border: var(--dsh-hairline-width, 1px) solid var(--dsw-alias-border-l2-darkmode-thin);
   background: var(--dsw-specific-input-major);
   overflow: hidden;
 }
@@ -278,15 +278,12 @@
   transition-property: border, background;
   transition-duration: 0.2s;
 
-  transition: border-color 0.2s, background-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+  transition: border-color var(--ds-transition-duration) var(--ds-ease-in-out), background-color var(--ds-transition-duration) var(--ds-ease-in-out), color var(--ds-transition-duration) var(--ds-ease-in-out);
 
   &:hover:not(:disabled) {
     background-color: var(--dsw-alias-interactive-bg-hover);
   }
 
-  &:active:not(:disabled) {
-    transform: scale(0.96);
-  }
 
   &:disabled {
     opacity: 0.4;
@@ -326,9 +323,7 @@
   background: var(--dsw-alias-button-primary-fill);
   color: var(--dsw-static-neutral-bluish-00);
   cursor: pointer;
-  transition: background 0.2s ease;
-
-  animation: send-pop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: background var(--ds-transition-duration) var(--ds-ease-in-out);
 
   &:not(.disabled):hover {
     background: var(--dsw-alias-button-primary-hover);
@@ -390,7 +385,6 @@
   font: inherit;
   font-size: 13px;
   cursor: pointer;
-  animation: card-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 
   [data-ds-dark-theme] & {
     background: #26282f;
@@ -407,40 +401,9 @@
 }
 
 
-/* 动效：发送键弹出、附件卡片错峰上浮、开关按压缩放 */
-@keyframes send-pop {
-  from {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 
 
 
-@keyframes card-in {
-  from {
-    transform: translateY(6px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-
-
-.attachCard:nth-child(2) {
-  animation-delay: 0.04s;
-}
-
-.attachCard:nth-child(3) {
-  animation-delay: 0.08s;
-}
 
 
 

@@ -96,26 +96,23 @@
 /* 设置页从右侧滑入，子页同样过渡 */
 @keyframes settings-in {
   from {
-    transform: translateX(24px);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
     opacity: 1;
   }
 }
 
 .overlay {
-  animation: settings-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: settings-in var(--ds-transition-duration) var(--ds-ease-in-out);
 }
 
 .row {
-  transition: background-color 0.14s ease, transform 0.12s ease;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
 }
 
 .row:active {
   background-color: var(--dsw-alias-interactive-bg-hover);
-  transform: scale(0.995);
 }
 
 @media (prefers-reduced-motion: reduce) {
