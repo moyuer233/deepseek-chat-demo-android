@@ -144,8 +144,18 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
 export const MobileSider = () => {
   const open = useMobileSider((state) => state.open)
   const drag = useMobileSider((state) => state.drag)
+  const [visibleSider, setVisibleSider] = useState(open || drag > 0)
+  useEffect(() => {
+    if (open || drag > 0) {
+      setVisibleSider(true)
+      return
+    }
+    // 关闭时保留挂载 240ms，让位移动画跑完再卸载
+    const timer = window.setTimeout(() => setVisibleSider(false), 240)
+    return () => window.clearTimeout(timer)
+  }, [open, drag])
   const fraction = open ? 1 : drag
-  if (!open && drag <= 0.001) {
+  if (!visibleSider) {
     return null
   }
   return (
