@@ -6,7 +6,7 @@
 
 <h1 align="center">DeepSeek Chat Demo</h1>
 
-<p align="center"><i>Run your own “free-tier” DeepSeek on your API: no free-tier throttling, full history import.</i></p>
+<p align="center"><i>A “free-tier” DeepSeek on your own API: no throttling, and your history comes along.</i></p>
 
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
@@ -17,19 +17,28 @@
 
 <p align="center"><b>English</b> | <a href="README.zh-CN.md">简体中文</a></p>
 
-> An **independent** Android client (not a chat-demo fork) that reuses the [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT) web core. Unofficial; not affiliated with, endorsed by, or sponsored by DeepSeek.
+> **Positioning**: a “free-tier DeepSeek” on your own API — your key, your quota, no free-tier throttling — an independent project with full history import, built on chat-demo.
+>
+> Not a chat-demo fork: it reuses chat-demo's web core (MIT). Unofficial; not affiliated with, endorsed by, or sponsored by DeepSeek.
 
-## A “free-tier” DeepSeek on your own API
+## What it is
 
-| Official app: quota reached, wait it out | This app: 1M context, keep chatting |
+A DeepSeek client on your phone: it calls `api.deepseek.com` with **your own API key or account grant**, so the quota and billing are yours and the official free tier's throttling does not apply. At the same time it brings your whole chat.deepseek.com history onto the device — browsable and exportable.
+
+- **“Free-tier” experience, your API account**: free-tier shape, your own API bill.
+- **Independent project**: not a fork; only the chat-demo web core is reused (MIT).
+- **History import**: export a ZIP from chat.deepseek.com, import every conversation, keep it in local IndexedDB, export it again any time.
+- **1M context**: the status line shows “context 8.2K / 1M”; near the limit only older turns are compacted on-device, originals are kept.
+
+## No throttling, how
+
+| Official free tier: wait for the quota | This app: 1M context, keep chatting |
 | --- | --- |
-| <img src="docs/assets/screens-official-limit.jpg" width="270" alt="Official app: server busy, usage limit reached" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="This app: context 8.2K / 1M" /> |
+| <img src="docs/assets/screens-official-limit.jpg" width="270" alt="Official free-tier limit message" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="This app: context 8.2K / 1M" /> |
 
-The free tier throttles you and says the server is busy once its quota is reached. This app takes another route: it calls `api.deepseek.com` with **your own API key or account grant**, so the quota is yours and the free-tier throttling does not apply, with a **1M-token context window** and "context 8.2K / 1M" plus total tokens right under the composer. It is also a full client for your history: import every conversation from chat.deepseek.com and keep it on the device.
+The free tier throttles you and asks you to wait (left). This app bypasses that entrance: it calls the API directly with your key or grant (right), and shows context usage plus tokens under the composer.
 
-Near the limit it only compacts older turns into a summary **on your device** — recent messages stay untouched and your local chat history is never deleted.
-
-To be clear: API calls are metered against your own account. "Free tier" here means the experience, not zero cost.
+To be clear: API calls are metered against your own account. “Free tier” means the experience, not zero cost.
 
 ## Screens
 
@@ -45,28 +54,29 @@ To be clear: API calls are metered against your own account. "Free tier" here me
 - Markdown: code, tables, math, Mermaid diagrams, citations.
 - Message tree and branch switching, regenerate, edit and resend, continue, copy, vote, share.
 
-**Sessions**
+**Sessions and history**
 - New, rename, delete, search; grouped as Today / Yesterday / 7 Days / 30 Days.
-- Export to `deepseek_data-*.zip` and import it again; a diff preview (added / updated / local-only) comes first.
-- Context compaction, manual or automatic: older turns become a summary, local originals stay.
+- Import every conversation from chat.deepseek.com, with a diff preview (added / updated / local-only).
+- Export to `deepseek_data-*.zip` and import it again.
+- Context compaction, manual or automatic; local originals are kept.
 
 **Account and top-up**
-- Sign in to chat.deepseek.com once and import every conversation; chat with the account grant, no API key needed, and a manual key still works.
-- Balance and bonus shown in the account page. The built-in top-up page detects the payment QR and opens the **WeChat or Alipay** app you picked.
-- Optional Scan assist: an accessibility service that taps "Scan → Album" for you within 20 seconds. Off by default, can be turned off in Android settings.
+- Sign in to chat.deepseek.com once for history import; chat with the DeepSeek account grant (no key) or a manual API key.
+- Balance and bonus in the account page; the built-in top-up page detects the payment QR and opens the WeChat or Alipay app you picked.
+- Optional Scan assist: an accessibility service that taps “Scan → Album” within 20 seconds, off by default.
 
 **Native shell**
-- Plain WebView plus `window.NativeShell`, no Capacitor bridge. Back goes up one level at a time, right-swipe opens the sidebar anywhere, left-swipe closes it.
+- Plain WebView plus `window.NativeShell`, no Capacitor bridge. Back goes up one level, right-swipe opens the sidebar, left-swipe closes it.
 - Camera, gallery, files and microphone use the system UI. Release builds use R8 and resource shrinking; the APK is about 2.9 MB.
 
-## Moving over from the official app
+## Moving your history over
 
 1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and export your chats to a ZIP.
 2. Install this app from [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) (or build it below).
-3. Settings → Data → Import chat history, pick the ZIP, check the diff preview and import.
+3. Settings → Data → Import chat history, pick the ZIP, check the diff (added / updated / local-only) and import.
 4. Settings → Account → sign in with your DeepSeek account (account grant) or paste an API key. Then just chat.
 
-Local data stays on the device (IndexedDB); exported ZIP files are yours to keep.
+Local data stays on the device; exported ZIP files are yours to keep.
 
 ## Download
 
@@ -107,4 +117,4 @@ MIT, with the upstream LICENSE and attribution kept. The DeepSeek name and logo 
 
 - Scan assist is an optional accessibility service, off by default. It is active only for 20 seconds after the top-up flow opens WeChat/Alipay and does not read or store chats or payment details.
 - Voice input needs microphone permission; images and files use the system pickers.
-- Chats stay on the device; no account password is uploaded, and the grant token is encrypted with Android Keystore.
+- Chats stay on the device; no account password is stored, and the grant token is encrypted with Android Keystore.

@@ -7,11 +7,19 @@
 把 DeepSeek 官方的 chat-demo（MIT，纯静态网页聊天客户端）做成安卓 App，开源在
 https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/chat-demo 二次开发的独立仓库，非 fork；保留上游署名，README 标明非官方）。
 
+## 项目定位（用户原话，2026-11-21）
+
+> 我们的项目定位是用API的「免费版 Deepseek」，用自己的API聊天，不受免费版限流限制，支持历史导入的独立项目，但是用了chat-demo。
+
+- **独立项目**：不是 chat-demo 的 fork；复用它的网页内核（MIT），保留署名与 LICENSE。
+- **用 API 的「免费版 DeepSeek」**：聊天直接调 `api.deepseek.com`，用用户自己的 API Key 或 DSH 账号授权；额度与计费归用户账号，因此不受官方免费版限流影响。
+- **历史导入**：从 chat.deepseek.com 导出并导入全部会话，本机保存，可再次导出/导入。
+- **非官方**：与 DeepSeek 无隶属或背书关系。对外文案（README/Release）统一按此口径，不写成官方客户端。
+
 ## 目标（用户拍板）
 
-1. 用户在 App 里登录 chat.deepseek.com 账号后：
-   - 一键导入该账号下的全部会话（导入需要 chat.deepseek.com 登录态）；
-   - App 用 DeepSeek 账号授权（DSH OAuth grant）直接聊天，不需要 API Key。
+1. 用 API 的「免费版 DeepSeek」：用户自己的 API Key 或 DSH 账号授权即可聊天，额度走自己的 API，不受官方免费版限流。
+   - 从 chat.deepseek.com 导出并一键导入该账号下的全部会话（导入自身需要 chat.deepseek.com 登录态）。
 2. 聊天走 api.deepseek.com，界面与交互沿用 chat-demo（不重做视觉）。
 3. 登录一次之后就该"能直接聊"，不要求用户手动填 Key、手动导数据。
 4. 内置充值入口：内置 TopUpActivity 用**桌面 UA** 打开 https://platform.deepseek.com/top_up，页面出微信二维码后注入 jsQR
@@ -25,8 +33,10 @@ https://github.com/moyuer233/deepseek-chat-demo-android （基于 deepseek-ai/ch
 
 ## 技术路线
 
+> 2026-11-21 起当前实现是 `native-app/`：Kotlin + Compose 外壳，WebView 加载 `assets/web` 的 chat-demo 构建产物，桥接层是 `window.NativeShell`（授权/导入导出/充值/相机/麦克风/侧滑/返回）。下面的 Capacitor 段落是历史路线，不要再按它改。
+
 - Android 优先，Capacitor 8 套壳（WebView 装现有 dist），不重写 UI；iOS 暂不做。
-- 应用 id：com.moyuer233.deepseekchatdemo；显示名：DeepSeek Chat Demo。
+- 应用 id：当前 `com.moyuer233.deepseeknative`（历史 Capacitor 版为 `com.moyuer233.deepseekchatdemo`）；显示名：DeepSeek Chat Demo。
 - 聊天请求走 api.deepseek.com：账号模式下 `x-dsh-auth-token`（grant），无 grant 时回退 API Key；登录/导出走原生 HTTP，绕开 CORS。
 - 改动尽量少：新增 `capacitor.config.ts`、`android/`、登录插件、导入服务；上游文件只在必要处补 Android 适配
   （返回键、安全区/edge-to-edge、外链用系统浏览器、历史导出改系统分享保存）。

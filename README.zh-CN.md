@@ -6,7 +6,7 @@
 
 <h1 align="center">DeepSeek Chat Demo</h1>
 
-<p align="center"><i>用你自己的 API，跑一个「免费版 DeepSeek」：不限流、能导入全部历史。</i></p>
+<p align="center"><i>用 API 跑一个「免费版 DeepSeek」：不限流，历史也能带走。</i></p>
 
 <p align="center">
   <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/v/release/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&logo=github&logoColor=white&color=2088FF" alt="release" /></a>
@@ -17,19 +17,28 @@
 
 <p align="center">English | <b>简体中文</b></p>
 
-> **独立项目**（不是 chat-demo 的 fork），复用了 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）的网页内核。非官方，与 DeepSeek 无隶属或背书关系。
+> **项目定位**：用 API 的「免费版 DeepSeek」，用自己的 API 聊天，不受免费版限流限制，支持历史导入的独立项目——但是用了 chat-demo。
+>
+> 不是 chat-demo 的 fork；复用了它的网页内核（MIT）。非官方，与 DeepSeek 无隶属或背书关系。
 
-## 用 API 跑的「免费版 DeepSeek」
+## 它是什么
 
-| 官方 App：额度到顶，只能等 | 本 App：1M 上下文，照常聊 |
+一个装在自己手机上的 DeepSeek 客户端：聊天直接调用 `api.deepseek.com`，用**你自己的 API Key 或 DeepSeek 账号授权**，额度与计费归你的账号，因此不受官方免费版限流影响；同时把 chat.deepseek.com 的历史会话完整搬到本机，随时能翻、能导出。
+
+- **用 API 的「免费版」**：体验是免费版的形态，账走你自己的 API。
+- **独立项目**：不是 fork，只复用 chat-demo 的网页内核（MIT）。
+- **历史导入**：从 chat.deepseek.com 导出 ZIP，一键导入全部会话；本机 IndexedDB 保存，可再次导出/导入。
+- **1M 上下文**：状态行实时显示「上下文 8.2K / 1M」，接近上限只在本机压摘要，原文不删。
+
+## 不限流，怎么做到
+
+| 官方免费版：额度到顶要等 | 本 App：1M 上下文，照常聊 |
 | --- | --- |
-| <img src="docs/assets/screens-official-limit.jpg" width="270" alt="官方 App：服务器繁忙，使用额度已达上限" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="本 App：上下文 8.2K / 1M" /> |
+| <img src="docs/assets/screens-official-limit.jpg" width="270" alt="官方免费版限额提示" /> | <img src="docs/assets/screens-chat-1m.png" width="270" alt="本 App：上下文 8.2K / 1M" /> |
 
-官方免费版会限流、额度到顶时提示「服务器繁忙，使用额度已达上限，将于 … 恢复」。本 App 换了一条路：直接调用 `api.deepseek.com` 的聊天接口，用你**自己的 API Key 或账号授权**聊天，额度来自你的账号，**不受官方免费版限流影响**；上下文窗口 **1M token**，输入框下方实时显示「上下文 8.2K / 1M」和累计 tokens。
+官方免费版限流时会提示「服务器繁忙，使用额度已达上限，将于 … 恢复」（左）。本 App 换了一条路：不经过官方免费版的限流入口，而是用你的 Key/授权直接打 API（右），输入框下方实时显示上下文占用与 tokens。
 
-它同时是一个能接住历史的完整客户端：从 chat.deepseek.com 导入全部会话，本机保存；接近上限时只在本机把较早的对话整理成摘要——最近消息原样保留，**本机聊天记录一条不删**。
-
-前提说清楚：API 调用按量计费，额度用你账号自己的；这里的「免费版」指体验形态，不是零成本。
+前提说清楚：API 按量计费，额度来自你自己的账号。「免费版」指体验形态，不是零成本。
 
 ## 界面
 
@@ -45,34 +54,35 @@
 - Markdown：代码块、表格、公式、Mermaid 图表、引用。
 - 消息树与分支切换、重新生成、编辑重发、继续生成、复制、赞踩、分享。
 
-**会话**
+**会话与历史**
 - 新建、重命名、删除、搜索；按 Today / Yesterday / 7 Days / 30 Days 分组。
-- 导出为 `deepseek_data-*.zip`，可再次导入；导入前先给差异预览（新增/更新/仅本机）。
-- 上下文压缩：手动或自动，把旧区间压成摘要，本机原文保留。
+- 从 chat.deepseek.com 导入全部会话；导入前给差异预览（新增/更新/仅本机）。
+- 导出为 `deepseek_data-*.zip`，可再次导入。
+- 上下文压缩：手动或自动，旧区间压成摘要，本机原文保留。
 
 **账号与充值**
-- 登录 chat.deepseek.com 一次，导入该账号全部会话；之后用账号 grant 聊天，免填 API Key，也可手动填 Key 兜底。
-- 账户页显示余额、赠送额度；内置充值页识别支付码，按你选的**微信/支付宝**拉起对应 App。
-- 可选「扫码辅助」：无障碍服务在 20 秒内自动点「扫一扫 → 相册」，默认关闭，随时可在系统设置里关掉。
+- 登录 chat.deepseek.com 一次做历史导入；聊天用 DeepSeek 账号授权（免 Key），也可手动填 API Key。
+- 账户页显示余额与赠送额度；内置充值页识别支付码，按你选的微信/支付宝拉起对应 App。
+- 可选「扫码辅助」：无障碍服务在 20 秒内自动点「扫一扫 → 相册」，默认关闭。
 
 **原生外壳**
-- 纯 WebView + `window.NativeShell`，没有 Capacitor 桥；返回键逐级后退、任意位置右滑开侧栏、左滑关闭。
+- 纯 WebView + `window.NativeShell`，没有 Capacitor 桥；返回键逐级后退、右滑开侧栏、左滑关闭。
 - 相机、相册、文件、麦克风走系统能力；Release 开 R8 与资源收缩，APK 约 2.9 MB。
 
-## 从官方 App 换过来
+## 把历史搬过来
 
 1. 在浏览器打开 [chat.deepseek.com](https://chat.deepseek.com)，从官方导出入口拿到会话 ZIP。
-2. 安装本 App（[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) 下载 APK，或本地构建）。
-3. 设置 → 数据管理 → 导入历史对话，选刚才的 ZIP；确认差异预览后导入。
-4. 设置 → 账户 → 登录 DeepSeek 账号（账号授权），或填 API Key。之后就能直接聊。
+2. 安装本 App（[Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) 下载，或本地构建）。
+3. 设置 → 数据管理 → 导入历史对话，选 ZIP；确认「新增 / 有更新 / 本地独有」差异后导入。
+4. 设置 → 账户 → 登录 DeepSeek 账号（账号授权）或填 API Key。之后直接聊。
 
-本机数据只在设备上（IndexedDB）；导出的 ZIP 由你自己保管。
+数据只在设备上；导出的 ZIP 由你自己保管。
 
 ## 下载
 
 APK 在 [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases)。自签名，Android 7.0+。
 
-- **1.1.0（当前，native）**：`native-app/` 的 Compose 外壳 + chat-demo 网页内核，原生桥接账号授权、导入导出、相机/文件、无障碍扫码辅助。
+- **1.1.0（当前，native）**：`native-app/` 的 Compose 外壳 + chat-demo 网页内核，原生桥负责授权、导入导出、相机/文件、无障碍扫码辅助。
 - **0.2.x（legacy）**：早期 Capacitor 套壳版本，只作历史保留。
 
 ## 构建
@@ -107,4 +117,4 @@ MIT，保留上游 LICENSE 与出处。DeepSeek 名称与图标归深度求索�
 
 - 扫码辅助是可选的无障碍服务，默认关闭；只在充值拉起微信/支付宝后的 20 秒内动作，不读取、不存储聊天或支付信息。
 - 语音输入需要麦克风权限；图片和文件走系统选择器。
-- 聊天记录只存在本机；没有账号密码上传，授权 token 由 Android Keystore 加密保存。
+- 聊天记录只存在本机；不保存账号密码，授权 token 由 Android Keystore 加密保存。
