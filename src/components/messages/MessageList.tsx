@@ -32,6 +32,8 @@ import styles from './MessageList.module.css'
 /** 距底部小于该值时视为在底部，流式内容增长时跟随 */
 const STICKY_THRESHOLD = 40
 const EMPTY_VERSIONS: MessageVersions = { ids: [], index: -1 }
+/** 首屏只渲染最近这么多条；更早的消息按「显示更早」逐批展开，避免长会话一次解析上百条 Markdown */
+const PAGE_SIZE = 25
 
 export const MessageList = ({
   session,
@@ -52,6 +54,11 @@ export const MessageList = ({
   const [previousVersions, setPreviousVersions] = useState(() =>
     buildMessageVersions(session, new Map())
   )
+  // 首屏渲染的可见窗口大小；切会话时重置回最近一页
+  const [windowCount, setWindowCount] = useState(PAGE_SIZE)
+  useEffect(() => {
+    setWindowCount(PAGE_SIZE)
+  }, [session.id])
   const versions = useMemo(
     () => buildMessageVersions(session, previousVersions),
     [session, previousVersions]
@@ -141,13 +148,40 @@ export const MessageList = ({
 
   const lastIndex = messages.length - 1
   const uploadRetryId = getUploadRetryId(messages, streaming)
+  // 可见窗口：从末尾往前取 visibleCount 条，开头补一个「显示更早」按钮
+  const visibleCount = Math.min(messages.length, windowCount)
+  const startIndex = messages.length - visibleCount
+  const hiddenCount = startIndex
+  const shown = startIndex > 0 ? messages.slice(startIndex) : messages
   return (
     <ScrollToBottomContext.Provider value={scrollToBottom}>
       <div ref={isMobile ? undefined : scrollRef} className={styles.container}>
         <div ref={isMobile ? scrollRef : undefined} className={styles.scroll}>
           <div ref={contentRef} className={styles.column}>
-            {messages.map((message, index) =>
-              message.role === 'user' ? (
+            {hiddenCount > 0 ? (
+              <button
+                type="button"
+                className={styles.loadEarlier}
+                onClick={() => {
+                  // 记录当前高度，展开后把视口保持在原来的那条消息上
+                  const el = scrollRef.current
+                  const before = el?.scrollHeight ?? 0
+                  const beforeTop = el?.scrollTop ?? 0
+                  setWindowCount((count) => count + PAGE_SIZE)
+                  requestAnimationFrame(() => {
+                    if (!el) {
+                      return
+                    }
+                    el.scrollTop = beforeTop + (el.scrollHeight - before)
+                  })
+                }}
+              >
+                显示更早的 {Math.min(hiddenCount, PAGE_SIZE)} 条消息
+              </button>
+            ) : null}
+            {shown.map((message, offset) => {
+              const index = startIndex + offset
+              return message.role === 'user' ? (
                 <UserMessage
                   key={message.id}
                   sessionId={session.id}
@@ -171,7 +205,7 @@ export const MessageList = ({
                   onSelectVersion={selectVersion}
                 />
               )
-            )}
+            })}
           </div>
         </div>
         {footer}

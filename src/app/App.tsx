@@ -27,6 +27,7 @@ import {
 } from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
 import { Toast } from '../components/base/Toast.js'
+import { ImportIsland } from '../components/base/ImportIsland.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
 import { registerShellAuthCallbacks } from '../services/deepseek/shell.js'
@@ -236,6 +237,7 @@ export const App = () => {
       </div>
       <SettingsDialog />
       <Toast />
+      <ImportIsland />
     </>
   )
 }

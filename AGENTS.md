@@ -141,6 +141,28 @@ cd android && ./gradlew assembleDebug    # Windows: gradlew.bat assembleDebug
    拿到后：装在模拟器上逐屏截图 → 列差异清单 → 逐项改（返回键/状态栏/安全区/启动图/登录页/导出保存/外链）。
 8. README（中英）、Release APK、push（GitHub 网络恢复后）。
 
+## 后续计划
+
+### 长会话虚拟滚动（待实施，2026-11-22 立项）
+
+现状与依据：官方 App 的消息列表用 Compose `LazyColumn` 虚拟滚动（反编译证据：
+`com.deepseek.chat.ui.pages.chat.session.views.AnimatedLazyColumn` + `rememberLazyListState`
++ `itemsIndexed`），只组合视口内的 item，所以长会话打开不卡。我们的实现是 WebView + React，
+`MessageList` 用 `messages.map()` 全量渲染，每条助手消息还要跑一次 `fromMarkdown`
+（mdast + GFM + llm-math），几百条消息 = 几百次解析 + 上万 DOM 节点。
+
+已做的临时方案（1.1.2）：只渲染最近 25 条，顶部「显示更早的 N 条消息」按 25 条一批展开，
+展开时保持视口停在原消息上（`MessageList.tsx` 的 `windowCount` / `PAGE_SIZE`）。
+
+后续要做的：引入虚拟滚动，只渲染视口内消息，任意长度会话滚动都流畅。要点：
+
+- 消息高度不定（Markdown / 代码块 / 图片），必须动态测量；优先选自带高度测量与
+  `scrollToIndex` 的库（如 react-virtuoso），不要手写测量。
+- 必须保住现有行为：流式回复跟随底部（`STICKY_THRESHOLD` / `stickyRef`）、向上翻阅时不被拉回、
+  分支切换后视口停在原消息、切会话恢复滚动位置。
+- 移动端与桌面端滚动容器不同（`.container` / `.scroll` 两套），改之前先统一。
+- 落地前先在本地 headless Chrome 用 200+ 条消息的会话量一次首屏渲染耗时，留基线再改。
+
 ## 里程碑
 
 - M1：能装、能聊（手动填 Key），界面与 chat-demo 一致。

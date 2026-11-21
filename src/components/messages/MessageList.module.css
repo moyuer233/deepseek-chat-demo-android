@@ -35,3 +35,23 @@
   margin: 0 auto;
   padding-bottom: 24px;
 }
+
+/* 长会话只渲染最近一页，更早的消息从这里展开 */
+.loadEarlier {
+  display: block;
+  width: 100%;
+  margin: 8px 0 16px;
+  padding: 10px 12px;
+  border: var(--dsh-hairline-width, 1px) solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.loadEarlier:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}

@@ -82,12 +82,15 @@ export type ImportPreflight = {
 }
 
 /** 解析归档到暂存并对比本地差异（不写入正式数据）；随后用 applyImport 提交。 */
-export const prepareImport = (file: File): Promise<ImportPreflight> =>
+export const prepareImport = (
+  file: File,
+  onProgress?: (progress: { done: number; total: number | null }) => void
+): Promise<ImportPreflight> =>
   enqueueBackup(async () => {
     const { checkArchiveFormat, importArchive } = await import('./history/importArchive.js')
     await checkArchiveFormat(file)
     await db.clearStaging()
-    await importArchive(file)
+    await importArchive(file, onProgress)
     return db.diffStaging()
   })
 

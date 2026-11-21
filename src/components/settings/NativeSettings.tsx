@@ -3,6 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
+import { hideImportIsland, showImportIsland } from '../base/importIslandState.js'
 import { applyImport, BackupError, clearHistory, discardImport, exportHistory, exportHistoryToFile, prepareImport, type ImportMode, type ImportPreflight } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
@@ -67,8 +68,11 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       return
     }
     setImportBusy(true)
+    showImportIsland({ done: 0, total: null, phase: 'prepare' })
     try {
-      const diff = await prepareImport(file)
+      const diff = await prepareImport(file, (progress) =>
+        showImportIsland({ done: progress.done, total: progress.total, phase: 'prepare' })
+      )
       if (diff.added === 0 && diff.updated === 0) {
         await discardImport()
         showToast({ key: 'importUpToDate' })
@@ -79,6 +83,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
+      hideImportIsland()
     }
   }
 
@@ -87,6 +92,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       return
     }
     setImportBusy(true)
+    showImportIsland({ done: 0, total: null, phase: 'apply' })
     try {
       const count = await applyImport(mode)
       showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
@@ -95,6 +101,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       showToast({ key: error instanceof BackupError ? error.key : 'historyImportFailed', type: 'error' })
     } finally {
       setImportBusy(false)
+      hideImportIsland()
     }
   }
 

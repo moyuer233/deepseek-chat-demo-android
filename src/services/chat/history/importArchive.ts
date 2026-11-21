@@ -81,10 +81,17 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
  * 会话读完立即暂存，只保留图片路径映射；图片全部读完后逐会话回填 MIME，不改变图片身份。
  * 写入导入暂存存储；调用方负责先清空暂存，成功后替换正式数据，失败时清理暂存。
  */
-export const importArchive = async (file: File): Promise<void> => {
+/** 导入进度回调：已处理条目数 / 总条目数（未知时 total 为 null）。 */
+export type ImportProgress = { done: number; total: number | null }
+
+export const importArchive = async (
+  file: File,
+  onProgress?: (progress: ImportProgress) => void
+): Promise<void> => {
   if (!(await isZipFile(file))) {
     fail('backupUnrecognized')
   }
+  let done = 0
   const imported = new Set<string>()
   const images = new Map<string, string>()
   /** 已保存的原件：文件 ID → MIME。同一图片出现在多个会话目录时只保存一次。 */
@@ -107,6 +114,8 @@ export const importArchive = async (file: File): Promise<void> => {
   try {
     for await (const entry of readArchive(file)) {
       const { path } = entry
+      done += 1
+      onProgress?.({ done, total: null })
       const sessionId = parseSessionPath(path)
       if (!manifest) {
         if (path === MANIFEST_PATH) {
