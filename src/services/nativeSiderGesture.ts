@@ -15,7 +15,16 @@ export const installNativeSiderGesture = () => {
   }
   w.__siderDrag = (progress: number) => setSiderDrag(Math.min(1, Math.max(0, progress)))
   w.__siderSwipeEnd = (progress: number, velocity: number) => {
-    // 阈值收紧：必须拖过一半或快速甩动才切换，避免轻扫误触
+    if (useMobileSider.getState().open) {
+      // 收回：向左拖过 20% 或向左甩动即可，便于在侧边栏上直接滑动收起
+      if (progress < 0.8 || velocity < -800) {
+        closeMobileSider()
+        return
+      }
+      openMobileSider()
+      return
+    }
+    // 打开：必须拖过一半或快速向右甩动，避免轻扫误触
     if (progress > 0.5 || velocity > 1200) {
       openMobileSider()
     } else {
