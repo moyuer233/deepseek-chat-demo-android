@@ -19,7 +19,8 @@ class ScanAssistService : AccessibilityService() {
         if (running || !isRequested()) {
             return
         }
-        if (event.packageName?.toString() != WECHAT) {
+        val pkg = event.packageName?.toString()
+        if (pkg != WECHAT && pkg != ALIPAY) {
             return
         }
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
@@ -28,7 +29,8 @@ class ScanAssistService : AccessibilityService() {
             return
         }
         running = true
-        clickPlus(0)
+        // 微信：先点右上角「+」；支付宝首页直接有「扫一扫」
+        if (pkg == WECHAT) clickPlus(0) else clickScan(0)
     }
 
     /** 微信首页右上角「+」：不同版本文案不同，逐个试探；页面没渲染完就重试。 */
@@ -113,6 +115,7 @@ class ScanAssistService : AccessibilityService() {
 
     companion object {
         private const val WECHAT = "com.tencent.mm"
+        private const val ALIPAY = "com.eg.android.AlipayGphone"
         private const val REQUEST_TTL_MS = 20_000L
         private val PLUS_LABELS = arrayOf("更多功能", "更多", "添加", "＋", "+")
         private val SCAN_LABELS = arrayOf("扫一扫", "Scan")

@@ -23,6 +23,14 @@ import java.io.FileOutputStream
 class TopUpActivity : ComponentActivity() {
     private var webView: WebView? = null
     private var signInHinted = false
+    /** 当前页面是否 DeepSeek 域；在 onPageFinished 里更新，避免桥线程直接读 WebView */
+    @Volatile
+    private var trustedPage = false
+    /** 防抖：同一张码 30 秒内只处理一次，避免后台重复存图/重复拉起 */
+    @Volatile
+    private var lastHandledQr = ""
+    @Volatile
+    private var lastHandledAt = 0L
     private val jsQrSource by lazy { readAsset("jsqr.js") }
     private val scanSource by lazy { readAsset("topup-scan.js") }
     private val hookSource by lazy { readAsset("topup-hook.js") }
@@ -47,7 +55,8 @@ class TopUpActivity : ComponentActivity() {
                 super.onPageFinished(v, url)
                 // 只在 DeepSeek 自己的页面上注入扫码脚本；外域一律不在本 WebView 里停留
                 val page = url ?: return
-                if (!isDeepSeekUrl(page)) {
+                trustedPage = isDeepSeekUrl(page)
+                if (!trustedPage) {
                     return
                 }
                 if (page.contains("sign_in") && !signInHinted) {
@@ -93,23 +102,31 @@ class TopUpActivity : ComponentActivity() {
         return true
     }
 
-    private fun openWeChat() {
-        val launch = packageManager.getLaunchIntentForPackage("com.tencent.mm")
+    /** 按用户选中的支付方式打开对应 App：微信 / 支付宝。 */
+    private fun openPayApp(channel: String) {
+        val pkg = if (channel == "alipay") "com.eg.android.AlipayGphone" else "com.tencent.mm"
+        val launch = packageManager.getLaunchIntentForPackage(pkg)
         if (launch != null) {
             // 让无障碍服务在接下来 20 秒内自动进「扫一扫 → 相册」
             com.moyuer233.deepseeknative.ScanAssistService.requestScan()
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(launch)
-            Toast.makeText(this, "已保存二维码到相册并打开微信：+ → 扫一扫 → 相册", Toast.LENGTH_LONG).show()
+            val tip = if (channel == "alipay") NativeCopy.topupSavedAlipay else NativeCopy.topupSavedWeChat
+            Toast.makeText(this, tip, Toast.LENGTH_LONG).show()
             return
         }
-        try {
-            val fallback = Intent(Intent.ACTION_VIEW, Uri.parse("weixin://"))
-            fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(fallback)
-        } catch (e: Exception) {
-            Toast.makeText(this, "没有找到微信", Toast.LENGTH_LONG).show()
+        if (channel == "wechat") {
+            try {
+                val fallback = Intent(Intent.ACTION_VIEW, Uri.parse("weixin://"))
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(fallback)
+                return
+            } catch (e: Exception) {
+                // 走下面的提示
+            }
         }
+        val missing = if (channel == "alipay") NativeCopy.topupNoAlipay else NativeCopy.topupNoWeChat
+        Toast.makeText(this, missing, Toast.LENGTH_LONG).show()
     }
 
     private fun saveQrImage(dataUrl: String): String? {
@@ -155,22 +172,38 @@ class TopUpActivity : ComponentActivity() {
 
     inner class Bridge {
         @JavascriptInterface
-        private fun trusted(): Boolean {
-            val host = runCatching { android.net.Uri.parse(webView?.url ?: "").host }.getOrNull() ?: return false
-            return host == "deepseek.com" || host.endsWith(".deepseek.com")
-        }
+        private fun trusted(): Boolean = trustedPage
 
         @JavascriptInterface
-        fun onQrImage(dataUrl: String, text: String) {
+        fun onQrImage(dataUrl: String, text: String, method: String) {
+            android.util.Log.d(
+                "DSTopUp",
+                "onQrImage trusted=" + trusted() + " method=" + method + " text=" + text.take(24) + " len=" + dataUrl.length,
+            )
             if (!trusted()) return
+            val now = System.currentTimeMillis()
+            if (text == lastHandledQr && now - lastHandledAt < 30_000L) {
+                android.util.Log.d("DSTopUp", "skip duplicate qr")
+                return
+            }
+            lastHandledQr = text
+            lastHandledAt = now
             runOnUiThread {
+                // 优先按二维码内容判断，其次按页面上选中的支付方式
+                val channel = when {
+                    text.startsWith("weixin://", true) -> "wechat"
+                    text.startsWith("alipays://", true) || text.contains("qr.alipay.com", true) -> "alipay"
+                    method == "alipay" -> "alipay"
+                    else -> "wechat"
+                }
                 val saved = saveQrImage(dataUrl)
+                android.util.Log.d("DSTopUp", "saveQrImage -> " + saved + " channel=" + channel)
                 copyText(text)
-                if (saved != null) openWeChat() else Toast.makeText(
-                    this@TopUpActivity,
-                    "二维码保存失败，已复制支付内容",
-                    Toast.LENGTH_LONG,
-                ).show()
+                if (saved != null) {
+                    openPayApp(channel)
+                } else {
+                    Toast.makeText(this@TopUpActivity, NativeCopy.topupQrSaveFailed, Toast.LENGTH_LONG).show()
+                }
             }
         }
 
@@ -202,6 +235,17 @@ class TopUpActivity : ComponentActivity() {
             if (!trusted()) return
             android.util.Log.d("DSTopUp", message)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // 切到微信/支付宝后停止扫码，避免后台一直识别和存图
+        webView?.evaluateJavascript("window.__dsTopupSetPaused && window.__dsTopupSetPaused(true)", null)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView?.evaluateJavascript("window.__dsTopupSetPaused && window.__dsTopupSetPaused(false)", null)
     }
 
     override fun onDestroy() {

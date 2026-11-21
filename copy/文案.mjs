@@ -740,6 +740,11 @@ export const sections = [
       { name: "chatExportFailed", where: "导出 · 导出任务失败", zh: "导出失败，请稍后重试", en: "Export failed. Please try again later." },
       { name: "chatExportTimeout", where: "导出 · 等待导出超时", zh: "导出超时，请稍后重试", en: "Export timed out. Please try again later." },
       { name: "downloadFailedHttp", where: "导出 · 下载失败（后接状态码）", zh: "下载失败 HTTP ", en: "Download failed. HTTP " },
+      { name: "topupSavedWeChat", where: "充值 · 打开微信提示", zh: "已保存二维码到相册并打开微信：+ → 扫一扫 → 相册", en: "QR saved to Photos, WeChat opened: + → Scan → Album" },
+      { name: "topupSavedAlipay", where: "充值 · 打开支付宝提示", zh: "已保存二维码到相册并打开支付宝：扫一扫 → 相册", en: "QR saved to Photos, Alipay opened: Scan → Album" },
+      { name: "topupQrSaveFailed", where: "充值 · 二维码保存失败", zh: "二维码保存失败，已复制支付内容", en: "Couldn't save the QR image; payment content copied instead" },
+      { name: "topupNoWeChat", where: "充值 · 没有安装微信", zh: "没有找到微信", en: "WeChat not found" },
+      { name: "topupNoAlipay", where: "充值 · 没有安装支付宝", zh: "没有找到支付宝", en: "Alipay not found" },
     ],
   },
 ];

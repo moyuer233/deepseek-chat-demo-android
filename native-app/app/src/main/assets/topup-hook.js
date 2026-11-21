@@ -24,20 +24,29 @@
   };
   XMLHttpRequest.prototype.send = function () {
     var xhr = this;
+    xhr.__dsBody = arguments[0];
     xhr.addEventListener('load', function () {
-      try { if (xhr.__dsUrl && /pay/i.test(xhr.__dsUrl)) interesting(xhr.__dsUrl, xhr.responseText); } catch (e) {}
+      try {
+        if (xhr.__dsUrl && /pay/i.test(xhr.__dsUrl)) {
+          report('[payreq] ' + xhr.__dsUrl + ' ' + String(xhr.__dsBody || '').slice(0, 300));
+          interesting(xhr.__dsUrl, xhr.responseText);
+        }
+      } catch (e) {}
     });
     return XS.apply(this, arguments);
   };
   var origFetch = window.fetch;
   if (origFetch) {
-    window.fetch = function () {
+    window.fetch = function (input, init) {
+      var reqBody = '';
+      try { reqBody = String((init && init.body) || ''); } catch (e0) {}
       var p = origFetch.apply(this, arguments);
       try {
         p.then(function (res) {
           try {
             var url = String(res && res.url || '');
             if (/pay/i.test(url) && res.clone) {
+              report('[payreq] ' + url + ' ' + reqBody.slice(0, 300));
               res.clone().text().then(function (t) { interesting(url, t); }).catch(function () {});
             }
           } catch (e) {}

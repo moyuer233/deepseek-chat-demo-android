@@ -5,5 +5,5 @@
     android:accessibilityFlags="flagDefault"
     android:canRetrieveWindowContent="true"
     android:description="@string/scan_assist_description"
-    android:packageNames="com.tencent.mm"
+    android:packageNames="com.tencent.mm,com.eg.android.AlipayGphone"
     android:notificationTimeout="100" />

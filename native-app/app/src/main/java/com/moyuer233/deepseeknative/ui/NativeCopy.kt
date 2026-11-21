@@ -136,4 +136,19 @@ object NativeCopy {
     // 界面：导出 · 下载失败（后接状态码）
     val downloadFailedHttp = if (en) "Download failed. HTTP " else "下载失败 HTTP "
 
+    // 界面：充值 · 打开微信提示
+    val topupSavedWeChat = if (en) "QR saved to Photos, WeChat opened: + → Scan → Album" else "已保存二维码到相册并打开微信：+ → 扫一扫 → 相册"
+
+    // 界面：充值 · 打开支付宝提示
+    val topupSavedAlipay = if (en) "QR saved to Photos, Alipay opened: Scan → Album" else "已保存二维码到相册并打开支付宝：扫一扫 → 相册"
+
+    // 界面：充值 · 二维码保存失败
+    val topupQrSaveFailed = if (en) "Couldn't save the QR image; payment content copied instead" else "二维码保存失败，已复制支付内容"
+
+    // 界面：充值 · 没有安装微信
+    val topupNoWeChat = if (en) "WeChat not found" else "没有找到微信"
+
+    // 界面：充值 · 没有安装支付宝
+    val topupNoAlipay = if (en) "Alipay not found" else "没有找到支付宝"
+
 }
