@@ -19,7 +19,7 @@
 
 > 独立项目，复用 [chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）的网页内核；非官方，与 DeepSeek 无隶属关系。
 
-直接用你自己的 API Key 或 DeepSeek 账号授权聊天，额度走自己的账号，不受官方免费版限流；从 chat.deepseek.com 导入全部历史会话，本机保存。
+用你自己的 API Key 或 DeepSeek 账号授权聊天，额度走自己的账号，不受官方免费版限流；把 chat.deepseek.com 导出的会话 ZIP 导入本机，历史就跟着走。
 
 ## 功能
 

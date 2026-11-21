@@ -19,7 +19,7 @@
 
 > An independent project that reuses the [chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT) web core. Unofficial; not affiliated with DeepSeek.
 
-Chat with your own API key or DeepSeek account grant — the quota is yours, so the free tier's throttling does not apply. Import your whole chat.deepseek.com history and keep it on the device.
+Chat with your own API key or DeepSeek account grant — the quota is yours, so the free tier's throttling does not apply. Export your chat.deepseek.com history to a ZIP, import it into the app, and keep it on the device.
 
 ## Features
 

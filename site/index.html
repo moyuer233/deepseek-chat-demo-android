@@ -4,11 +4,11 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DeepSeek Chat Demo Android — 用你自己的 API 聊天</title>
-<meta name="description" content="非官方安卓客户端：用你自己的 DeepSeek API Key 或账号授权聊天，额度归你；支持导入 chat.deepseek.com 全部历史。MIT 开源，Android 7.0+。" />
+<meta name="description" content="非官方安卓客户端：导入 chat.deepseek.com 导出的会话 ZIP，用你自己的 API Key 或账号授权接着聊；额度归你。MIT 开源，Android 7.0+。" />
 <link rel="canonical" href="https://moyuer233.github.io/deepseek-chat-demo-android/" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="DeepSeek Chat Demo Android — 用你自己的 API 聊天" />
-<meta property="og:description" content="聊天直连 api.deepseek.com，额度与账单在你自己的账号；导入 chat.deepseek.com 全部历史。MIT 开源安卓客户端。" />
+<meta property="og:description" content="把 chat.deepseek.com 导出的会话导入 App，再直连 api.deepseek.com 聊天；额度与账单在你自己的账号。MIT 开源安卓客户端。" />
 <meta property="og:url" content="https://moyuer233.github.io/deepseek-chat-demo-android/" />
 <meta property="og:image" content="https://moyuer233.github.io/deepseek-chat-demo-android/icon.png" />
 <meta name="twitter:card" content="summary" />
@@ -18,7 +18,7 @@
 <link rel="icon" type="image/png" href="./icon.png" />
 <link rel="apple-touch-icon" href="./icon.png" />
 <meta name="theme-color" content="#f7f8fb" />
-<link rel="stylesheet" href="./styles.css?v=20261122-4" />
+<link rel="stylesheet" href="./styles.css?v=20261122-5" />
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -47,7 +47,7 @@
       <div class="hero-copy">
         <p class="eyebrow">非官方 · 独立开源 · Android 7.0+</p>
         <h1>DeepSeek 安卓客户端，<br />用你自己的 API 聊天。</h1>
-        <p class="hero-lede">聊天直连 api.deepseek.com，用你的 API Key 或 DeepSeek 账号授权；额度、账单都在你自己账号里，网页免费版的限流不适用。登录一次，可把 chat.deepseek.com 的历史会话全部导入。</p>
+        <p class="hero-lede">聊天直连 api.deepseek.com，用你的 API Key 或 DeepSeek 账号授权；额度、账单都在你自己账号里，网页免费版的限流不适用。把 chat.deepseek.com 导出的会话 ZIP 导入进来，接着用 API 聊。</p>
         <div class="actions">
           <a class="btn btn-primary" href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest">下载 APK</a>
           <a class="btn btn-ghost" href="https://github.com/moyuer233/deepseek-chat-demo-android">看源码</a>
@@ -95,18 +95,18 @@
       <header class="sec-head">
         <p class="kicker"><span>01</span>计费与机制</p>
         <h2>从授权到聊天，三步。</h2>
-        <p class="sec-lede">用 DeepSeek 账号登录授权，或填自己的 API Key；要历史就顺手导入，不要也能直接聊。聊天请求直连 api.deepseek.com，不经过本项目的中转服务器。</p>
+        <p class="sec-lede">先把 chat.deepseek.com 的会话导出成 ZIP，导入本 App；再填自己的 API Key 或用 DeepSeek 账号授权，就能接着聊。聊天请求直连 api.deepseek.com，不经过本项目的中转服务器。</p>
       </header>
       <div class="cards3">
         <article class="card">
           <span class="card-num">01</span>
           <h3>授权账号，或填 API Key</h3>
-          <p>登录在 chat.deepseek.com 官方页面完成，App 不接触密码；授权 token 只存本机，也可以只填 API Key。</p>
+          <p>用 DeepSeek 账号授权，或填自己的 API Key；账号登录在官方授权页完成，App 不接触密码，token 只存本机。</p>
         </article>
         <article class="card">
           <span class="card-num">02</span>
           <h3>导入历史（可跳过）</h3>
-          <p>登录后 App 拉取官方导出包，先给差异预览；不导入历史也能直接开始聊天。</p>
+          <p>先在 chat.deepseek.com 导出会话 ZIP，再到「设置 → 数据管理 → 导入历史对话」；不导入也能直接聊。</p>
         </article>
         <article class="card">
           <span class="card-num">03</span>
@@ -140,10 +140,10 @@
       <div class="split-copy">
         <p class="kicker"><span>02</span>历史导入</p>
         <h2>导入全部历史会话。</h2>
-        <p class="sec-lede">用 DeepSeek 账号登录后，App 拉取官方导出包，先给差异预览：新增、更新、本地独有。选合并、仅新增或覆盖，确认后才写入。也能手动导入 deepseek_data ZIP，随时再导出带走。</p>
+        <p class="sec-lede">在 chat.deepseek.com 把会话导出成 ZIP，导入本 App：先给差异预览——新增、更新、本地独有；选合并、仅新增或覆盖，确认后才写入。导入后随时能再导出 ZIP 带走。</p>
         <ol class="steps-list">
-          <li><span>01</span>登录 chat.deepseek.com</li>
-          <li><span>02</span>App 拉取官方导出包</li>
+          <li><span>01</span>在 chat.deepseek.com 导出会话 ZIP</li>
+          <li><span>02</span>设置 → 数据管理 → 导入历史对话</li>
           <li><span>03</span>看差异，确认导入</li>
         </ol>
         <p class="section-note">导入前不改动本机数据；差异确认后才写入。</p>
