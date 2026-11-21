@@ -48,7 +48,7 @@ b, strong { font-weight: 650; }
 .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
 .btn-ghost:hover { border-color: rgb(195, 200, 210); background: #fff; }
 .btn-small { height: 38px; padding: 0 16px; font-size: 13px; }
-.btn-nav { height: 40px; padding: 0 18px; font-size: 13px; }
+.btn-nav { height: 40px; padding: 0 18px; font-size: 13px; margin-left: auto; }
 a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 
 /* hero */
@@ -262,9 +262,12 @@ h2 { margin-top: 14px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.15; l
 }
 
 @media (max-width: 860px) {
+  /* 手机上隐藏中间导航后，品牌靠左、下载按钮靠右，不要挤在中间 */
+  .nav-pill { justify-content: space-between; }
   .nav-links { display: none; }
   .brand-long { display: none; }
   .brand-short { display: inline; }
+  .btn-nav { margin-left: auto; }
   .hero { min-height: 0; padding: 120px 0 56px; }
   .hero-copy { text-align: left; max-width: none; }
   .hero-lede { margin-left: 0; margin-right: 0; font-size: 15px; }
