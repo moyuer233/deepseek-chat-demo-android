@@ -49,10 +49,26 @@ export const VoiceButton = ({
           aria-label={label}
           aria-pressed={recording}
           aria-disabled={disabled}
-          onClick={() => {
-            if (!disabled) {
+          onPointerDown={(event) => {
+            // 对齐官方：按住说话，按下开始录音
+            event.preventDefault()
+            if (!disabled && status === 'idle') {
               onClick()
             }
+          }}
+          onPointerUp={() => {
+            if (!disabled && status === 'recording') {
+              onClick()
+            }
+          }}
+          onPointerCancel={() => {
+            if (!disabled && status === 'recording') {
+              onClick()
+            }
+          }}
+          onClick={(event) => {
+            // 由 pointer 事件负责起停，阻止 click 再次切换
+            event.preventDefault()
           }}
         >
           {recording ? (
