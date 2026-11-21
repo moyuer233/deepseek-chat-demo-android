@@ -464,7 +464,7 @@ h2 {
 .steps { display: grid; gap: 14px; margin-top: 28px; }
 .steps li { display: flex; align-items: center; gap: 14px; font-size: 14px; color: var(--ink-2); }
 .steps span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.split-visual { display: flex; justify-content: center; }
+.split-visual { display: flex; justify-content: flex-start; align-self: start; }
 .split-stack { width: min(460px, 100%); display: grid; gap: 18px; }
 .section-art { width: 100%; height: auto; display: block; }
 .feature-art { max-width: 560px; margin-top: 22px; }
