@@ -26,6 +26,8 @@ export const zh = {
   enabled: '开',
   disabled: '关',
   searchSessionsPlaceholder: '搜索会话',
+  searchSessionsNarrow: '结果较多，请输入更精确的关键词',
+  searchSessionsSearching: '搜索中…',
   searchSessionsEmpty: '没有匹配的会话',
   checkUpdate: '检查更新',
   updateLatest: '已是最新版本',

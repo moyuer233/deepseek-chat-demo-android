@@ -28,6 +28,8 @@ export const en = {
   enabled: 'On',
   disabled: 'Off',
   searchSessionsPlaceholder: 'Search chats',
+  searchSessionsNarrow: 'Too many results, try a more specific query',
+  searchSessionsSearching: 'Searching…',
   searchSessionsEmpty: 'No matching chats',
   checkUpdate: 'Check for updates',
   updateLatest: 'You are up to date',
