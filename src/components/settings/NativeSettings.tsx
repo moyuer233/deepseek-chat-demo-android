@@ -3,13 +3,15 @@ import { useTranslate } from '../../i18n/index.js'
 import { useSettings, setAutoCompact, setLocale, setModel, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
-import { clearHistory, exportHistory, importHistory } from '../../services/chat/backup.js'
+import { clearHistory, exportHistory, importHistory, type ImportMode } from '../../services/chat/backup.js'
 import { getSession, useChatStore } from '../../services/chat/store.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
 import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
 import { SettingsRow as Row } from './SettingsRow.js'
+import { Modal } from '../base/Modal.js'
+import { Button } from '../base/Button.js'
 import styles from './NativeSettings.module.css'
 import {
   IconDataOutline16,
@@ -38,6 +40,8 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const [page, setPage] = useState<'main' | 'account' | 'data' | 'chat'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
+  const [pendingImport, setPendingImport] = useState<File | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
 
   const cycleLocale = () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')
   const cycleTheme = () => setThemePreference(theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system')
@@ -49,16 +53,24 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         ? t('avatarMenuSettingsDialogThemeSelectLightOption')
         : t('avatarMenuSettingsDialogThemeSelectDarkOption')
 
-  const onImport = async (file: File) => {
-    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
-    if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
+  const onImport = (file: File) => {
+    setPendingImport(file)
+  }
+
+  const runImport = async (mode: ImportMode) => {
+    const file = pendingImport
+    if (!file || importBusy) {
       return
     }
+    setImportBusy(true)
     try {
-      const count = await importHistory(file)
+      const count = await importHistory(file, mode)
       showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
+      setPendingImport(null)
     } catch {
       showToast({ key: 'historyImportFailed', type: 'error' })
+    } finally {
+      setImportBusy(false)
     }
   }
 
@@ -72,10 +84,6 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   }
 
   const onChatImport = async () => {
-    // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
-    if (!window.confirm(t('historyImportConfirmTitle') + '\n' + t('historyImportConfirmDescription'))) {
-      return
-    }
     setChatImportBusy(true)
     try {
       const archive = await requestChatArchive()
@@ -214,6 +222,33 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>
+          {pendingImport ? (
+            <Modal
+              title={t('importModeTitle')}
+              onClose={() => setPendingImport(null)}
+              footer={
+                <Button variant="outlined" size="m" onClick={() => setPendingImport(null)}>
+                  {t('cancel')}
+                </Button>
+              }
+            >
+              <div className={styles.importModes}>
+                <p className={styles.importHint}>{t('importModeHint')}</p>
+                <button type="button" className={styles.importMode} onClick={() => void runImport('merge')}>
+                  <span className={styles.importModeTitle}>{t('importModeMerge')}</span>
+                  <span className={styles.importModeDesc}>{t('importModeMergeDesc')}</span>
+                </button>
+                <button type="button" className={styles.importMode} onClick={() => void runImport('add')}>
+                  <span className={styles.importModeTitle}>{t('importModeAdd')}</span>
+                  <span className={styles.importModeDesc}>{t('importModeAddDesc')}</span>
+                </button>
+                <button type="button" className={styles.importModeDanger} onClick={() => void runImport('overwrite')}>
+                  <span className={styles.importModeTitle}>{t('importModeOverwrite')}</span>
+                  <span className={styles.importModeDesc}>{t('importModeOverwriteDesc')}</span>
+                </button>
+              </div>
+            </Modal>
+          ) : null}
           <input
             ref={fileRef}
             type="file"

@@ -76,7 +76,7 @@ export const startLoginAndImport = async () => {
       }
       set({ phase: 'importing' })
         const file = readArchiveFile(archive.path, archive.bytes, archive.name)
-        const count = await importHistory(file)
+        const count = await importHistory(file, 'merge')
         nativeShell()?.deleteArchive?.(archive.path)
         archivePath = null
         set({ phase: 'done', importedCount: count })

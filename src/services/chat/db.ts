@@ -244,6 +244,82 @@ export const commitStaging = async (): Promise<SessionSummary[]> => {
   return summaries
 }
 
+/**
+ * 导入后的合并提交（不删除本机会话）：
+ * - add：只新增本机没有的会话；
+ * - merge：同 id 会话合并消息（按消息 id 去重，保留本地分支），清除压缩摘要。
+ * 只复制被导入会话引用到的附件，避免产生孤儿文件。
+ */
+export const mergeStaging = async (mode: 'merge' | 'add'): Promise<SessionSummary[]> => {
+  const tx = (await getDB()).transaction(
+    ['sessions', 'sessionSummaries', 'files', 'sessionsStaging', 'filesStaging'],
+    'readwrite'
+  )
+  try {
+    const sessionsStore = tx.objectStore('sessions')
+    const summariesStore = tx.objectStore('sessionSummaries')
+    const filesStore = tx.objectStore('files')
+    const neededFiles = new Set<string>()
+    for (
+      let cursor = await tx.objectStore('sessionsStaging').openCursor();
+      cursor;
+      cursor = await cursor.continue()
+    ) {
+      const staged = cursor.value as Session
+      const existing = (await sessionsStore.get(staged.id)) as Session | undefined
+      let next: Session | null = staged
+      if (existing) {
+        if (mode === 'add') {
+          next = null
+        } else {
+          const byId = new Map(existing.messages.map((message) => [message.id, message]))
+          const merged = [...existing.messages]
+          for (const message of staged.messages) {
+            if (!byId.has(message.id)) {
+              merged.push(message)
+            }
+          }
+          next = {
+            ...existing,
+            title: existing.title || staged.title,
+            messages: merged,
+            updatedAt: Math.max(existing.updatedAt, staged.updatedAt),
+            compaction: undefined,
+          }
+        }
+      }
+      if (next) {
+        for (const message of next.messages) {
+          if (message.role === 'user') {
+            message.files.forEach((file) => neededFiles.add(file.id))
+          }
+        }
+        await sessionsStore.put(next)
+        const summary = storedSummary(next)
+        await summariesStore.put(summary)
+      }
+      await cursor.delete()
+    }
+    for (
+      let cursor = await tx.objectStore('filesStaging').openCursor();
+      cursor;
+      cursor = await cursor.continue()
+    ) {
+      const stored = cursor.value as StoredFile
+      if (neededFiles.has(stored.id)) {
+        await filesStore.put(stored)
+      }
+      await cursor.delete()
+    }
+    const summaries = ((await summariesStore.getAll()) as StoredSessionSummary[]).map(toSessionSummary)
+    await tx.done
+    return summaries
+  } catch (error) {
+    abortTransaction(tx)
+    throw error
+  }
+}
+
 /** 本地存储失败不打断对话，只在控制台留痕 */
 export const reportStorageError = (action: string) => (error: unknown) => {
   // eslint-disable-next-line no-console

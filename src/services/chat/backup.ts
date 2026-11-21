@@ -1,6 +1,6 @@
 import { formatDate } from '../../utils/format.js'
 import * as db from './db.js'
-import { replaceHistory, useChatStore } from './store.js'
+import { importIntoHistory, replaceHistory, useChatStore } from './store.js'
 import type { Session } from './types.js'
 
 export { BackupError } from './history/errors.js'
@@ -43,11 +43,20 @@ export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
  * 确认覆盖后调用：先检查 ZIP 格式与版本，校验失败时保留正在生成的回答；
  * 通过后从 ZIP 流式写入暂存，成功才替换原有会话与图片原件。返回导入的会话数。
  */
-export const importHistory = (file: File): Promise<number> =>
+export type ImportMode = 'overwrite' | 'merge' | 'add'
+
+/**
+ * 导入历史：overwrite 整库替换；merge 合并同 id 会话并保留本机内容；add 只新增本机没有的会话。
+ * 覆盖模式沿用暂存 + 原子替换；合并模式只清空暂存并写回合并结果。
+ */
+export const importHistory = (file: File, mode: ImportMode = 'overwrite'): Promise<number> =>
   enqueueBackup(async () => {
     const { checkArchiveFormat, importArchive } = await import('./history/importArchive.js')
     await checkArchiveFormat(file)
-    return replaceHistory(() => importArchive(file))
+    if (mode === 'overwrite') {
+      return replaceHistory(() => importArchive(file))
+    }
+    return importIntoHistory(file, mode)
   })
 
 /** 确认删除后调用：以空历史原子替换全部本地会话与附件，保留 API Key 和其他设置。 */

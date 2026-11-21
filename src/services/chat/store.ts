@@ -546,6 +546,50 @@ const removeSessionData = async (id: string): Promise<boolean> => {
   }
 }
 
+/** 合并导入：archive 先写暂存，再按 merge/add 合并进现有历史（不删除本机会话）。 */
+export const importIntoHistory = async (file: File, mode: 'merge' | 'add'): Promise<number> => {
+  if (get().importingHistory) {
+    throw new Error('History replacement is already in progress')
+  }
+  set({ importingHistory: true })
+  try {
+    for (const controller of Object.values(get().streaming)) {
+      controller.abort()
+    }
+    await Promise.all(deletionTasks)
+    historyEpoch += 1
+    initTask = undefined
+    sessionLoads.clear()
+    await waitForIdle()
+    await db.clearStaging()
+    try {
+      const { importArchive } = await import('./history/importArchive.js')
+      await importArchive(file)
+    } catch (error) {
+      await db.clearStaging().catch(db.reportStorageError('clear unfinished history merge'))
+      throw error
+    }
+    const summaries = await db.mergeStaging(mode)
+    sessionAccess.clear()
+    unsavedSessions.clear()
+    pendingFiles.clear()
+    clearAllDrafts()
+    set({
+      ready: true,
+      initError: false,
+      sessions: sortSessions(summaries),
+      sessionCache: {},
+      sessionLoadErrors: {},
+      sessionSaveErrors: {},
+      activeId: null,
+    })
+    return summaries.length
+  } finally {
+    set({ importingHistory: false })
+    retrySaveSessions()
+  }
+}
+
 export const stopReply = (sessionId: string) => getStreamController(sessionId)?.abort()
 
 /**

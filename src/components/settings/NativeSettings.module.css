@@ -124,3 +124,54 @@
 .spacer40 {
   width: 40px;
 }
+
+
+/* 导入方式选择弹窗 */
+.importModes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.importHint {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.importMode,
+.importModeDanger {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: var(--dsh-hairline-width, 1px) solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--dsw-alias-label-primary);
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+
+  &:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.importModeDanger {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.importModeTitle {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.importModeDesc {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}

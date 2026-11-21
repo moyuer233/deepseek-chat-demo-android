@@ -11,7 +11,7 @@ export const importPendingArchive = async (): Promise<void> => {
     }
     const pending = JSON.parse(raw) as { path: string; name: string; bytes: number }
     const file = readArchiveFile(pending.path, pending.bytes, pending.name)
-    const count = await importHistory(file)
+    const count = await importHistory(file, 'merge')
     nativeShell()?.clearPendingArchive?.()
     nativeShell()?.deleteArchive?.(pending.path)
     showToast({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
