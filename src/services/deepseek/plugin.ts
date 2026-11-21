@@ -1,4 +1,5 @@
 import { registerPlugin } from '@capacitor/core'
+import { nativeShell, shellPlatformAuthLogin } from './shell.js'
 
 /** 安卓原生侧实现的 DeepSeek 账号能力；Web 环境不可用。 */
 export interface DeepSeekAccountPlugin {
@@ -32,4 +33,22 @@ export interface DeepSeekAccountPlugin {
   pickImages(): Promise<{ files: { name: string; mime: string; base64: string }[] }>
 }
 
-export const DeepSeekAccount = registerPlugin<DeepSeekAccountPlugin>('DeepSeekAccount')
+/** WebView 壳里没有 Capacitor，用原生注入的 NativeShell 提供账号/授权/充值能力。 */
+const shellAccount: DeepSeekAccountPlugin = {
+  loginChat: () => Promise.reject(new Error('当前版本暂不支持网页登录，请用账号授权')),
+  loginPlatform: () => Promise.reject(new Error('当前版本暂不支持平台网页登录')),
+  createApiKey: () => Promise.reject(new Error('当前版本暂不支持网页建 Key')),
+  platformAuthLogin: () => shellPlatformAuthLogin(),
+  platformAuthToken: () => Promise.resolve({ token: nativeShell()?.getToken() ?? '' }),
+  runAccountProbes: () => Promise.resolve({ probes: '', chatCookie: '' }),
+  fetchExportArchive: () => Promise.reject(new Error('当前版本暂不支持官方导出')),
+  openTopUp: () => Promise.resolve(nativeShell()?.openTopUp()),
+  openExternal: ({ url }) => Promise.resolve(nativeShell()?.openExternal(url)),
+  beginExportFile: () => Promise.reject(new Error('当前版本暂不支持分享导出')),
+  appendExportChunk: () => Promise.reject(new Error('当前版本暂不支持分享导出')),
+  shareFile: () => Promise.reject(new Error('当前版本暂不支持分享导出')),
+  openAccessibilitySettings: () => Promise.resolve(),
+  pickImages: () => Promise.reject(new Error('当前版本暂不支持原生选图')),
+}
+
+export const DeepSeekAccount: DeepSeekAccountPlugin = nativeShell() ? shellAccount : registerPlugin<DeepSeekAccountPlugin>('DeepSeekAccount')

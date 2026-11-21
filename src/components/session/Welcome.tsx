@@ -2,6 +2,9 @@ import { useIsMobile } from '../../app/viewport.js'
 import { useTranslate } from '../../i18n/index.js'
 import { useSettings } from '../../services/settings.js'
 import { openSettings } from '../settings/settingsDialogState.js'
+import { startPlatformOAuth } from '../../services/deepseek/account.js'
+import { isNativeShell } from '../../services/deepseek/shell.js'
+import { showToast } from '../base/toastState.js'
 import { ChatInput } from '../chatInput/ChatInput.js'
 import { MobileHeader } from './MobileHeader.js'
 import styles from './Welcome.module.css'
@@ -22,7 +25,15 @@ export const Welcome = () => {
           <button
             type="button"
             className={styles.login}
-            onClick={() => openSettings('account')}
+            onClick={() => {
+              if (isNativeShell()) {
+                void startPlatformOAuth()
+                  .then(() => showToast('已授权 DeepSeek 账号'))
+                  .catch((error: unknown) => showToast(error instanceof Error ? error.message : String(error)))
+              } else {
+                openSettings('account')
+              }
+            }}
           >
             {t('accountLoginShort')}
           </button>

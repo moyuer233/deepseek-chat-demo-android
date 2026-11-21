@@ -1,10 +1,11 @@
 import { Capacitor } from '@capacitor/core'
 import { DeepSeekAccount } from './plugin.js'
 import { setAccountToken, useSettings } from '../settings.js'
+import { isNativeShell } from './shell.js'
 
 /** 启动时把原生保存的 grant 读回内存；Web 环境直接跳过。 */
 export const loadAccountToken = async (): Promise<void> => {
-  if (!Capacitor.isNativePlatform()) {
+  if (!Capacitor.isNativePlatform() && !isNativeShell()) {
     return
   }
   try {

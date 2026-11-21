@@ -38,9 +38,24 @@ import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 private enum class Screen { Onboarding, Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
 
 class MainActivity : ComponentActivity() {
+    private var webViewRef: WebView? = null
+    private var authLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        authLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+            val ok = result.resultCode == android.app.Activity.RESULT_OK
+            val token = if (ok) com.moyuer233.deepseeknative.data.DshAuth.token(this) ?: "" else ""
+            val script = if (ok && token.isNotEmpty()) {
+                "window.__onNativeAuth && window.__onNativeAuth(" + org.json.JSONObject.quote(token) + ")"
+            } else {
+                "window.__onNativeAuthError && window.__onNativeAuthError(" + org.json.JSONObject.quote(
+                    result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.OAuthActivity.EXTRA_ERROR) ?: "已取消授权"
+                ) + ")"
+            }
+            webViewRef?.evaluateJavascript(script, null)
+        }
         // 默认启动：直接展示 chat-demo 界面（WebView 套壳）；带 screen/native 参数时才进原生调试页。
         if (!intent.hasExtra("screen") && !intent.hasExtra("native") && !intent.hasExtra("importLocal")) {
             if (!SessionStore.isOnboarded(this)) {
@@ -65,6 +80,46 @@ class MainActivity : ComponentActivity() {
             val assetLoader = WebViewAssetLoader.Builder()
                 .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
                 .build()
+            webViewRef = web
+            web.addJavascriptInterface(object {
+                @android.webkit.JavascriptInterface
+                fun getToken(): String = com.moyuer233.deepseeknative.data.DshAuth.token(this@MainActivity) ?: ""
+
+                @android.webkit.JavascriptInterface
+                fun startAuth() {
+                    Thread {
+                        try {
+                            val url = com.moyuer233.deepseeknative.data.DshAuth.init(this@MainActivity).getString("authorizeUrl")
+                            runOnUiThread {
+                                authLauncher?.launch(
+                                    Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.OAuthActivity::class.java)
+                                        .putExtra(com.moyuer233.deepseeknative.ui.OAuthActivity.EXTRA_URL, url)
+                                )
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread {
+                                webViewRef?.evaluateJavascript(
+                                    "window.__onNativeAuthError && window.__onNativeAuthError(" +
+                                        org.json.JSONObject.quote(e.message ?: "授权初始化失败") + ")",
+                                    null,
+                                )
+                            }
+                        }
+                    }.start()
+                }
+
+                @android.webkit.JavascriptInterface
+                fun openTopUp() {
+                    startActivity(Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.TopUpActivity::class.java))
+                }
+
+                @android.webkit.JavascriptInterface
+                fun openExternal(url: String) {
+                    runCatching {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                }
+            }, "NativeShell")
             web.webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,

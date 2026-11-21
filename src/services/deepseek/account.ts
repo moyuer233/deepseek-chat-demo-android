@@ -5,6 +5,7 @@ import { importHistory } from '../chat/backup.js'
 import { setAccountToken, setApiKey, useSettings } from '../settings.js'
 import { readArchivePreview, type ArchivePreview } from './archive.js'
 import { DeepSeekAccount } from './plugin.js'
+import { isNativeShell } from './shell.js'
 
 /** 一步一次：chat 登录 → 导出 → 预览 → 导入 → platform 登录 → 建 Key。 */
 export type AccountPhase =
@@ -37,7 +38,7 @@ export const useAccount = create<AccountState>(() => ({
 const set = (patch: Partial<AccountState>) => useAccount.setState(patch)
 
 const requireNative = () => {
-  if (!Capacitor.isNativePlatform()) {
+  if (!Capacitor.isNativePlatform() && !isNativeShell()) {
     throw new Error('登录导入只在 App 里可用')
   }
 }

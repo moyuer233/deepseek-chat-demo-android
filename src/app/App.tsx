@@ -29,6 +29,7 @@ import { Onboarding } from '../components/onboarding/Onboarding.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
+import { registerShellAuthCallbacks } from '../services/deepseek/shell.js'
 import { Button } from '../components/base/Button.js'
 import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
@@ -142,6 +143,10 @@ export const App = () => {
       cancelled = true
       listener?.remove()
     }
+  }, [])
+
+  useEffect(() => {
+    registerShellAuthCallbacks()
   }, [])
 
   useEffect(() => {
