@@ -95,7 +95,7 @@ export const writeArchive = async (entries: { name: string; blob: Blob }[]): Pro
     completed = final
   })
   try {
-    for (const { name, blob, size: blobSize } of prepared) {
+    for (const { name, blob, size: blobSize, buffer } of prepared) {
       const entry = new ZipPassThrough(name)
       entry.mtime = new Date(1980, 0, 1)
       zip.add(entry)
