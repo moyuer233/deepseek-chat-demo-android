@@ -437,6 +437,26 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun isScanAssistEnabled(): Boolean {
+            val enabled = android.provider.Settings.Secure.getString(
+                contentResolver,
+                android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+            ) ?: return false
+            val target = packageName + "/" + ScanAssistService::class.java.name
+            return enabled.split(':').any { it.equals(target, ignoreCase = true) }
+        }
+
+        @JavascriptInterface
+        fun openAccessibilitySettings() {
+            runCatching {
+                startActivity(
+                    Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }
+        }
+
+        @JavascriptInterface
         fun openExternal(url: String) {
             val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
             if (uri.scheme != "https" && uri.scheme != "http") return

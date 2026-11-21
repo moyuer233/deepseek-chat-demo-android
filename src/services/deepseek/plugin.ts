@@ -13,6 +13,8 @@ export interface DeepSeekAccountPlugin {
   openExternal(options: { url: string }): Promise<void>
   /** 打开系统无障碍设置，让用户开启扫码辅助 */
   openAccessibilitySettings(): Promise<void>
+  /** 扫码辅助的无障碍服务是否已在系统设置里开启 */
+  isScanAssistEnabled(): Promise<boolean>
 }
 
 /** WebView 壳里没有 Capacitor，用原生注入的 NativeShell 提供账号/授权/充值能力。 */
@@ -21,7 +23,8 @@ const shellAccount: DeepSeekAccountPlugin = {
   platformAuthToken: () => Promise.resolve({ token: nativeShell()?.getToken() ?? '' }),
   openTopUp: () => Promise.resolve(nativeShell()?.openTopUp()),
   openExternal: ({ url }) => Promise.resolve(nativeShell()?.openExternal(url)),
-  openAccessibilitySettings: () => Promise.resolve(),
+  openAccessibilitySettings: () => Promise.resolve(nativeShell()?.openAccessibilitySettings?.()),
+  isScanAssistEnabled: () => Promise.resolve(nativeShell()?.isScanAssistEnabled?.() ?? false),
 }
 
 export const DeepSeekAccount: DeepSeekAccountPlugin = nativeShell() ? shellAccount : registerPlugin<DeepSeekAccountPlugin>('DeepSeekAccount')

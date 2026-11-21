@@ -215,7 +215,8 @@ export const en = {
   accountLoginHint: "Sign in with your DeepSeek account to chat (no API Key needed).",
   accountRecharge: "Top up",
   accountScanAssist: "Scan assist",
-  accountRechargeHint: "Opens the desktop top-up page, detects the WeChat QR code and opens WeChat",
+  accountScanAssistHint: "After enabling it in system settings, WeChat opens straight to Scan and Album.",
+  accountRechargeHint: "Opens the desktop top-up page and detects the WeChat QR code; with Scan assist on, WeChat opens straight to Scan and Album.",
   // ===== 导入/导出 =====
   backupInvalidJson: "The file is not valid JSON.",
   backupUnrecognized: "File not recognized. Please choose a DeepSeek chat history ZIP.",

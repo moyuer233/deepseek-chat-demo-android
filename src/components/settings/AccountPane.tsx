@@ -25,6 +25,7 @@ export const AccountPane = () => {
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [balance, setBalance] = useState<Balance | null>(null)
   const [balanceFailed, setBalanceFailed] = useState(false)
+  const [scanAssist, setScanAssist] = useState(false)
   const streaming = useChatStore((state) => Object.keys(state.streaming).length > 0)
 
   const loadBalance = () => {
@@ -37,11 +38,20 @@ export const AccountPane = () => {
       .catch(() => setBalanceFailed(true))
   }
 
+  const refreshScanAssist = () => {
+    void DeepSeekAccount.isScanAssistEnabled()
+      .then(setScanAssist)
+      .catch(() => setScanAssist(false))
+  }
+
   useEffect(() => {
     loadBalance()
+    refreshScanAssist()
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
         loadBalance()
+        // 从系统无障碍设置返回后刷新开关状态
+        refreshScanAssist()
         // 通知头部余额一起刷新（充值返回等场景）
         window.dispatchEvent(new Event('deepseek-balance-refresh'))
       }
@@ -142,11 +152,24 @@ export const AccountPane = () => {
           />
         ) : null}
         {isNativeShell() ? (
-          <SettingsRow
-            icon={<DshIcon name="settings-outline" size={16} />}
-            title={t('accountScanAssist')}
-            onClick={() => void DeepSeekAccount.openAccessibilitySettings()}
-          />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={scanAssist}
+            className={nsStyles.row}
+            onClick={() => {
+              showToast(t('accountScanAssistHint'))
+              void DeepSeekAccount.openAccessibilitySettings()
+            }}
+          >
+            <span className={nsStyles.rowIcon} aria-hidden>
+              <DshIcon name="settings-outline" size={16} />
+            </span>
+            <span className={nsStyles.rowTitle}>{t('accountScanAssist')}</span>
+            <span className={scanAssist ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle} aria-hidden>
+              <span className={styles.toggleKnob} />
+            </span>
+          </button>
         ) : null}
       </div>
       <div className={styles.hint}>{t('accountRechargeHint')}</div>

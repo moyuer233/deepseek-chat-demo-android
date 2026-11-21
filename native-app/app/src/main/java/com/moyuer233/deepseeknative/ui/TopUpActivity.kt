@@ -96,6 +96,8 @@ class TopUpActivity : ComponentActivity() {
     private fun openWeChat() {
         val launch = packageManager.getLaunchIntentForPackage("com.tencent.mm")
         if (launch != null) {
+            // 让无障碍服务在接下来 20 秒内自动进「扫一扫 → 相册」
+            com.moyuer233.deepseeknative.ScanAssistService.requestScan()
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(launch)
             Toast.makeText(this, "已保存二维码到相册并打开微信：+ → 扫一扫 → 相册", Toast.LENGTH_LONG).show()

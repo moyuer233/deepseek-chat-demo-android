@@ -15,6 +15,8 @@ export type NativeShell = {
   appendExport?(path: string, base64: string): number
   finishExport?(path: string, mime: string, name: string): void
   requestMic?(): void
+  openAccessibilitySettings?(): void
+  isScanAssistEnabled?(): boolean
   clearToken?(): void
 }
 

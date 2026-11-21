@@ -214,8 +214,9 @@ export const zh = {
   accountNotLoggedIn: "未登录",
   accountLoginHint: "登录 DeepSeek 账号后即可聊天（免 API Key）。",
   accountRecharge: "充值",
-  accountScanAssist: "开启扫码辅助",
-  accountRechargeHint: "充值页以电脑版打开，出微信二维码后会自动识别并拉起微信",
+  accountScanAssist: "扫码辅助",
+  accountScanAssistHint: "已在系统设置里开启后，拉起微信时会自动进入扫一扫与相册",
+  accountRechargeHint: "充值页以电脑版打开，出微信二维码后会自动识别并拉起微信；开启扫码辅助可直接进微信扫一扫相册",
   // ===== 导入/导出 =====
   backupInvalidJson: "文件不是有效的 JSON",
   backupUnrecognized: "无法识别该文件，请选择 DeepSeek 导出的历史对话 ZIP 文件",
