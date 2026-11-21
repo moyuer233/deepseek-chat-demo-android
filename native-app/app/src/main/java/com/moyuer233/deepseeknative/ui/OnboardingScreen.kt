@@ -25,6 +25,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import androidx.compose.ui.platform.LocalContext
 import com.moyuer233.deepseeknative.data.ArchiveImporter
 import com.moyuer233.deepseeknative.data.DshAuth
@@ -44,8 +45,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import com.moyuer233.deepseeknative.R
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+
 
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
@@ -90,7 +91,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         Triple("准备就绪", "随时可以在设置里更换主题、字体和授权方式。", 3),
     )
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.White).statusBarsPadding(),
+        modifier = Modifier.fillMaxSize().background(LocalAppColors.current.background).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(1f))
@@ -100,7 +101,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         }
         Text(
             pages[index].first,
-            color = TextPrimary,
+            color = LocalAppColors.current.textPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -109,7 +110,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Text(
             pages[index].second,
-            color = TextSecondary,
+            color = LocalAppColors.current.textSecondary,
             fontSize = 15.sp,
             lineHeight = 22.sp,
             textAlign = TextAlign.Center,
@@ -147,7 +148,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
             Text(if (index < pages.lastIndex) "下一步" else "开始使用", fontSize = 16.sp)
         }
         TextButton(onClick = onDone, modifier = Modifier.padding(bottom = 24.dp)) {
-            Text("跳过", color = TextSecondary, fontSize = 14.sp)
+            Text("跳过", color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
         }
     }
 }

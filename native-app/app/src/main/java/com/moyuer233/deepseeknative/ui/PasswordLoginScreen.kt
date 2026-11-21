@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,8 +50,8 @@ import kotlinx.coroutines.withContext
 import com.moyuer233.deepseeknative.data.ApiClient
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+
 
 /** 官方「密码登录」页 1:1 复刻。 */
 @Composable
@@ -62,23 +63,23 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
-    Column(modifier = Modifier.fillMaxSize().statusBarsPaddingCompat().background(Color.White)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPaddingCompat().background(LocalAppColors.current.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(shape = CircleShape, color = Color(0xFFF2F3F5), modifier = Modifier.size(40.dp)) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = LocalAppColors.current.textPrimary)
                 }
             }
             Spacer(Modifier.weight(1f))
-            Text("Contact us", color = TextSecondary, fontSize = 15.sp)
+            Text("Contact us", color = LocalAppColors.current.textSecondary, fontSize = 15.sp)
         }
         Spacer(Modifier.height(24.dp))
         Text(
             "Log in with password",
-            color = TextPrimary,
+            color = LocalAppColors.current.textPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -91,12 +92,12 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 20.dp)) {
-                Text("+86", color = TextPrimary, fontSize = 16.sp)
+                Text("+86", color = LocalAppColors.current.textPrimary, fontSize = 16.sp)
                 Spacer(Modifier.width(8.dp))
                 TextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    placeholder = { Text("Phone number", color = Color(0xFF9AA0A9), fontSize = 16.sp) },
+                    placeholder = { Text("Phone number", color = LocalAppColors.current.textSecondary, fontSize = 16.sp) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     colors = transparentFieldColors(),
@@ -114,7 +115,7 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn
                 TextField(
                     value = password,
                     onValueChange = { password = it },
-                    placeholder = { Text("Password", color = Color(0xFF9AA0A9), fontSize = 16.sp) },
+                    placeholder = { Text("Password", color = LocalAppColors.current.textSecondary, fontSize = 16.sp) },
                     singleLine = true,
                     visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -125,7 +126,7 @@ fun PasswordLoginScreen(onBack: () -> Unit, onPhoneLogin: () -> Unit, onLoggedIn
                     Icon(
                         if (visible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                         contentDescription = "显示密码",
-                        tint = Color(0xFF9AA0A9),
+                        tint = LocalAppColors.current.textSecondary,
                         modifier = Modifier.size(20.dp),
                     )
                 }

@@ -87,12 +87,7 @@ fun ChatHomeScreen(
                     Icon(Icons.Filled.Menu, contentDescription = "菜单", tint = LocalAppColors.current.textPrimary)
                 }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { }) {
-                    Icon(Icons.Filled.Call, contentDescription = "通话", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(22.dp))
-                }
-                IconButton(onClick = { }) {
-                    Icon(Icons.Filled.VolumeOff, contentDescription = "静音", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(22.dp))
-                }
+                // 通话/静音是官方 App 的实时语音入口，API 模式下无法实现，按红线不作为假控件展示
                 IconButton(onClick = { }) {
                     Icon(Icons.Filled.Add, contentDescription = "新建", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(26.dp))
                 }
@@ -219,7 +214,7 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
 
 @Composable
 private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    val bg = if (active) Color(0xFFE8EEFF) else Color.White
+    val bg = if (active) LocalAppColors.current.bubble else LocalAppColors.current.field
     val fg = if (active) BrandBlue else LocalAppColors.current.textPrimary
     Surface(
         shape = RoundedCornerShape(20.dp),

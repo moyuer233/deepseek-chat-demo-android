@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,8 +45,8 @@ import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.R
 import com.moyuer233.deepseeknative.ui.theme.BorderGray
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+
 
 /** 官方 App 欢迎/登录入口页的 1:1 复刻骨架。 */
 @Composable
@@ -61,7 +62,7 @@ fun WelcomeScreen(
         Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Text(
                 text = "Contact us",
-                color = TextSecondary,
+                color = LocalAppColors.current.textSecondary,
                 fontSize = 15.sp,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -113,14 +114,14 @@ fun WelcomeScreen(
                             .fillMaxWidth()
                             .height(56.dp),
                     ) {
-                        Icon(Icons.Filled.Lock, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.Lock, contentDescription = null, tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(10.dp))
-                        Text("Continue with Password", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Continue with Password", color = LocalAppColors.current.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(
                         "使用 DeepSeek 账号授权登录",
-                        color = TextSecondary,
+                        color = LocalAppColors.current.textSecondary,
                         fontSize = 13.sp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -143,7 +144,7 @@ fun WelcomeScreen(
                         )
                         Text(
                             text = "I confirm that I have read and agree to DeepSeek's Terms of Use and Privacy Policy",
-                            color = TextSecondary,
+                            color = LocalAppColors.current.textSecondary,
                             fontSize = 13.sp,
                             lineHeight = 18.sp,
                             textAlign = TextAlign.Start,

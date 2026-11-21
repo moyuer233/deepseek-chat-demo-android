@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,8 +50,8 @@ import kotlinx.coroutines.withContext
 import com.moyuer233.deepseeknative.data.ApiClient
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+
 
 /** 官方「手机验证码登录」页 1:1 复刻。 */
 @Composable
@@ -68,23 +69,23 @@ fun PhoneLoginScreen(onBack: () -> Unit, onLoggedIn: () -> Unit = {}) {
         phoneFocus.requestFocus()
         keyboard?.show()
     }
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().background(Color.White)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().background(LocalAppColors.current.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(shape = CircleShape, color = Color(0xFFF2F3F5), modifier = Modifier.size(40.dp)) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = LocalAppColors.current.textPrimary)
                 }
             }
             Spacer(Modifier.weight(1f))
-            Text("Contact us", color = TextSecondary, fontSize = 15.sp)
+            Text("Contact us", color = LocalAppColors.current.textSecondary, fontSize = 15.sp)
         }
         Spacer(Modifier.height(24.dp))
         Text(
             "Log in with phone",
-            color = TextPrimary,
+            color = LocalAppColors.current.textPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -186,13 +187,13 @@ private fun Field(
     Surface(shape = RoundedCornerShape(28.dp), color = Color(0xFFF2F3F5), modifier = modifier.fillMaxWidth().height(56.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 20.dp)) {
             if (prefix != null) {
-                Text(prefix, color = TextPrimary, fontSize = 16.sp)
+                Text(prefix, color = LocalAppColors.current.textPrimary, fontSize = 16.sp)
                 Spacer(Modifier.width(8.dp))
             }
             TextField(
                 value = value,
                 onValueChange = onValueChange,
-                placeholder = { Text(hint, color = Color(0xFF9AA0A9), fontSize = 16.sp) },
+                placeholder = { Text(hint, color = LocalAppColors.current.textSecondary, fontSize = 16.sp) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 colors = TextFieldDefaults.colors(
