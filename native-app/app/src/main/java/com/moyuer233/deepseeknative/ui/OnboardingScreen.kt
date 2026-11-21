@@ -134,38 +134,44 @@ fun OnboardingScreen(onDone: () -> Unit) {
         modifier = Modifier.fillMaxSize().background(LocalAppColors.current.background).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(1f))
-        // 用 Pager：支持左右滑动切换，滑到最后一页继续右滑即可完成引导（相当于系统「滑动返回」）
+        // 用 Pager 占满中间整块空间：这样在页面任何位置横向滑动都能切页，
+        // 而不是只有文字那一小块能滑（之前只 wrap content，用户几乎滑不动）
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().weight(1f),
             pageSpacing = 0.dp,
         ) { page ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (page == 0) {
-                    Image(painter = painterResource(R.drawable.ic_deepseek_logo), contentDescription = null, modifier = Modifier.size(84.dp))
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    if (page == 0) {
+                        Image(painter = painterResource(R.drawable.ic_deepseek_logo), contentDescription = null, modifier = Modifier.size(84.dp))
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    // 标题与描述都吃满宽度再居中：只靠 wrap content 时，
+                    // 多行文本的每行虽然 textAlign 居中，但整块在父容器里的位置会随内容宽度变化，看起来像没居中
+                    Text(
+                        pages[page].first,
+                        color = LocalAppColors.current.textPrimary,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                    )
                     Spacer(Modifier.height(12.dp))
+                    Text(
+                        pages[page].second,
+                        color = LocalAppColors.current.textSecondary,
+                        fontSize = 15.sp,
+                        lineHeight = 22.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 36.dp),
+                    )
                 }
-                Text(
-                    pages[page].first,
-                    color = LocalAppColors.current.textPrimary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    pages[page].second,
-                    color = LocalAppColors.current.textSecondary,
-                    fontSize = 15.sp,
-                    lineHeight = 22.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 36.dp),
-                )
             }
         }
-        Spacer(Modifier.weight(1.2f))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 20.dp)) {
             pages.indices.forEach { i ->
                 // 每个点都占固定 14dp 的格子，只让内部圆点变大小/颜色，
@@ -225,8 +231,17 @@ fun OnboardingScreen(onDone: () -> Unit) {
         ) {
             Text(if (index < pages.lastIndex) NativeCopy.next else NativeCopy.start, fontSize = 16.sp)
         }
-        TextButton(onClick = onDone, modifier = Modifier.navigationBarsPadding().padding(bottom = 24.dp)) {
-            Text(NativeCopy.skip, color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
+        TextButton(
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 24.dp),
+        ) {
+            Text(
+                NativeCopy.skip,
+                color = LocalAppColors.current.textSecondary,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
