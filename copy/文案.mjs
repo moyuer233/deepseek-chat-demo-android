@@ -724,7 +724,7 @@ export const sections = [
       { name: "importReady", where: "引导页 · 第 2 页 状态提示", zh: "已获取数据，进入 Chat Demo 后自动导入", en: "Archive ready. It will be imported automatically after entering Chat Demo." },
       { name: "importDoneToast", where: "引导页 · 第 2 页 导出完成 Toast", zh: "导出完成，完成后会自动导入", en: "Export complete. It will be imported automatically." },
       { name: "importFailedPrefix", where: "引导页 · 第 2 页 导出失败提示前缀", zh: "导出失败：", en: "Export failed: " },
-      { name: "authorize", where: "引导页 · 第 3 页 授权按钮", zh: "使用 DeepSeek 账号授权", en: "Authorize with DeepSeek account" },
+      { name: "authorize", where: "引导页 · 第 3 页 授权按钮", zh: "使用 DeepSeek开放平台 账号授权", en: "Authorize with a DeepSeek Platform account" },
       { name: "authorized", where: "引导页 · 第 3 页 已授权状态", zh: "已授权", en: "Authorized" },
       { name: "authSuccessToast", where: "引导页 · 第 3 页 授权成功 Toast", zh: "授权成功", en: "Authorization successful" },
       { name: "authFailedPrefix", where: "引导页 · 第 3 页 授权失败 Toast 前缀", zh: "授权失败：", en: "Authorization failed: " },

@@ -63,7 +63,7 @@ object NativeCopy {
     val importFailedPrefix = if (en) "Export failed: " else "导出失败："
 
     // 界面：引导页 · 第 3 页 授权按钮
-    val authorize = if (en) "Authorize with DeepSeek account" else "使用 DeepSeek 账号授权"
+    val authorize = if (en) "Authorize with a DeepSeek Platform account" else "使用 DeepSeek开放平台 账号授权"
 
     // 界面：引导页 · 第 3 页 已授权状态
     val authorized = if (en) "Authorized" else "已授权"
