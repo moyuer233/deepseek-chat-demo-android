@@ -54,7 +54,7 @@ object NativeCopy {
     val importCancelled = if (en) "Import cancelled" else "已取消导入"
 
     // 界面：引导页 · 第 2 页 状态提示
-    val importReady = if (en) "Archive ready. It will be imported automatically after entering Chat Demo." else "已获取归档，进入 Chat Demo 后自动导入"
+    val importReady = if (en) "Archive ready. It will be imported automatically after entering Chat Demo." else "已获取数据，进入 Chat Demo 后自动导入"
 
     // 界面：引导页 · 第 2 页 导出完成 Toast
     val importDoneToast = if (en) "Export complete. It will be imported automatically." else "导出完成，完成后会自动导入"
