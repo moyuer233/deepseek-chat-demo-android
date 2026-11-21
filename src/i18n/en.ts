@@ -32,6 +32,15 @@ export const en = {
   // 位置：src/components/settings/settingsDialogState.ts · 未登录时点发送/语音/附件 的 toast
   loginRequiredHint: 'Sign in with a DeepSeek account or set an API key first',
   // 位置：src/components/settings/AccountPane.tsx · 账户页：余额卡标签
+  apiKeyLabel: 'API Key',
+  apiKeySetTail: 'Set (ends {tail})',
+  apiKeyNotSet: 'Not set',
+  apiKeyHint: 'Used when no account grant is available (stored locally, never uploaded). Create one at platform.deepseek.com.',
+  apiKeySave: 'Save',
+  apiKeyClear: 'Clear',
+  apiKeySaved: 'API key saved',
+  apiKeyCleared: 'API key cleared',
+  accountSignIn: 'Sign in to DeepSeek',
   accountBalance: 'Balance',
   // 位置：src/components/settings/AccountPane.tsx · 账户页：余额失败重试按钮
   accountBalanceRetry: 'Failed to load balance, retry',

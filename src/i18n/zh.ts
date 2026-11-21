@@ -30,6 +30,15 @@ export const zh = {
   // 位置：src/components/settings/settingsDialogState.ts · 未登录时点发送/语音/附件 的 toast
   loginRequiredHint: '请先登录 DeepSeek 账号或填写 API Key',
   // 位置：src/components/settings/AccountPane.tsx · 账户页：余额卡标签
+  apiKeyLabel: 'API Key',
+  apiKeySetTail: '已设置（尾号 {tail}）',
+  apiKeyNotSet: '未设置',
+  apiKeyHint: '没有账号授权时可用 API Key 聊天（本机保存，不上传）。到 platform.deepseek.com 创建。',
+  apiKeySave: '保存',
+  apiKeyClear: '清除',
+  apiKeySaved: 'API Key 已保存',
+  apiKeyCleared: 'API Key 已清除',
+  accountSignIn: '登录 DeepSeek 账号',
   accountBalance: '余额',
   // 位置：src/components/settings/AccountPane.tsx · 账户页：余额失败重试按钮
   accountBalanceRetry: '余额读取失败，重试',

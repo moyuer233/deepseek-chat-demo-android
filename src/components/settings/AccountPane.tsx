@@ -55,6 +55,8 @@ export const AccountPane = () => {
   const preview = useAccount((state) => state.preview)
   const importedCount = useAccount((state) => state.importedCount)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [apiKeyOpen, setApiKeyOpen] = useState(false)
+  const [apiKeyInput, setApiKeyInput] = useState('')
   const [balance, setBalance] = useState<Balance | null>(null)
   const [balanceFailed, setBalanceFailed] = useState(false)
   const streaming = useChatStore((state) => Object.keys(state.streaming).length > 0)
@@ -160,7 +162,7 @@ export const AccountPane = () => {
         {signedIn ? null : (
           <SettingsRow
             icon={<DshIcon name="user-outline" size={16} />}
-            title={t('accountLoginButton')}
+            title={t('accountSignIn')}
             onClick={() => {
               if (busy) {
                 return
@@ -174,6 +176,15 @@ export const AccountPane = () => {
             }}
           />
         )}
+        <SettingsRow
+          icon={<DshIcon name="settings-outline" size={16} />}
+          title={t('apiKeyLabel')}
+          value={apiKey ? t('apiKeySetTail', { tail: apiKey.slice(-4) }) : t('apiKeyNotSet')}
+          onClick={() => {
+            setApiKeyInput(apiKey ?? '')
+            setApiKeyOpen(true)
+          }}
+        />
         <SettingsRow
           icon={<DshIcon name="layers-outline" size={16} />}
           title={t('accountRecharge')}
@@ -216,6 +227,54 @@ export const AccountPane = () => {
         <div className={styles.hint}>{t('accountRechargeHint')}</div>
       )}
       {phase === 'preview' && preview ? <PreviewDialog preview={preview} /> : null}
+      {apiKeyOpen ? (
+        <Modal
+          title={t('apiKeyLabel')}
+          onClose={() => setApiKeyOpen(false)}
+          footer={
+            <>
+              {apiKey ? (
+                <Button
+                  variant="outlined"
+                  size="m"
+                  onClick={() => {
+                    setApiKey(null)
+                    setApiKeyInput('')
+                    setApiKeyOpen(false)
+                    showToast({ key: 'apiKeyCleared' })
+                  }}
+                >
+                  {t('apiKeyClear')}
+                </Button>
+              ) : null}
+              <Button
+                size="m"
+                onClick={() => {
+                  const value = apiKeyInput.trim()
+                  setApiKey(value || null)
+                  setApiKeyOpen(false)
+                  showToast({ key: value ? 'apiKeySaved' : 'apiKeyCleared' })
+                  loadBalance()
+                }}
+              >
+                {t('apiKeySave')}
+              </Button>
+            </>
+          }
+        >
+          <div className={styles.apiKeyForm}>
+            <p className={styles.terms}>{t('apiKeyHint')}</p>
+            <input
+              className={styles.apiKeyInput}
+              type="password"
+              value={apiKeyInput}
+              placeholder="sk-..."
+              autoComplete="off"
+              onChange={(event) => setApiKeyInput(event.target.value)}
+            />
+          </div>
+        </Modal>
+      ) : null}
       {logoutOpen ? (
         <Modal
           title={t('accountLogout')}

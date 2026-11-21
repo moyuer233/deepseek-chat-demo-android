@@ -202,3 +202,28 @@
 .dotError {
   background: var(--dsw-alias-state-error-primary, #d93025);
 }
+
+
+/* API Key 设置弹窗 */
+.apiKeyForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.apiKeyInput {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: var(--dsh-hairline-width, 1px) solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--dsw-alias-button-primary-fill);
+  }
+}
