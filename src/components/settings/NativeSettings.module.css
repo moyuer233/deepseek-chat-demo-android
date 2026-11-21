@@ -18,13 +18,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: none;
-  border-radius: 20px;
+  border-radius: 22px;
   background: transparent;
   color: var(--dsw-alias-label-primary);
   cursor: pointer;
+  transition: background-color var(--dsh-motion, 180ms ease);
+
+  &:active {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 .title {
   flex: 1;

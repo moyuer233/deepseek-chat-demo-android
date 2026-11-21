@@ -32,6 +32,7 @@ import {
   IconDownloadOutline16,
   IconGlobeLanguageOutline14,
   IconWarningOutline16,
+  IconArrowLeftOutline20,
 } from '../base/icons.js'
 
 const Shell = ({ children }: { children: React.ReactNode }) => <div className={styles.overlay}>{children}</div>
@@ -220,7 +221,9 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
 
   const header = (title: string, onBack: () => void) => (
     <div className={styles.header}>
-      <button type="button" className={styles.back} onClick={onBack} aria-label={t('back')}>‹</button>
+      <button type="button" className={styles.back} onClick={onBack} aria-label={t('back')}>
+        <IconArrowLeftOutline20 />
+      </button>
       <div className={styles.title}>{title}</div>
       <span className={styles.spacer40} />
     </div>
