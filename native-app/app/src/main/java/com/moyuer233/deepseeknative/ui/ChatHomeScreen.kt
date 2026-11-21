@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.R
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+import com.moyuer233.deepseeknative.ui.theme.tr
 
 /** 官方聊天首页（空态）1:1 复刻。 */
 @Composable
@@ -112,9 +113,9 @@ fun ChatHomeScreen(
                 Spacer(Modifier.height(16.dp))
                 val greeting = remember {
                     listOf(
-                        "你好，我能帮什么忙吗？",
-                        "嗨！今天想聊些什么？",
-                        "今天有什么可以帮到你？",
+                        tr("你好，我能帮什么忙吗？", "How can I help you?"),
+                        tr("嗨！今天想聊些什么？", "Hi! What do you want to talk about?"),
+                        tr("今天有什么可以帮到你？", "What can I help you with today?"),
                     ).random()
                 }
                 Text(greeting, color = LocalAppColors.current.textPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
@@ -176,19 +177,19 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
                     if (text.isEmpty()) {
-                        Text("发消息或按住说话", color = LocalAppColors.current.textSecondary, fontSize = 16.sp)
+                        Text(tr("发消息或按住说话", "Message or hold to talk"), color = LocalAppColors.current.textSecondary, fontSize = 16.sp)
                     }
                     inner()
                 },
             )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ToggleChip("深度思考", think, Icons.Filled.GraphicEq) {
+                ToggleChip(tr("深度思考", "DeepThink"), think, Icons.Filled.GraphicEq) {
                     think = !think
                     com.moyuer233.deepseeknative.data.SessionStore.saveToggles(ctx, think, search)
                 }
                 Spacer(Modifier.width(8.dp))
-                ToggleChip("智能搜索", search, Icons.Filled.Public) {
+                ToggleChip(tr("智能搜索", "Search"), search, Icons.Filled.Public) {
                     search = !search
                     com.moyuer233.deepseeknative.data.SessionStore.saveToggles(ctx, think, search)
                 }
@@ -278,7 +279,7 @@ private fun DrawerContent(
                         modifier = Modifier.weight(1f),
                         decorationBox = { inner ->
                             if (query.isEmpty()) {
-                                Text("搜索对话内容...", color = LocalAppColors.current.textSecondary, fontSize = 15.sp)
+                                Text(tr("搜索对话内容...", "Search chats..."), color = LocalAppColors.current.textSecondary, fontSize = 15.sp)
                             }
                             inner()
                         },
@@ -335,14 +336,14 @@ private fun DrawerContent(
                     when {
                         loading -> "加载中…"
                         query.isNotBlank() -> "无匹配结果"
-                        else -> "暂无对话"
+                        else -> tr("暂无对话", "No conversations")
                     },
                     color = LocalAppColors.current.textPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("你与 DeepSeek 的对话\n将展示在这里", color = LocalAppColors.current.textSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
+                Text(tr("你与 DeepSeek 的对话\n将展示在这里", "Your chats with DeepSeek\nwill appear here"), color = LocalAppColors.current.textSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
                 Spacer(Modifier.height(16.dp))
                 Surface(
                     shape = RoundedCornerShape(24.dp),
@@ -361,7 +362,7 @@ private fun DrawerContent(
                     }.height(48.dp),
                 ) {
                     Box(modifier = Modifier.padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
-                        Text("开启新对话", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(tr("开启新对话", "Start a new chat"), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -377,7 +378,7 @@ private fun DrawerContent(
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    com.moyuer233.deepseeknative.data.SessionStore.maskedMobile(context) ?: "未登录",
+                    com.moyuer233.deepseeknative.data.SessionStore.maskedMobile(context) ?: tr("未登录", "Not signed in"),
                     color = LocalAppColors.current.textPrimary,
                     fontSize = 15.sp,
                 )

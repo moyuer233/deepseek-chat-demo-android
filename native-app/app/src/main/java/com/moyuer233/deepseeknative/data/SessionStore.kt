@@ -14,6 +14,7 @@ object SessionStore {
     private const val KEY_THINK = "think_enabled"
     private const val KEY_SEARCH = "search_enabled"
     private const val KEY_THEME = "theme_mode"
+    private const val KEY_LANG_EN = "lang_english"
 
     fun token(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TOKEN, null)
@@ -65,6 +66,13 @@ object SessionStore {
     fun saveToggles(context: Context, think: Boolean, search: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_THINK, think).putBoolean(KEY_SEARCH, search).apply()
+    }
+
+    fun langEnglish(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_LANG_EN, false)
+
+    fun saveLangEnglish(context: Context, english: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_LANG_EN, english).apply()
     }
 
     fun themeMode(context: Context): Int =

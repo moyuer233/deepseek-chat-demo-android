@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
             }.start()
         }
         com.moyuer233.deepseeknative.ui.theme.ThemeState.mode = SessionStore.themeMode(this)
+        com.moyuer233.deepseeknative.ui.theme.LangState.english = SessionStore.langEnglish(this)
         val hasToken = SessionStore.token(this) != null || com.moyuer233.deepseeknative.data.DshAuth.token(this) != null || SessionStore.apiKey(this) != null
         val onboarded = SessionStore.isOnboarded(this)
         setContent {

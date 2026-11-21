@@ -78,6 +78,7 @@ import com.moyuer233.deepseeknative.data.PcmPlayer
 import com.moyuer233.deepseeknative.data.SessionStore
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
 import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
+import com.moyuer233.deepseeknative.ui.theme.tr
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 import kotlinx.coroutines.Dispatchers
@@ -625,7 +626,7 @@ fun ChatScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.clickable { expandedThinking[message.id] = !expanded },
                             ) {
-                                Text("已思考", color = Color(0xFF9AA0A9), fontSize = 14.sp)
+                                Text(tr("已思考", "Thought"), color = Color(0xFF9AA0A9), fontSize = 14.sp)
                                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFF9AA0A9), modifier = Modifier.size(16.dp))
                             }
                             if (expanded) {
@@ -694,7 +695,7 @@ fun ChatScreen(
                             Icon(Icons.Filled.Refresh, contentDescription = "重新生成", tint = Color(0xFF9AA0A9), modifier = Modifier.size(20.dp).clickable { regenerate() })
                         }
                         if (message.done && index == messages.lastIndex && message.content.isNotEmpty() && !streaming) {
-                            TextButton(onClick = { continueLast() }) { Text("继续生成", fontSize = 13.sp) }
+                            TextButton(onClick = { continueLast() }) { Text(tr("继续生成", "Continue"), fontSize = 13.sp) }
                         }
                         val tree = session
                         if (tree != null && message.role == "assistant" && message.dbId != 0) {
@@ -811,7 +812,7 @@ fun ChatScreen(
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (input.isEmpty()) {
-                                Text("发消息或按住说话", color = appColors.textSecondary, fontSize = 15.sp)
+                                Text(tr("发消息或按住说话", "Message or hold to talk"), color = appColors.textSecondary, fontSize = 15.sp)
                             }
                             inner()
                         },

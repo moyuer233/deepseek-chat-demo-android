@@ -62,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 import com.moyuer233.deepseeknative.ui.theme.ThemeState
+import com.moyuer233.deepseeknative.ui.theme.LangState
+import com.moyuer233.deepseeknative.ui.theme.tr
 import com.moyuer233.deepseeknative.ui.theme.TextPrimary
 import com.moyuer233.deepseeknative.ui.theme.TextSecondary
 
@@ -82,6 +84,7 @@ fun SettingsScreen(
     var showLogout by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLangDialog by remember { mutableStateOf(false) }
     var showVoiceDialog by remember { mutableStateOf(false) }
     var voices by remember { mutableStateOf<List<String>>(emptyList()) }
     val ttsHolder = remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
@@ -103,7 +106,7 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "设置",
+                tr("设置", "Settings"),
                 color = c.textPrimary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
@@ -113,53 +116,58 @@ fun SettingsScreen(
             Spacer(Modifier.width(36.dp))
         }
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            SectionLabel("账户")
+            SectionLabel(tr("账户", "Account"))
             SettingsCard {
-                SettingsRow("账号管理", Icons.Filled.PersonOutline, onClick = onOpenAccount)
+                SettingsRow(tr("账号管理", "Account"), Icons.Filled.PersonOutline, onClick = onOpenAccount)
                 Divider()
-                SettingsRow("数据管理", Icons.Filled.Storage, onClick = onOpenData)
+                SettingsRow(tr("数据管理", "Data"), Icons.Filled.Storage, onClick = onOpenData)
                 Divider()
-                SettingsRow("充值", Icons.Filled.Paid, onClick = {
+                SettingsRow(tr("充值", "Top up"), Icons.Filled.Paid, onClick = {
                     context.startActivity(Intent(context, TopUpActivity::class.java))
                 })
             }
-            SectionLabel("应用")
+            SectionLabel(tr("应用", "Appearance"))
             SettingsCard {
-                SettingsRow("语言", Icons.Filled.Language, value = "中文（简体中文）")
+                SettingsRow(
+                    tr("语言", "Language"),
+                    Icons.Filled.Language,
+                    value = if (LangState.english) "English" else "中文（简体中文）",
+                    onClick = { showLangDialog = true },
+                )
                 Divider()
                 SettingsRow(
-                    "外观",
+                    tr("外观", "Appearance"),
                     Icons.Filled.DarkMode,
-                    value = listOf("系统", "浅色", "深色").getOrElse(ThemeState.mode) { "系统" },
+                    value = listOf(tr("系统", "System"), tr("浅色", "Light"), tr("深色", "Dark")).getOrElse(ThemeState.mode) { tr("系统", "System") },
                     onClick = { showThemeDialog = true },
                 )
                 Divider()
                 SettingsRow(
-                    "字体大小",
+                    tr("字体大小", "Font size"),
                     Icons.Filled.FormatSize,
                     value = listOf("小", "标准", "大", "超大").getOrElse(SessionStore.fontStep(context)) { "标准" },
                     onClick = { showFontDialog = true },
                 )
                 Divider()
-                SettingsRow("个性化", Icons.Filled.Palette)
+                SettingsRow(tr("个性化", "Personalization"), Icons.Filled.Palette)
             }
-            SectionLabel("语音")
+            SectionLabel(tr("语音", "Voice"))
             SettingsCard {
                 SettingsRow(
-                    "朗读音色",
+                    tr("朗读音色", "Voice"),
                     Icons.Filled.VolumeUp,
                     value = when (SessionStore.ttsVoice(context)) {
-                        "tide" -> "tide（男声）"
-                        "stella" -> "stella（女声）"
+                        "tide" -> tr("tide（男声）", "tide (Male)")
+                        "stella" -> tr("stella（女声）", "stella (Female)")
                         else -> "stella（女声）"
                     },
                     onClick = { showVoiceDialog = true },
                 )
             }
-            SectionLabel("关于")
+            SectionLabel(tr("关于", "About"))
             SettingsCard {
                 SettingsRow(
-                    if (checking) "检查更新中…" else "检查更新",
+                    if (checking) "检查更新中…" else tr("检查更新", "Check for updates"),
                     Icons.Filled.Update,
                     value = com.moyuer233.deepseeknative.BuildConfig.VERSION_NAME,
                     onClick = {
@@ -174,15 +182,15 @@ fun SettingsScreen(
                     },
                 )
                 Divider()
-                SettingsRow("服务协议", Icons.Filled.Description, onClick = onOpenAgreement)
+                SettingsRow(tr("服务协议", "Terms of service"), Icons.Filled.Description, onClick = onOpenAgreement)
             }
             Spacer(Modifier.height(16.dp))
             SettingsCard {
-                SettingsRow("帮助与反馈", Icons.Filled.HelpOutline)
+                SettingsRow(tr("帮助与反馈", "Help & feedback"), Icons.Filled.HelpOutline)
             }
             Spacer(Modifier.height(16.dp))
             SettingsCard {
-                SettingsRow("退出登录", Icons.Filled.Logout, onClick = { showLogout = true })
+                SettingsRow(tr("退出登录", "Sign out"), Icons.Filled.Logout, onClick = { showLogout = true })
             }
             Spacer(Modifier.height(20.dp))
             Text(
@@ -199,7 +207,7 @@ fun SettingsScreen(
     if (showVoiceDialog) {
         AlertDialog(
             onDismissRequest = { showVoiceDialog = false },
-            title = { Text("朗读音色") },
+            title = { Text(tr("朗读音色", "Voice")) },
             text = {
                 Column {
                     listOf("stella" to "stella（女声）", "tide" to "tide（男声）").forEach { (id, label) ->
@@ -215,13 +223,33 @@ fun SettingsScreen(
         )
     }
 
+    if (showLangDialog) {
+        AlertDialog(
+            onDismissRequest = { showLangDialog = false },
+            title = { Text(tr("语言", "Language")) },
+            text = {
+                Column {
+                    listOf("中文" to false, "English" to true).forEach { (label, en) ->
+                        TextButton(onClick = {
+                            LangState.english = en
+                            SessionStore.saveLangEnglish(context, en)
+                            showLangDialog = false
+                        }) { Text((if (LangState.english == en) "✓ " else "   ") + label) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showLangDialog = false }) { Text(tr("取消", "Cancel")) } },
+        )
+    }
+
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("外观") },
+            title = { Text(tr("外观", "Appearance")) },
             text = {
                 Column {
-                    listOf("系统", "浅色", "深色").forEachIndexed { index, label ->
+                    listOf(tr("系统", "System") to "系统", tr("浅色", "Light") to "浅色", tr("深色", "Dark") to "深色").forEachIndexed { index, pair ->
+                        val label = pair.first
                         val selected = ThemeState.mode == index
                         TextButton(onClick = {
                             ThemeState.mode = index
@@ -238,7 +266,7 @@ fun SettingsScreen(
     if (showFontDialog) {
         AlertDialog(
             onDismissRequest = { showFontDialog = false },
-            title = { Text("字体大小") },
+            title = { Text(tr("字体大小", "Font size")) },
             text = {
                 Column {
                     listOf("小", "标准", "大", "超大").forEachIndexed { index, label ->
@@ -259,14 +287,14 @@ fun SettingsScreen(
     if (showLogout) {
         AlertDialog(
             onDismissRequest = { showLogout = false },
-            title = { Text("退出登录") },
+            title = { Text(tr("退出登录", "Sign out")) },
             text = { Text("退出后需要重新登录才能继续使用。") },
             confirmButton = {
                 TextButton(onClick = {
                     showLogout = false
                     com.moyuer233.deepseeknative.data.SessionStore.clear(context)
                     onLogout()
-                }) { Text("退出登录") }
+                }) { Text(tr("退出登录", "Sign out")) }
             },
             dismissButton = { TextButton(onClick = { showLogout = false }) { Text("取消") } },
         )
@@ -276,7 +304,7 @@ fun SettingsScreen(
         val hasNew = result.latestVersion != null && result.latestVersion != result.currentVersion
         AlertDialog(
             onDismissRequest = { updateResult = null },
-            title = { Text("检查更新") },
+            title = { Text(tr("检查更新", "Check for updates")) },
             text = {
                 Text(
                     when {
