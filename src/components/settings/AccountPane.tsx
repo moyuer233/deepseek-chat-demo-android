@@ -5,7 +5,6 @@ import {
   cancelPreview,
   confirmImportAndCreateKey,
   openRecharge,
-  resetAccountFlow,
   useAccount,
   type AccountPhase,
 } from '../../services/deepseek/account.js'
@@ -21,6 +20,8 @@ import { useChatStore } from '../../services/chat/store.js'
 import { nativeShell, shellPlatformAuthLogin } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import styles from './AccountPane.module.css'
+import nsStyles from './NativeSettings.module.css'
+import { SettingsRow } from './SettingsRow.js'
 
 /** 预览清单先渲染的条数，避免几千条一次性插进 DOM。 */
 const previewLimit = 200
@@ -155,61 +156,61 @@ export const AccountPane = () => {
           {status}
         </div>
       ) : null}
-      <div className={styles.actions}>
-        {phase === 'done' ? (
-          <Button size="m" onClick={resetAccountFlow}>
-            {t('accountDone')}
-          </Button>
-        ) : phase === 'error' ? (
-          <Button size="m" onClick={resetAccountFlow}>
-            {t('retry')}
-          </Button>
-        ) : (
-          <>
-            {signedIn ? null : (
-              <Button
-                size="m"
-                disabled={busy}
-                onClick={() => {
-                  void shellPlatformAuthLogin()
-                    .then(({ token }) => {
-                      setAccountToken(token)
-                      loadBalance()
-                    })
-                    .catch((error) => showToast(error instanceof Error ? error.message : String(error)))
-                }}
-              >
-                {t('accountLoginButton')}
-              </Button>
-            )}
-            <Button size="m" variant="outlined" disabled={busy} onClick={() => void openRecharge()}>
-              {t('accountRecharge')}
-            </Button>
-            <Button
-              size="m"
-              variant="outlined"
-              disabled={busy}
-              onClick={() => nativeShell()?.openExternal?.('https://platform.deepseek.com/usage')}
-            >
-              {t('accountMoreInfo')}
-            </Button>
-            {signedIn ? (
-              <Button size="m" variant="outlined" disabled={busy} onClick={() => setLogoutOpen(true)}>
-                {t('accountLogout')}
-              </Button>
-            ) : null}
-            {Capacitor.isNativePlatform() ? (
-              <Button
-                size="m"
-                variant="outlined"
-                disabled={busy}
-                onClick={() => void DeepSeekAccount.openAccessibilitySettings()}
-              >
-                {t('accountScanAssist')}
-              </Button>
-            ) : null}
-          </>
+      <div className={nsStyles.card}>
+        {signedIn ? null : (
+          <SettingsRow
+            icon={<DshIcon name="user-outline" size={16} />}
+            title={t('accountLoginButton')}
+            onClick={() => {
+              if (busy) {
+                return
+              }
+              void shellPlatformAuthLogin()
+                .then(({ token }) => {
+                  setAccountToken(token)
+                  loadBalance()
+                })
+                .catch((error) => showToast(error instanceof Error ? error.message : String(error)))
+            }}
+          />
         )}
+        <SettingsRow
+          icon={<DshIcon name="layers-outline" size={16} />}
+          title={t('accountRecharge')}
+          onClick={() => {
+            if (!busy) {
+              void openRecharge()
+            }
+          }}
+        />
+        <SettingsRow
+          icon={<DshIcon name="link-outline" size={16} />}
+          title={t('accountMoreInfo')}
+          onClick={() => nativeShell()?.openExternal?.('https://platform.deepseek.com/usage')}
+        />
+        {signedIn ? (
+          <SettingsRow
+            icon={<DshIcon name="close-outline" size={16} />}
+            title={t('accountLogout')}
+            danger
+            onClick={() => {
+              if (!busy) {
+                setLogoutOpen(true)
+              }
+            }}
+          />
+        ) : null}
+        {Capacitor.isNativePlatform() ? (
+          <SettingsRow
+            icon={<DshIcon name="settings-outline" size={16} />}
+            title={t('accountScanAssist')}
+            onClick={() => {
+              if (!busy) {
+                void DeepSeekAccount.openAccessibilitySettings()
+              }
+            }}
+          />
+        ) : null}
       </div>
       {phase === 'done' || phase === 'error' ? null : (
         <div className={styles.hint}>{t('accountRechargeHint')}</div>

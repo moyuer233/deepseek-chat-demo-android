@@ -9,6 +9,7 @@ import { DshIcon } from '../chatInput/StatusIcons.js'
 import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
 import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
+import { SettingsRow as Row } from './SettingsRow.js'
 import styles from './NativeSettings.module.css'
 import {
   IconDataOutline16,
@@ -24,27 +25,6 @@ import {
 } from '../base/icons.js'
 
 const Shell = ({ children }: { children: React.ReactNode }) => <div className={styles.overlay}>{children}</div>
-
-const Row = ({
-  icon,
-  title,
-  value,
-  danger,
-  onClick,
-}: {
-  icon: React.ReactNode
-  title: string
-  value?: string
-  danger?: boolean
-  onClick?: () => void
-}) => (
-  <button type="button" className={styles.row} onClick={onClick} style={danger ? { color: '#d93025' } : undefined}>
-    <span className={styles.rowIcon} aria-hidden>{icon}</span>
-    <span className={styles.rowTitle}>{title}</span>
-    {value ? <span className={styles.rowValue}>{value}</span> : null}
-    {onClick ? <span className={styles.chevron}>›</span> : null}
-  </button>
-)
 
 /** 移动端原生风格设置页：账户 / 应用 / 语音 / 关于。 */
 export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
