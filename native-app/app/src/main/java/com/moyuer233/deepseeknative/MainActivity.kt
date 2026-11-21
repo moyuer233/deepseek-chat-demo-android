@@ -38,7 +38,7 @@ import com.moyuer233.deepseeknative.ui.theme.DeepSeekTheme
 private enum class Screen { Onboarding, Welcome, PhoneLogin, PasswordLogin, Chat, Session, Settings, AccountManage, DataManage, Agreement, Devices, MinorMode }
 
 class MainActivity : ComponentActivity() {
-    private var webViewRef: WebView? = null
+    private var webViewRef: SwipeWebView? = null
     private var authLauncher: androidx.activity.result.ActivityResultLauncher<Intent>? = null
     private var fileChooserLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>? = null
     private var fileChooserCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
@@ -47,6 +47,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val web = webViewRef
+                if (web != null && web.siderOpen) {
+                    web.evaluateJavascript("window.__siderClose && window.__siderClose()", null)
+                    return
+                }
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        })
         chatImportLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
             val token = if (result.resultCode == android.app.Activity.RESULT_OK) {
                 result.data?.getStringExtra(com.moyuer233.deepseeknative.ui.ChatLoginActivity.EXTRA_TOKEN)
@@ -104,7 +115,7 @@ class MainActivity : ComponentActivity() {
                 }
                 return
             }
-            val web = WebView(this)
+            val web = SwipeWebView(this)
             web.settings.javaScriptEnabled = true
             web.settings.domStorageEnabled = true
             web.settings.allowFileAccess = true
@@ -143,6 +154,12 @@ class MainActivity : ComponentActivity() {
                 @android.webkit.JavascriptInterface
                 fun openTopUp() {
                     startActivity(Intent(this@MainActivity, com.moyuer233.deepseeknative.ui.TopUpActivity::class.java))
+                }
+
+                @android.webkit.JavascriptInterface
+                fun setSiderOpen(open: Boolean) {
+                    android.util.Log.d("Sider", "setSiderOpen=" + open)
+                    webViewRef?.siderOpen = open
                 }
 
                 @android.webkit.JavascriptInterface
@@ -456,4 +473,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }

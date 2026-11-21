@@ -143,13 +143,25 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
 /** 移动端抽屉：浮在页面上方，点空白区域关闭。 */
 export const MobileSider = () => {
   const open = useMobileSider((state) => state.open)
-  if (!open) {
+  const drag = useMobileSider((state) => state.drag)
+  const fraction = open ? 1 : drag
+  if (!open && drag <= 0.001) {
     return null
   }
   return (
     <>
-      <div className={styles.drawerMask} onClick={closeMobileSider} />
-      <div className={styles.drawer}>
+      <div
+        className={styles.drawerMask}
+        style={{ opacity: fraction, transition: drag > 0 ? 'none' : 'opacity .22s ease' }}
+        onClick={closeMobileSider}
+      />
+      <div
+        className={styles.drawer}
+        style={{
+          transform: `translateX(${(fraction - 1) * 100}%)`,
+          transition: drag > 0 ? 'none' : 'transform .22s ease',
+        }}
+      >
         <Sider mobile />
       </div>
     </>

@@ -30,6 +30,7 @@ import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
 import { registerShellAuthCallbacks } from '../services/deepseek/shell.js'
+import { installNativeSiderGesture } from '../services/nativeSiderGesture.js'
 import { Button } from '../components/base/Button.js'
 import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
@@ -147,6 +148,7 @@ export const App = () => {
 
   useEffect(() => {
     registerShellAuthCallbacks()
+    installNativeSiderGesture()
   }, [])
 
   useEffect(() => {
