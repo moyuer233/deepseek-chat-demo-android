@@ -63,8 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moyuer233.deepseeknative.R
 import com.moyuer233.deepseeknative.ui.theme.BrandBlue
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 
 /** 官方聊天首页（空态）1:1 复刻。 */
 @Composable
@@ -74,7 +73,7 @@ fun ChatHomeScreen(
     onStartNewChat: (String) -> Unit = {},
 ) {
     var drawerOpen by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Box(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.surface)) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
                 modifier = Modifier
@@ -84,17 +83,17 @@ fun ChatHomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = { drawerOpen = true }) {
-                    Icon(Icons.Filled.Menu, contentDescription = "菜单", tint = TextPrimary)
+                    Icon(Icons.Filled.Menu, contentDescription = "菜单", tint = LocalAppColors.current.textPrimary)
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { }) {
-                    Icon(Icons.Filled.Call, contentDescription = "通话", tint = TextPrimary, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.Call, contentDescription = "通话", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(22.dp))
                 }
                 IconButton(onClick = { }) {
-                    Icon(Icons.Filled.VolumeOff, contentDescription = "静音", tint = TextPrimary, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.VolumeOff, contentDescription = "静音", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(22.dp))
                 }
                 IconButton(onClick = { }) {
-                    Icon(Icons.Filled.Add, contentDescription = "新建", tint = TextPrimary, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Filled.Add, contentDescription = "新建", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(26.dp))
                 }
             }
             Column(
@@ -118,7 +117,7 @@ fun ChatHomeScreen(
                         "今天有什么可以帮到你？",
                     ).random()
                 }
-                Text(greeting, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                Text(greeting, color = LocalAppColors.current.textPrimary, fontSize = 22.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1.2f))
             }
             InputCard(
@@ -159,14 +158,14 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFF7F8FA),
+        color = LocalAppColors.current.field,
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             BasicTextField(
                 value = text,
                 onValueChange = { text = it },
                 singleLine = false,
-                textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 16.sp),
+                textStyle = androidx.compose.ui.text.TextStyle(color = LocalAppColors.current.textPrimary, fontSize = 16.sp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
                     if (text.isNotBlank()) {
@@ -177,7 +176,7 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
                     if (text.isEmpty()) {
-                        Text("发消息或按住说话", color = Color(0xFF9AA0A9), fontSize = 16.sp)
+                        Text("发消息或按住说话", color = LocalAppColors.current.textSecondary, fontSize = 16.sp)
                     }
                     inner()
                 },
@@ -208,10 +207,10 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
                         }
                     }
                 } else {
-                    Icon(Icons.Filled.Add, contentDescription = "上传", tint = TextPrimary, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Filled.Add, contentDescription = "上传", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.width(14.dp))
-                Icon(Icons.Filled.GraphicEq, contentDescription = "语音", tint = TextPrimary, modifier = Modifier.size(26.dp))
+                Icon(Icons.Filled.GraphicEq, contentDescription = "语音", tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(26.dp))
             }
         }
     }
@@ -220,11 +219,11 @@ private fun InputCard(modifier: Modifier = Modifier, onSend: (String) -> Unit = 
 @Composable
 private fun ToggleChip(text: String, active: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     val bg = if (active) Color(0xFFE8EEFF) else Color.White
-    val fg = if (active) BrandBlue else TextPrimary
+    val fg = if (active) BrandBlue else LocalAppColors.current.textPrimary
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = bg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE3E6EA)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LocalAppColors.current.border),
         modifier = Modifier.clickable(onClick = onClick),
     ) {
         Row(
@@ -257,29 +256,29 @@ private fun DrawerContent(
         sessions = com.moyuer233.deepseeknative.data.LocalStore.load(context).sortedWith(compareByDescending<com.moyuer233.deepseeknative.data.LocalSession> { it.pinned }.thenByDescending { it.updatedAt })
         loading = false
     }
-    Surface(modifier = modifier, color = Color.White) {
+    Surface(modifier = modifier, color = LocalAppColors.current.surface) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Spacer(Modifier.height(12.dp))
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = Color(0xFFF2F3F5),
+                color = LocalAppColors.current.field,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
                     .height(44.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = Color(0xFF9AA0A9), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = LocalAppColors.current.textSecondary, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     BasicTextField(
                         value = query,
                         onValueChange = { query = it },
                         singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(color = TextPrimary, fontSize = 15.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = LocalAppColors.current.textPrimary, fontSize = 15.sp),
                         modifier = Modifier.weight(1f),
                         decorationBox = { inner ->
                             if (query.isEmpty()) {
-                                Text("搜索对话内容...", color = Color(0xFF9AA0A9), fontSize = 15.sp)
+                                Text("搜索对话内容...", color = LocalAppColors.current.textSecondary, fontSize = 15.sp)
                             }
                             inner()
                         },
@@ -298,7 +297,7 @@ private fun DrawerContent(
                         item {
                             Text(
                                 label,
-                                color = Color(0xFF8A9099),
+                                color = LocalAppColors.current.textSecondary,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 6.dp),
                             )
@@ -317,7 +316,7 @@ private fun DrawerContent(
                             ) {
                                 Text(
                                     session.title,
-                                    color = TextPrimary,
+                                    color = LocalAppColors.current.textPrimary,
                                     fontSize = 15.sp,
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -338,12 +337,12 @@ private fun DrawerContent(
                         query.isNotBlank() -> "无匹配结果"
                         else -> "暂无对话"
                     },
-                    color = TextPrimary,
+                    color = LocalAppColors.current.textPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("你与 DeepSeek 的对话\n将展示在这里", color = TextSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
+                Text("你与 DeepSeek 的对话\n将展示在这里", color = LocalAppColors.current.textSecondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 20.sp)
                 Spacer(Modifier.height(16.dp))
                 Surface(
                     shape = RoundedCornerShape(24.dp),
@@ -373,20 +372,20 @@ private fun DrawerContent(
                     .padding(horizontal = 14.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Surface(shape = CircleShape, color = Color(0xFFE6E8EC), modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.Person, contentDescription = null, tint = Color(0xFF8A9099), modifier = Modifier.padding(6.dp))
+                Surface(shape = CircleShape, color = LocalAppColors.current.field, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Filled.Person, contentDescription = null, tint = LocalAppColors.current.textSecondary, modifier = Modifier.padding(6.dp))
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
                     com.moyuer233.deepseeknative.data.SessionStore.maskedMobile(context) ?: "未登录",
-                    color = TextPrimary,
+                    color = LocalAppColors.current.textPrimary,
                     fontSize = 15.sp,
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(
                     Icons.Filled.MoreHoriz,
                     contentDescription = "设置",
-                    tint = TextSecondary,
+                    tint = LocalAppColors.current.textSecondary,
                     modifier = Modifier.size(22.dp).clickable { onOpenSettings() },
                 )
             }

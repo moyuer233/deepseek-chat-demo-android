@@ -52,8 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moyuer233.deepseeknative.ui.theme.TextPrimary
-import com.moyuer233.deepseeknative.ui.theme.TextSecondary
+import com.moyuer233.deepseeknative.ui.theme.LocalAppColors
 
 @Composable
 private fun ManageTopBar(title: String, onBack: () -> Unit) {
@@ -61,14 +60,14 @@ private fun ManageTopBar(title: String, onBack: () -> Unit) {
         modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(shape = CircleShape, color = Color(0xFFEDEEF0), modifier = Modifier.size(36.dp)) {
+        Surface(shape = CircleShape, color = LocalAppColors.current.field, modifier = Modifier.size(36.dp)) {
             IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = LocalAppColors.current.textPrimary)
             }
         }
         Text(
             title,
-            color = TextPrimary,
+            color = LocalAppColors.current.textPrimary,
             fontSize = 17.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
@@ -82,7 +81,7 @@ private fun ManageTopBar(title: String, onBack: () -> Unit) {
 private fun ManageCard(content: @Composable () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = LocalAppColors.current.surface,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Column { content() }
@@ -102,17 +101,17 @@ private fun ManageRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = LocalAppColors.current.textPrimary, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(14.dp))
         }
-        Text(title, color = if (danger) Color(0xFFD93025) else TextPrimary, fontSize = 16.sp)
+        Text(title, color = if (danger) Color(0xFFD93025) else LocalAppColors.current.textPrimary, fontSize = 16.sp)
         Spacer(Modifier.weight(1f))
         if (value != null) {
-            Text(value, color = TextSecondary, fontSize = 14.sp)
+            Text(value, color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
             Spacer(Modifier.width(6.dp))
         }
         if (!danger) {
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFFC7CBD1), modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = LocalAppColors.current.border, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -121,7 +120,7 @@ private fun ManageRow(
 private fun ManageLabel(text: String) {
     Text(
         text,
-        color = Color(0xFF8A9099),
+        color = LocalAppColors.current.textSecondary,
         fontSize = 13.sp,
         modifier = Modifier.padding(start = 28.dp, top = 18.dp, bottom = 8.dp),
     )
@@ -135,7 +134,7 @@ fun AccountManageScreen(
     onOpenMinor: () -> Unit = {},
 ) {
     var showChangePhone by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.grouped).statusBarsPadding()) {
         ManageTopBar("账号管理", onBack)
         ManageLabel("账户")
         ManageCard {
@@ -188,14 +187,14 @@ fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
             }
         }
     }
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.grouped).statusBarsPadding()) {
         ManageTopBar("数据管理", onBack)
         ManageCard {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("数据用于优化体验", color = TextPrimary, fontSize = 16.sp)
+                Text("数据用于优化体验", color = LocalAppColors.current.textPrimary, fontSize = 16.sp)
                 Spacer(Modifier.weight(1f))
                 Switch(
                     checked = optimize,
@@ -206,7 +205,7 @@ fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
         }
         Text(
             "允许我们将你的对话内容用于优化 DeepSeek 的使用体验。我们保障你的数据隐私安全。",
-            color = TextSecondary,
+            color = LocalAppColors.current.textSecondary,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp),
@@ -241,7 +240,7 @@ fun DataManageScreen(onBack: () -> Unit, onImported: () -> Unit = {}) {
 /** 官方「服务协议」页 1:1 复刻（列表项后续接 WebView/文档）。 */
 @Composable
 fun AgreementScreen(onBack: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.grouped).statusBarsPadding()) {
         ManageTopBar("服务协议", onBack)
         ManageCard {
             ManageRow("用户协议")
@@ -271,11 +270,11 @@ fun DeviceManageScreen(onBack: () -> Unit) {
         DeviceEntry("Chrome", "开放平台", false, "Windows", "2026/11/20 21:54:19"),
         DeviceEntry("Chrome", null, false, "Android 14", "2026/11/20 21:52:45"),
     )
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.grouped).statusBarsPadding()) {
         ManageTopBar("登录设备管理", onBack)
         Text(
             "以下为本账号已登录的设备，点击“退出登录”后，该设备上将退出登录。",
-            color = TextSecondary,
+            color = LocalAppColors.current.textSecondary,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
@@ -283,7 +282,7 @@ fun DeviceManageScreen(onBack: () -> Unit) {
         ManageCard {
             devices.forEachIndexed { index, device ->
                 if (index > 0) {
-                    HorizontalDivider(color = Color(0xFFF0F1F3), modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp))
+                    HorizontalDivider(color = LocalAppColors.current.border, modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp))
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
@@ -291,16 +290,16 @@ fun DeviceManageScreen(onBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(device.name, color = TextPrimary, fontSize = 16.sp)
+                            Text(device.name, color = LocalAppColors.current.textPrimary, fontSize = 16.sp)
                             if (device.badge != null) {
                                 Spacer(Modifier.width(8.dp))
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
-                                    color = if (device.current) Color(0xFFEAF0FE) else Color(0xFFF0F1F3),
+                                    color = if (device.current) LocalAppColors.current.bubble else LocalAppColors.current.border,
                                 ) {
                                     Text(
                                         device.badge,
-                                        color = if (device.current) Color(0xFF426EFE) else TextSecondary,
+                                        color = if (device.current) Color(0xFF426EFE) else LocalAppColors.current.textSecondary,
                                         fontSize = 12.sp,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     )
@@ -308,9 +307,9 @@ fun DeviceManageScreen(onBack: () -> Unit) {
                             }
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text(device.os, color = TextSecondary, fontSize = 13.sp)
+                        Text(device.os, color = LocalAppColors.current.textSecondary, fontSize = 13.sp)
                         Spacer(Modifier.height(2.dp))
-                        Text("登录时间：" + device.loginTime, color = TextSecondary, fontSize = 13.sp)
+                        Text("登录时间：" + device.loginTime, color = LocalAppColors.current.textSecondary, fontSize = 13.sp)
                     }
                     if (!device.current) {
                         Text("退出登录", color = Color(0xFF426EFE), fontSize = 15.sp, modifier = Modifier.clickable { })
@@ -342,13 +341,13 @@ fun MinorModeScreen(onBack: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = CircleShape, color = Color(0xFFF2F3F5), modifier = Modifier.size(36.dp)) {
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = TextPrimary)
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "返回", tint = LocalAppColors.current.textPrimary)
                 }
             }
         }
         Text(
             "修改你的出生年月，验证是否进入未成年人模式",
-            color = TextPrimary,
+            color = LocalAppColors.current.textPrimary,
             fontSize = 26.sp,
             lineHeight = 34.sp,
             fontWeight = FontWeight.SemiBold,
@@ -356,7 +355,7 @@ fun MinorModeScreen(onBack: () -> Unit) {
         )
         Text(
             "仅用于确认你的年龄，以提供更好的服务，你的信息不会公开。",
-            color = TextSecondary,
+            color = LocalAppColors.current.textSecondary,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
@@ -412,7 +411,7 @@ private fun WheelColumn(
                 ) {
                     Text(
                         items[index],
-                        color = if (index == selectedIndex) TextPrimary else Color(0xFFB0B5BD),
+                        color = if (index == selectedIndex) LocalAppColors.current.textPrimary else LocalAppColors.current.textSecondary,
                         fontSize = if (index == selectedIndex) 20.sp else 18.sp,
                         fontWeight = if (index == selectedIndex) FontWeight.SemiBold else FontWeight.Normal,
                     )
