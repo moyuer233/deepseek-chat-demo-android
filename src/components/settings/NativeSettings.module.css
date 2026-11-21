@@ -163,9 +163,9 @@
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px;
   border: var(--dsh-hairline-width, 1px) solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
+  border-radius: var(--dsh-radius-12);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -185,6 +185,7 @@
 .importModeTitle {
   font-size: 14px;
   line-height: 22px;
+  font-weight: 600;
 }
 
 .importModeDesc {

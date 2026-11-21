@@ -10,7 +10,7 @@ import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../s
 import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
 import { SettingsRow as Row } from './SettingsRow.js'
-import { Modal } from '../base/Modal.js'
+import { Dialog } from '../base/Dialog.js'
 import { pushBackHandler } from '../../services/backHandlers.js'
 import { ConfirmDialog } from '../base/ConfirmDialog.js'
 import { Button } from '../base/Button.js'
@@ -29,6 +29,13 @@ import {
 } from '../base/icons.js'
 
 const Shell = ({ children }: { children: React.ReactNode }) => <div className={styles.overlay}>{children}</div>
+
+const UploadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 16V4M7 9l5-5 5 5" />
+    <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+  </svg>
+)
 
 /** 移动端原生风格设置页：账户 / 应用 / 语音 / 关于。 */
 export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
@@ -313,8 +320,10 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
             />
           ) : null}
           {pendingPreflight ? (
-            <Modal
+            <Dialog
               title={t('importModeTitle')}
+              icon={<UploadIcon />}
+              lead={t('importStats', { added: pendingPreflight.added, updated: pendingPreflight.updated, localOnly: pendingPreflight.localOnly })}
               onClose={cancelImport}
               footer={
                 <Button variant="outlined" size="m" onClick={cancelImport}>
@@ -323,7 +332,6 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               }
             >
               <div className={styles.importModes}>
-                <p className={styles.importStats}>{t('importStats', { added: pendingPreflight.added, updated: pendingPreflight.updated, localOnly: pendingPreflight.localOnly })}</p>
                 <p className={styles.importHint}>{t('importModeHint')}</p>
                 <button type="button" className={styles.importMode} onClick={() => void runImport('merge')}>
                   <span className={styles.importModeTitle}>{t('importModeMerge')}</span>
@@ -338,7 +346,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
                   <span className={styles.importModeDesc}>{t('importModeOverwriteDesc')}</span>
                 </button>
               </div>
-            </Modal>
+            </Dialog>
           ) : null}
           <input
             ref={fileRef}

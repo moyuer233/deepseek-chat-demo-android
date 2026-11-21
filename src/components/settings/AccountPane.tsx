@@ -4,7 +4,7 @@ import { DeepSeekAccount } from '../../services/deepseek/plugin.js'
 import { setAccountToken, setApiKey, useSettings } from '../../services/settings.js'
 import { useTranslate } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
-import { Modal } from '../base/Modal.js'
+import { Dialog } from '../base/Dialog.js'
 import { fetchBalance, currencySymbol, type Balance } from '../../services/deepseek/balance.js'
 import { verifyApiKey } from '../../services/api/client.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
@@ -15,6 +15,20 @@ import { pushBackHandler } from '../../services/backHandlers.js'
 import styles from './AccountPane.module.css'
 import nsStyles from './NativeSettings.module.css'
 import { SettingsRow } from './SettingsRow.js'
+
+const KeyIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="8" cy="12" r="3.4" />
+    <path d="M11.4 12H20M17 12v3M14 12v2" />
+  </svg>
+)
+
+const LogoutIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4" />
+    <path d="M10 8l-4 4 4 4M6 12h9" />
+  </svg>
+)
 
 /** 账户：账号授权、API Key 与充值入口。 */
 export const AccountPane = () => {
@@ -197,8 +211,10 @@ export const AccountPane = () => {
       </div>
       <div className={styles.hint}>{t('accountRechargeHint')}</div>
       {apiKeyOpen ? (
-        <Modal
+        <Dialog
           title={t('apiKeyLabel')}
+          icon={<KeyIcon />}
+          lead={t('apiKeyHint')}
           onClose={() => setApiKeyOpen(false)}
           footer={
             <>
@@ -242,22 +258,22 @@ export const AccountPane = () => {
             </>
           }
         >
-          <div className={styles.apiKeyForm}>
-            <p className={styles.terms}>{t('apiKeyHint')}</p>
-            <input
-              className={styles.apiKeyInput}
-              type="password"
-              value={apiKeyInput}
-              placeholder="sk-..."
-              autoComplete="off"
-              onChange={(event) => setApiKeyInput(event.target.value)}
-            />
-          </div>
-        </Modal>
+          <input
+            className={styles.apiKeyInput}
+            type="password"
+            value={apiKeyInput}
+            placeholder="sk-..."
+            autoComplete="off"
+            onChange={(event) => setApiKeyInput(event.target.value)}
+          />
+        </Dialog>
       ) : null}
       {logoutOpen ? (
-        <Modal
+        <Dialog
           title={t('accountLogout')}
+          icon={<LogoutIcon />}
+          tone="danger"
+          lead={streaming ? t('accountLogoutActive') : t('accountLogoutBody')}
           onClose={() => setLogoutOpen(false)}
           footer={
             <>
@@ -279,11 +295,7 @@ export const AccountPane = () => {
               </Button>
             </>
           }
-        >
-          <div className={styles.terms}>
-            {streaming ? t('accountLogoutActive') : t('accountLogoutBody')}
-          </div>
-        </Modal>
+        />
       ) : null}
     </div>
   )

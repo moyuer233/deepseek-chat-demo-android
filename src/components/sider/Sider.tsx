@@ -1,12 +1,11 @@
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { IconSettingsOutline16 } from '../base/icons.js'
+import { IconSettingsOutline16, IconTrashOutline16 } from '../base/icons.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
 import { getSession, removeSession, selectSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
-import { Button } from '../base/Button.js'
-import { Modal } from '../base/Modal.js'
+import { Dialog } from '../base/Dialog.js'
 import { showToast } from '../base/toastState.js'
 import { openSettings } from '../settings/settingsDialogState.js'
 import { DshIcon } from '../chatInput/StatusIcons.js'
@@ -244,41 +243,32 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
         </button>
       </div>
       {deleting ? (
-        <Modal
+        <Dialog
           title={t('deleteSessionModalContentTitle')}
+          icon={<IconTrashOutline16 />}
+          tone="danger"
+          lead={t('deleteSessionWithFilesDescription')}
+          confirmText={t('delete')}
+          confirmVariant="danger"
+          busy={deletePending}
           onClose={() => {
             if (!deletePending) {
               setDeleting(null)
             }
           }}
-          footer={
-            <>
-              <Button variant="outlined" disabled={deletePending} onClick={() => setDeleting(null)}>
-                {t('cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                disabled={deletePending}
-                onClick={async () => {
-                  setDeletePending(true)
-                  try {
-                    if (await removeSession(deleting.id)) {
-                      setDeleting(null)
-                    } else {
-                      showToast({ key: 'sessionDeleteFailed', type: 'error' })
-                    }
-                  } finally {
-                    setDeletePending(false)
-                  }
-                }}
-              >
-                {t('delete')}
-              </Button>
-            </>
-          }
-        >
-          {t('deleteSessionWithFilesDescription')}
-        </Modal>
+          onConfirm={async () => {
+            setDeletePending(true)
+            try {
+              if (await removeSession(deleting.id)) {
+                setDeleting(null)
+              } else {
+                showToast({ key: 'sessionDeleteFailed', type: 'error' })
+              }
+            } finally {
+              setDeletePending(false)
+            }
+          }}
+        />
       ) : null}
     </div>
   )
