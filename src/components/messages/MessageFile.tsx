@@ -7,6 +7,9 @@ import { IconPhotoErrorFill20, IconRefreshOutline16 } from '../base/icons.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { FileCard } from '../files/FileCard.js'
 import { useFileView } from '../files/useFileView.js'
+import { shareBlob } from '../../services/deepseek/share.js'
+import { showImagePreview } from '../files/imagePreview.js'
+import { showToast } from '../base/toastState.js'
 import styles from './MessageFile.module.css'
 
 /** 历史或失效附件的补传状态：只在还没有 serverId 时显示 */
@@ -36,6 +39,7 @@ export const MessageFile = ({
   const t = useTranslate()
   const { image, url, link } = useFileView(file.id, file.name)
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
+
   const upload = useUploadState(file)
   const uploading = upload?.status === 'uploading'
   const failed = upload?.status === 'error'
@@ -51,7 +55,11 @@ export const MessageFile = ({
           <IconPhotoErrorFill20 />
         </span>
       ) : (
-        <img src={url} alt={file.name} onError={() => setFailedUrl(url)} />
+        <img
+          src={url}
+          alt={file.name}
+          onClick={() => url && showImagePreview(url, file.name)}
+          onError={() => setFailedUrl(url)} />
       )
     ) : null
 
@@ -114,7 +122,17 @@ export const MessageFile = ({
 
     // 正常态：链接到原件
     return link ? (
-      <a className={clsx(styles.image, styles.imageThumb)} {...link} title={file.name}>
+      <a
+        className={clsx(styles.image, styles.imageThumb)}
+        {...link}
+        title={file.name}
+        onClick={(event) => {
+          if (url) {
+            event.preventDefault()
+            showImagePreview(url, file.name)
+          }
+        }}
+      >
         {preview}
       </a>
     ) : (
@@ -131,6 +149,19 @@ export const MessageFile = ({
       error={errorText}
       onRetry={retry ?? undefined}
       link={link}
+      onLinkClick={
+        link
+          ? () => {
+              if (!url) {
+                return
+              }
+              void fetch(url)
+                .then((response) => response.blob())
+                .then((blob) => shareBlob(file.name, blob))
+                .catch(() => showToast({ key: 'historyExportFailed', type: 'error' }))
+            }
+          : undefined
+      }
     />
   )
 }

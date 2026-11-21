@@ -57,6 +57,10 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [voiceMode, setVoiceMode] = useState(false)
+  const [voiceCancel, setVoiceCancel] = useState(false)
+  const voiceStartY = useRef(0)
+  const voiceCancelRef = useRef(false)
+  const autoSendRef = useRef(false)
   const [attachMenu, setAttachMenu] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const togglesRef = useRef<HTMLDivElement>(null)
@@ -112,7 +116,14 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     const focused = textarea !== null && document.activeElement === textarea
     const start = focused ? (textarea.selectionStart ?? current.length) : current.length
     const end = focused ? (textarea.selectionEnd ?? current.length) : current.length
-    setText(current.slice(0, start) + transcript + current.slice(end))
+    const next = current.slice(0, start) + transcript + current.slice(end)
+    setText(next)
+    if (autoSendRef.current) {
+      autoSendRef.current = false
+      // 等 useVoiceInput 把状态切回 idle 再发送
+      window.setTimeout(() => sendRef.current(), 120)
+      return
+    }
     requestAnimationFrame(() => {
       textarea?.focus({ preventScroll: true })
       textarea?.setSelectionRange(start + transcript.length, start + transcript.length)
@@ -137,6 +148,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   // 排队、上传中或上传失败的附件都留在输入框，全部上传成功后才能发送
   const canSend = !importingHistory && !streaming && voice.status === 'idle' && draftReady
 
+  const sendRef = useRef<() => void>(() => {})
   const send = () => {
     if (
       useChatStore.getState().importingHistory ||
@@ -173,23 +185,52 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             type="button"
             className={styles.voiceBar}
             disabled={!voice.available || importingHistory}
-            onPointerDown={() => {
+            onPointerDown={(event) => {
+              voiceStartY.current = event.clientY
+              voiceCancelRef.current = false
+              setVoiceCancel(false)
               if (voice.status === 'idle' && ensureApiKey()) {
                 void voice.toggle()
               }
             }}
-            onPointerUp={() => {
-              if (voice.status === 'recording') {
-                void voice.toggle()
+            onPointerMove={(event) => {
+              if (voice.status !== 'recording') {
+                return
               }
+              const cancel = voiceStartY.current - event.clientY > 60
+              if (cancel !== voiceCancelRef.current) {
+                voiceCancelRef.current = cancel
+                setVoiceCancel(cancel)
+              }
+            }}
+            onPointerUp={() => {
+              if (voice.status !== 'recording') {
+                return
+              }
+              if (voiceCancelRef.current) {
+                voiceCancelRef.current = false
+                setVoiceCancel(false)
+                voice.cancel()
+                return
+              }
+              autoSendRef.current = true
+              void voice.toggle()
             }}
             onPointerCancel={() => {
               if (voice.status === 'recording') {
-                void voice.toggle()
+                voice.cancel()
               }
             }}
           >
-            {recording ? t('voiceInputStop') : t('voiceHoldToSpeak')}
+            {recording ? (
+              <span className={styles.voiceRecording}>
+                <Spectrum getAnalyser={voice.getAnalyser} />
+                <span>{voiceCancel ? t('voiceReleaseCancel') : t('voiceReleaseToSend')}</span>
+                <span className={styles.voiceHint}>{t('voiceSlideUpCancel')}</span>
+              </span>
+            ) : (
+              t('voiceHoldToSpeak')
+            )}
           </button>
         ) : null}
         <textarea

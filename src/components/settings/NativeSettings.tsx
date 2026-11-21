@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { useSettings, setLocale, setThemePreference, setTtsVoice } from '../../services/settings.js'
+import { useSettings, setAutoCompact, setLocale, setThemePreference, setTtsVoice } from '../../services/settings.js'
 import { openRecharge } from '../../services/deepseek/account.js'
 import { nativeShell, readArchiveFile, requestChatArchive } from '../../services/deepseek/shell.js'
 import { showToast } from '../base/toastState.js'
 import { clearHistory, exportHistory, importHistory } from '../../services/chat/backup.js'
+import { getSession, useChatStore } from '../../services/chat/store.js'
+import { contextPressure, formatTokens, sessionUsage, totalUsage } from '../../services/chat/usage.js'
 import { shareBlob } from '../../services/deepseek/share.js'
 import { AccountPane } from './AccountPane.js'
 import styles from './NativeSettings.module.css'
@@ -50,7 +52,9 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
   const locale = useSettings((s) => s.locale)
   const theme = useSettings((s) => s.themePreference)
   const voice = useSettings((s) => s.ttsVoice)
-  const [page, setPage] = useState<'main' | 'account' | 'data'>('main')
+  const autoCompact = useSettings((s) => s.autoCompact)
+  const activeId = useChatStore((state) => state.activeId)
+  const [page, setPage] = useState<'main' | 'account' | 'data' | 'usage'>('main')
   const fileRef = useRef<HTMLInputElement>(null)
   const [chatImportBusy, setChatImportBusy] = useState(false)
 
@@ -105,6 +109,29 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
     }
   }
 
+  const checkUpdate = async () => {
+    try {
+      const response = await fetch('https://api.github.com/repos/moyuer233/deepseek-chat-demo-android/releases/latest', {
+        headers: { Accept: 'application/vnd.github+json' },
+      })
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status)
+      }
+      const data = (await response.json()) as { tag_name?: string; html_url?: string }
+      const latest = String(data.tag_name ?? '').replace(/^v/, '')
+      if (latest && latest !== '1.0.1') {
+        showToast(t('updateAvailable') + ' ' + latest)
+        if (data.html_url) {
+          nativeShell()?.openExternal?.(data.html_url)
+        }
+      } else {
+        showToast(t('updateLatest'))
+      }
+    } catch {
+      showToast('检查更新失败')
+    }
+  }
+
   const onDelete = async () => {
     // oxlint-disable-next-line no-alert -- WebView 通过 onJsConfirm 显示原生确认框
     if (!window.confirm(t('deleteAllSessionsModalDescription'))) {
@@ -136,6 +163,43 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
       </Shell>
     )
   }
+  if (page === 'usage') {
+    const session = activeId ? (getSession(activeId) ?? null) : null
+    const usage = session ? sessionUsage(session) : null
+    const total = totalUsage()
+    const pressure = contextPressure(session)
+    const row = (title: string, value: string) => (
+      <Row icon={<IconDataOutline16 />} title={title} value={value} />
+    )
+    return (
+      <Shell>
+        {header(t('usageStats'), () => setPage('main'))}
+        <div className={styles.body}>
+          <div className={styles.section}>{t('usageSession')}</div>
+          <div className={styles.card}>
+            {usage ? (
+              <>
+                {row(t('usageRequests'), String(usage.requests))}
+                {row(t('usageInput'), formatTokens(usage.input + usage.cacheWrite))}
+                {row(t('usageCacheRead'), formatTokens(usage.cacheRead))}
+                {row(t('usageOutput'), formatTokens(usage.output))}
+              </>
+            ) : (
+              <Row icon={<IconDataOutline16 />} title={t('usageRequests')} value="0" />
+            )}
+            {row(t('usageContext'), formatTokens(pressure.tokens) + ' / ' + formatTokens(pressure.window))}
+          </div>
+          <div className={styles.section}>{t('usageTotal')}</div>
+          <div className={styles.card}>
+            {row(t('usageRequests'), String(total.requests))}
+            {row(t('usageInput'), formatTokens(total.input + total.cacheWrite))}
+            {row(t('usageCacheRead'), formatTokens(total.cacheRead))}
+            {row(t('usageOutput'), formatTokens(total.output))}
+          </div>
+        </div>
+      </Shell>
+    )
+  }
   if (page === 'data') {
     return (
       <Shell>
@@ -153,6 +217,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               }}
             />
             <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
+            <Row icon={<IconDataOutline16 />} title={t('usageStats')} onClick={() => setPage('usage')} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>
           <input
@@ -188,6 +253,12 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         <div className={styles.card}>
           <Row icon={<IconGlobeLanguageOutline14 />} title={t('settingsLocalePreference')} value={locale === 'zh-CN' ? '中文' : 'English'} onClick={cycleLocale} />
           <Row icon={<IconDarkOutline16 />} title={t('avatarMenuSettingsDialogThemeItemLabel')} value={themeLabel} onClick={cycleTheme} />
+          <Row
+            icon={<IconDataOutline16 />}
+            title={t('contextCompression')}
+            value={autoCompact ? t('enabled') : t('disabled')}
+            onClick={() => setAutoCompact(!autoCompact)}
+          />
         </div>
 
         <div className={styles.section}>{t('nativeSettingsVoice')}</div>
@@ -198,6 +269,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         <div className={styles.section}>{t('nativeSettingsAbout')}</div>
         <div className={styles.card}>
           <Row icon={<IconWarningOutline16 />} title={t('aboutVersion')} value="1.0.1" />
+          <Row icon={<IconDownloadOutline16 />} title={t('checkUpdate')} onClick={checkUpdate} />
           <Row
             icon={(
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

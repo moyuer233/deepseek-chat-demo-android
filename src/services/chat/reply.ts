@@ -305,7 +305,8 @@ export const toRequestMessages = (
   question: UserMessage,
   prefix?: AssistantMessage,
   thinking = prefix?.thinking ?? false,
-  latestReminder?: string
+  latestReminder?: string,
+  compaction?: { summary: string; throughId: string }
 ): MessageParam[] => {
   const messages: MessageParam[] = []
   let previousReminder: string | undefined
@@ -316,7 +317,17 @@ export const toRequestMessages = (
       previousReminder = reminder
     }
   }
+  const cutoffIndex = compaction ? history.findIndex((message) => message.id === compaction.throughId) : -1
+  if (compaction && cutoffIndex >= 0) {
+    messages.push(
+      { role: 'user', content: '以下是之前对话的摘要，请把它当作已发生过的上下文：\n\n' + compaction.summary },
+      { role: 'assistant', content: [{ type: 'text', text: '好的，我已经记住了这些上下文。' }] }
+    )
+  }
   for (const [user, reply] of getContextRounds(history)) {
+    if (cutoffIndex >= 0 && history.indexOf(user) <= cutoffIndex) {
+      continue
+    }
     // 历史提问没有文字、附件也都没有 serverId 时，提问为空，连同回答一起省略。
     if (!user.content && toFileBlocks(user.files).length === 0) {
       continue

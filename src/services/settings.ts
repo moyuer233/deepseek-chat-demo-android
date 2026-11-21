@@ -19,6 +19,9 @@ type Settings = {
   thinking: boolean
   search: boolean
   siderCollapsed: boolean
+  /** 上下文压缩：超过阈值后把旧对话总结成摘要 */
+  autoCompact: boolean
+  compactThresholdTokens: number
 }
 
 const KEYS = {
@@ -30,6 +33,8 @@ const KEYS = {
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
+  autoCompact: 'chat-demo:auto-compact',
+  compactThreshold: 'chat-demo:compact-threshold',
 } as const
 
 const read = (key: string) => {
@@ -99,6 +104,8 @@ export const useSettings = create<Settings>(() => ({
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+  autoCompact: read(KEYS.autoCompact) !== 'false',
+  compactThresholdTokens: Number(read(KEYS.compactThreshold)) || 102_400,
 }))
 
 export const setLocale = (locale: Locale) => {
@@ -144,4 +151,14 @@ export const setSearch = (search: boolean) => {
 export const setSiderCollapsed = (siderCollapsed: boolean) => {
   write(KEYS.siderCollapsed, String(siderCollapsed))
   useSettings.setState({ siderCollapsed })
+}
+
+export const setAutoCompact = (autoCompact: boolean) => {
+  write(KEYS.autoCompact, String(autoCompact))
+  useSettings.setState({ autoCompact })
+}
+
+export const setCompactThresholdTokens = (compactThresholdTokens: number) => {
+  write(KEYS.compactThreshold, String(compactThresholdTokens))
+  useSettings.setState({ compactThresholdTokens })
 }

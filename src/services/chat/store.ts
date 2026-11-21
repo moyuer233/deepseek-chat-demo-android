@@ -98,7 +98,7 @@ const { getState: get, setState: set } = useChatStore
 const sortSessions = (sessions: SessionSummary[]) =>
   [...sessions].sort((a, b) => b.updatedAt - a.updatedAt)
 
-const getSession = (id: string) => {
+export const getSession = (id: string) => {
   const cache = get().sessionCache
   return Object.hasOwn(cache, id) ? cache[id] : undefined
 }
@@ -973,6 +973,15 @@ const reuploadInvalidatedFiles = (sessionId: string, request: Request, error: un
   return true
 }
 
+/** 保存上下文摘要（由 compaction 服务调用；单独导出避免循环依赖） */
+export const updateCompaction = (
+  sessionId: string,
+  compaction: { summary: string; throughId: string; updatedAt: number }
+) => {
+  updateSession(sessionId, (session) => ({ ...session, compaction }))
+  persist(sessionId)
+}
+
 /** 重传前的退避等待；停止生成时立即返回，由调用方按已停止收尾 */
 const waitForRetry = (attempt: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
@@ -1034,7 +1043,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           prepared.question,
           prepared.prefix,
           initial.thinking ?? false,
-          latestReminder
+          latestReminder,
+          getSession(sessionId)?.compaction
         )
         const events = streamMessage(
           useSettings.getState().apiKey ?? '',
@@ -1072,6 +1082,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           }
         }
         reply = settleReply(reply, 'done', Date.now())
+        // 回合结束后按阈值压缩旧上下文（动态导入避免循环依赖）
+        void import('./compaction.js').then((module) => module.maybeCompact(sessionId)).catch(() => {})
         break
       } catch (error) {
         if (controller.signal.aborted) {
@@ -1084,6 +1096,24 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
             message: '',
             localMessage: describeUploadError(error),
             retryable: isRetryableApiError(error),
+          })
+          break
+        }
+        // 上下文超限：DSH 同款恢复策略——先压缩再让用户重试（当前请求快照无法安全重建）
+        if (
+          error instanceof ApiError &&
+          attempt < 1 &&
+          /context|too long|exceed|maximum/i.test(error.message)
+        ) {
+          const { compactSession } = await import('./compaction.js')
+          const compacted = await compactSession(sessionId, true)
+          reply = settleReply(reply, 'error', Date.now(), {
+            kind: error.kind,
+            message: error.message,
+            status: error.status,
+            localMessage: compacted
+              ? { key: 'contextOverflowCompacted' }
+              : { key: 'contextOverflowCompactFailed' },
           })
           break
         }

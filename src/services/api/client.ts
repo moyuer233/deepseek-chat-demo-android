@@ -65,7 +65,18 @@ const readErrorResponse = async (
   } catch {
     // 非 JSON 响应体直接展示原文
   }
-  return new ApiError(kind, message, response.status)
+  const hint = message.includes('余额') || message.includes('balance')
+    ? ''
+    : response.status === 401
+      ? 'API Key 无效或授权已过期'
+      : response.status === 402
+        ? '账户余额不足，请充值'
+        : response.status === 429
+          ? '请求过于频繁，请稍后再试'
+          : response.status >= 500
+            ? '服务器繁忙，请稍后重试'
+            : ''
+  return new ApiError(kind, hint ? `${hint}（${message}）` : message, response.status)
 }
 
 export const request = async (url: string, init: RequestInit): Promise<Response> => {

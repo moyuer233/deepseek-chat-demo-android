@@ -19,7 +19,20 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
   const sessions = useChatStore((state) => state.sessions)
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
-  const groups = useMemo(() => groupSessions(sessions, now, t), [sessions, now, t])
+  const [query, setQuery] = useState('')
+  const groups = useMemo(() => {
+    const grouped = groupSessions(sessions, now, t)
+    const keyword = query.trim().toLowerCase()
+    if (!keyword) {
+      return grouped
+    }
+    return grouped
+      .map((group) => ({
+        ...group,
+        sessions: group.sessions.filter((session) => session.title.toLowerCase().includes(keyword)),
+      }))
+      .filter((group) => group.sessions.length > 0)
+  }, [sessions, now, t, query])
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
 
@@ -62,8 +75,19 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
         </span>
         {t('newChat')}
       </button>
+      <input
+        className={styles.search}
+        type="search"
+        value={query}
+        placeholder={t('searchSessionsPlaceholder')}
+        aria-label={t('searchSessionsPlaceholder')}
+        onChange={(event) => setQuery(event.target.value)}
+      />
       <div className={styles.listWrap}>
         <div className={styles.list}>
+          {groups.length === 0 ? (
+            <div className={styles.empty}>{t('searchSessionsEmpty')}</div>
+          ) : null}
           {groups.map((group) => (
             <div key={group.key} className={styles.section}>
               <div className={styles.sectionHeader}>{group.label}</div>
@@ -79,6 +103,17 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
           ))}
         </div>
       </div>
+      <button
+        type="button"
+        className={styles.fab}
+        aria-label={t('newChat')}
+        onClick={() => {
+          newChat()
+          closeMobileSider()
+        }}
+      >
+        <NewChatIcon />
+      </button>
       <div className={styles.bottom}>
         <button type="button" className={styles.settings} onClick={() => openSettings('general')}>
           <span className={styles.settingsIcon}>

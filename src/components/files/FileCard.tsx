@@ -19,6 +19,7 @@ export const FileCard = ({
   onRetry,
   onRemove,
   link,
+  onLinkClick,
 }: {
   name: string
   size: number
@@ -27,6 +28,8 @@ export const FileCard = ({
   onRetry?: () => void
   onRemove?: () => void
   link?: AnchorHTMLAttributes<HTMLAnchorElement>
+  /** 原生壳里 blob 链接不能直接打开：交给外部保存/预览 */
+  onLinkClick?: () => void
 }) => {
   const t = useTranslate()
   const ext = getExtension(name)
@@ -66,7 +69,20 @@ export const FileCard = ({
         <div className={styles.caption}>{name}</div>
         <div className={styles.subCaption}>{description}</div>
       </div>
-      {fileLink && <a {...fileLink} aria-label={name} />}
+      {fileLink && (
+        <a
+          {...fileLink}
+          aria-label={name}
+          onClick={
+            onLinkClick
+              ? (event) => {
+                  event.preventDefault()
+                  onLinkClick()
+                }
+              : undefined
+          }
+        />
+      )}
       {onRemove ? (
         <button
           type="button"

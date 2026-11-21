@@ -108,6 +108,8 @@ export type AssistantMessage = MessageBranch & {
 export type Message = UserMessage | AssistantMessage
 
 export type Session = {
+  /** 上下文压缩：throughId 之前的消息用 summary 代替 */
+  compaction?: { summary: string; throughId: string; updatedAt: number }
   id: string
   title: string
   createdAt: number

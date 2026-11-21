@@ -460,3 +460,16 @@
     opacity: 1;
   }
 }
+
+
+.voiceRecording {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.voiceHint {
+  color: var(--dsw-alias-label-caption);
+  font-size: 12px;
+}
