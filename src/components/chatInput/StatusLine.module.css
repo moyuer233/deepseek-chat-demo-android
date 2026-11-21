@@ -1,0 +1,24 @@
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  width: 100%;
+  max-width: var(--message-list-max-width);
+  margin: 6px auto 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-caption);
+  white-space: nowrap;
+}
+
+.model {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.streaming {
+  color: var(--dsw-alias-brand-text);
+}

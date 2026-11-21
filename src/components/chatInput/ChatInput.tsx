@@ -31,6 +31,7 @@ import { DraftAttachments } from './DraftAttachments.js'
 import { useVoiceInput } from './useVoiceInput.js'
 import { VoiceButton } from './VoiceButton.js'
 import { Spectrum } from './Spectrum.js'
+import { StatusLine } from './StatusLine.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './ChatInput.module.css'
 
@@ -170,6 +171,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   }
 
   return (
+    <>
     <div
       className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session, attachMenu && styles.menuOpen)}
       onClick={(event) => {
@@ -460,5 +462,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
 
       {dragging ? <DragMask /> : null}
     </div>
+    <StatusLine sessionId={sessionId} />
+    </>
   )
 }

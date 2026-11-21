@@ -1016,6 +1016,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
   set((state) => ({ streaming: { ...state.streaming, [sessionId]: controller } }))
   let reply = initial
   let frame = 0
+  const startedAt = Date.now()
+  let firstTokenAt = 0
   const flush = () => {
     cancelAnimationFrame(frame)
     frame = 0
@@ -1061,6 +1063,9 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         )
         const blockIndexes = new Map<number, number>()
         for await (const event of events) {
+          if (!firstTokenAt && (event.type === 'content_block_start' || event.type === 'content_block_delta')) {
+            firstTokenAt = Date.now()
+          }
           receivedContent ||= event.type === 'content_block_start'
           if (
             event.type === 'message_delta' &&
@@ -1082,6 +1087,13 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           }
         }
         reply = settleReply(reply, 'done', Date.now())
+        reply = {
+          ...reply,
+          perf: {
+            firstTokenMs: firstTokenAt ? firstTokenAt - startedAt : undefined,
+            totalMs: Date.now() - startedAt,
+          },
+        }
         // 回合结束后按阈值压缩旧上下文（动态导入避免循环依赖）
         void import('./compaction.js').then((module) => module.maybeCompact(sessionId)).catch(() => {})
         break
