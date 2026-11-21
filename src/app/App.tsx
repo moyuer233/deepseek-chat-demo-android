@@ -48,7 +48,8 @@ const readOnboarded = (): boolean => {
   }
 }
 const isNativeApp = Capacitor.isNativePlatform()
-const showOnboardingInitially = isNativeApp && !readOnboarded()
+// 原生壳由 MainActivity 的 Compose 引导页负责；网页引导只留给浏览器版本，避免两套引导连播
+const showOnboardingInitially = !isNativeApp && !readOnboarded()
 
 export const App = () => {
   const t = useTranslate()
