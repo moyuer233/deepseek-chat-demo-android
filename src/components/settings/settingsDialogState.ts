@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useSettings } from '../../services/settings.js'
+import { showToast } from '../base/toastState.js'
 
 /** 设置弹窗的分组：通用设置 / 数据管理 / 账户 */
 export type SettingsSection = 'general' | 'data' | 'account'
@@ -15,11 +16,11 @@ export const openSettings = (section: SettingsSection) =>
 
 export const closeSettings = () => useSettingsDialog.setState({ open: false })
 
-/** 没有 API Key 时打开设置并选中 API Key 所在的「数据管理」，返回是否已有 Key */
+/** 是否已有可用凭据（账号授权或 API Key）；不再自动跳转设置，只做提示 */
 export const ensureApiKey = () => {
   if (useSettings.getState().apiKey || useSettings.getState().accountToken) {
     return true
   }
-  openSettings('data')
+  showToast({ key: 'loginRequiredHint' })
   return false
 }

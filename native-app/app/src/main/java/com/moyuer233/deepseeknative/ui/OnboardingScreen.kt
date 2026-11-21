@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -120,7 +121,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         }.start()
     }
     val pages = listOf(
-        Triple("欢迎使用 DeepSeek", "和官方 App 一样的外观，聊天与数据都由你自己掌控。", 0),
+        Triple("欢迎使用 DeepSeek Chat Demo", "和官方 App 一样的外观，聊天与数据都由你自己掌控。", 0),
         Triple("导入历史会话", "从 chat.deepseek.com 登录并导出全部会话；进入 chat-demo 后自动导入。", 1),
         Triple("连接聊天内核", "用 DeepSeek 账号授权或 API Key 即可聊天，无需验证码。", 2),
         Triple("准备就绪", "随时可以在设置里更换主题、字体和授权方式。", 3),
@@ -139,7 +140,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         ) { page ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (page == 0) {
-                    Image(painter = painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(84.dp))
+                    Image(painter = painterResource(R.drawable.ic_deepseek_logo), contentDescription = null, modifier = Modifier.size(84.dp))
                     Spacer(Modifier.height(12.dp))
                 }
                 Text(
@@ -210,7 +211,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
         ) {
             Text(if (index < pages.lastIndex) "下一步" else "开始使用", fontSize = 16.sp)
         }
-        TextButton(onClick = onDone, modifier = Modifier.padding(bottom = 24.dp)) {
+        TextButton(onClick = onDone, modifier = Modifier.navigationBarsPadding().padding(bottom = 24.dp)) {
             Text("跳过", color = LocalAppColors.current.textSecondary, fontSize = 14.sp)
         }
     }

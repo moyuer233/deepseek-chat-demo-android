@@ -13,6 +13,7 @@ export const zh = {
   usageContext: '上下文占用',
   usageSession: '本会话',
   usageTotal: '全部会话',
+  loginRequiredHint: '请先登录 DeepSeek 账号或填写 API Key',
   accountBalance: '余额',
   accountBalanceRetry: '余额读取失败，重试',
   accountMoreInfo: '更多账号信息',

@@ -15,6 +15,7 @@ export const en = {
   usageContext: 'Context usage',
   usageSession: 'This session',
   usageTotal: 'All sessions',
+  loginRequiredHint: 'Sign in with a DeepSeek account or set an API key first',
   accountBalance: 'Balance',
   accountBalanceRetry: 'Failed to load balance, retry',
   accountMoreInfo: 'More account info',
