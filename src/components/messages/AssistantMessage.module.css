@@ -95,9 +95,9 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   opacity: 0;
-  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+  transition: opacity var(--dsh-motion, 180ms ease);
 }
 
 .alwaysShow {
@@ -121,7 +121,7 @@
   font: var(--dsw-font-markdown-small);
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.3s;
+  transition: background-color var(--dsh-motion, 180ms ease);
 
   > span:first-child {
     margin-left: 0;

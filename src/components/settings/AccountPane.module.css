@@ -177,14 +177,21 @@
 }
 
 .balanceRetry {
-  padding: 4px 10px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
+  padding: 2px 4px;
+  border: none;
+  border-radius: var(--dsh-radius-8);
   background: none;
   color: var(--dsw-alias-brand-text);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
   cursor: pointer;
+  transition: opacity var(--dsh-motion, 180ms ease);
+
+  &:active {
+    opacity: 0.6;
+  }
 }
 
 .dotOk,
