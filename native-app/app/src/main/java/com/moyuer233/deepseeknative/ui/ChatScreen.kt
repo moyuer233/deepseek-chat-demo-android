@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.GraphicEq
@@ -107,6 +108,8 @@ private fun cleanSafety(raw: String): String {
     return text.trimEnd()
 }
 
+private data class PendingAttachment(val path: String, val name: String, val mime: String, val isImage: Boolean)
+
 private data class ChatMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val dbId: Int = 0,
@@ -115,6 +118,9 @@ private data class ChatMessage(
     var content: String = "",
     var thinking: String = "",
     var imagePath: String = "",
+    var filePath: String = "",
+    var fileName: String = "",
+    var fileMime: String = "",
     var liked: Int = 0,
     var done: Boolean = false,
 )
@@ -173,6 +179,9 @@ fun ChatScreen(
                     content = m.content,
                     thinking = m.thinking,
                     imagePath = m.imagePath,
+                    filePath = m.filePath,
+                    fileName = m.fileName,
+                    fileMime = m.fileMime,
                     liked = m.liked,
                     done = true,
                 )
@@ -218,7 +227,7 @@ fun ChatScreen(
     var streaming by remember { mutableStateOf(false) }
     var sendSeq by remember { mutableStateOf(0) }
     var editingIndex by remember { mutableStateOf(-1) }
-    var attachmentPath by remember { mutableStateOf<String?>(null) }
+    var attachment by remember { mutableStateOf<PendingAttachment?>(null) }
     var quoted by remember { mutableStateOf<String?>(null) }
     var menuTarget by remember { mutableStateOf<ChatMessage?>(null) }
     var selectMode by remember { mutableStateOf(false) }
@@ -234,10 +243,30 @@ fun ChatScreen(
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     file.outputStream().use { output -> input.copyTo(output) }
                 }
-                attachmentPath = file.absolutePath
+                attachment = PendingAttachment(file.absolutePath, "image.png", "image/png", true)
             }
         }
     }
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val dir = File(context.filesDir, "files").apply { mkdirs() }
+            val name = runCatching {
+                context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                    val idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (c.moveToFirst() && idx >= 0) c.getString(idx) else null
+                }
+            }.getOrNull() ?: ("file-" + System.currentTimeMillis())
+            val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
+            val file = File(dir, System.currentTimeMillis().toString() + "-" + name)
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output -> input.copyTo(output) }
+                }
+                attachment = PendingAttachment(file.absolutePath, name, mime, false)
+            }
+        }
+    }
+    var showAttachDialog by remember { mutableStateOf(false) }
     var editText by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var showKeyDialog by remember { mutableStateOf(false) }
@@ -290,7 +319,7 @@ fun ChatScreen(
             }
             withContext(Dispatchers.IO) {
                 if (grant != null) {
-                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, imageFileId = null, searchEnabled = false, onContent = onDelta,
+                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, attachments = emptyList(), searchEnabled = false, onContent = onDelta,
                         onDone = { scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); val db = messages.getOrNull(i)?.dbId ?: 0; syncAssistant(db, content = messages.getOrNull(i)?.content); persistSession() } } },
                         onError = { msg -> scope.launch { if (mySeq == sendSeq) { val i = messages.indexOfFirst { it.id == id }; if (i >= 0) messages[i] = messages[i].copy(done = true); error = msg; persistSession() } } })
                 } else if (apiKey != null) {
@@ -305,7 +334,7 @@ fun ChatScreen(
 
     fun send() {
         val text = input.trim()
-        if ((text.isEmpty() && attachmentPath == null) || streaming) return
+        if ((text.isEmpty() && attachment == null) || streaming) return
         val grant = DshAuth.token(context)
         val chatToken = SessionStore.token(context)
         val apiKey = SessionStore.apiKey(context)
@@ -313,16 +342,27 @@ fun ChatScreen(
             showKeyDialog = true
             return
         }
-        val pendingImage = attachmentPath
+        val pendingAttachment = attachment
         val pendingQuote = quoted
         quoted = null
         val outgoing = if (pendingQuote != null) "> " + pendingQuote + "\n\n" + text else text
         input = ""
-        attachmentPath = null
+        attachment = null
         error = null
         val tree = ensureSession()
         val userId = tree.nextId()
-        tree.messages.add(LocalMessage(id = userId, parentId = tree.currentMessageId, role = "user", content = outgoing, imagePath = pendingImage ?: ""))
+        tree.messages.add(
+            LocalMessage(
+                id = userId,
+                parentId = tree.currentMessageId,
+                role = "user",
+                content = outgoing,
+                imagePath = if (pendingAttachment?.isImage == true) pendingAttachment.path else "",
+                filePath = if (pendingAttachment?.isImage == false) pendingAttachment.path else "",
+                fileName = if (pendingAttachment?.isImage == false) pendingAttachment.name else "",
+                fileMime = if (pendingAttachment?.isImage == false) pendingAttachment.mime else "",
+            )
+        )
         val assistantDbId = tree.nextId()
         tree.messages.add(LocalMessage(id = assistantDbId, parentId = userId, role = "assistant", content = ""))
         tree.currentMessageId = assistantDbId
@@ -339,20 +379,21 @@ fun ChatScreen(
         scope.launch {
             when {
                 grant != null -> withContext(Dispatchers.IO) {
-                    val fileId = if (pendingImage != null) {
-                        runCatching { java.io.File(pendingImage).readBytes() }.getOrNull()?.let { bytes ->
-                            ApiClient.uploadImage(grant, bytes, "image.png", "image/png")
+                    var attachments = emptyList<Pair<String, Boolean>>()
+                    if (pendingAttachment != null) {
+                        val bytes = runCatching { java.io.File(pendingAttachment.path).readBytes() }.getOrNull()
+                        val fileId = bytes?.let { ApiClient.uploadFile(grant, it, pendingAttachment.name, pendingAttachment.mime) }
+                        if (fileId == null) {
+                            scope.launch { updateAssistant { it.copy(done = true) }; error = "附件上传失败，请稍后重试" }
+                            return@withContext
                         }
-                    } else null
-                    if (pendingImage != null && fileId == null) {
-                        scope.launch { updateAssistant { it.copy(done = true) }; error = "图片上传失败，请稍后重试" }
-                        return@withContext
+                        attachments = listOf(fileId to pendingAttachment.isImage)
                     }
                     ApiClient.streamGrantChat(
                         grant = grant,
                         prompt = outgoing.ifEmpty { "请描述这张图片" },
                         thinking = thinkingEnabled,
-                        imageFileId = fileId,
+                        attachments = attachments,
                         searchEnabled = searchEnabled,
                         onContent = { content -> scope.launch { if (mySeq == sendSeq) updateAssistant { it.copy(content = content) } } },
                         onDone = { scope.launch { if (mySeq == sendSeq) { updateAssistant { it.copy(done = true) }; messages.firstOrNull { it.id == assistantId }?.let { m -> syncAssistant(assistantDbId, m.content, m.thinking) }; persistSession() } } },
@@ -458,7 +499,7 @@ fun ChatScreen(
                     scope.launch { if (mySeq == sendSeq) { error = msg; streaming = false } }
                 }
                 if (grant != null) {
-                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, imageFileId = null, searchEnabled = searchEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
+                    ApiClient.streamGrantChat(grant = grant, prompt = prompt, thinking = thinkingEnabled, attachments = emptyList(), searchEnabled = searchEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
                 } else if (apiKey != null) {
                     ApiClient.streamApiChat(apiKey = apiKey, prompt = prompt, thinking = thinkingEnabled, onContent = onContent, onDone = onDone, onError = onError, onThinking = onThinking)
                 }
@@ -538,6 +579,13 @@ fun ChatScreen(
                                     if (bitmap != null) {
                                         Image(bitmap, contentDescription = null, modifier = Modifier.widthIn(max = 240.dp).heightIn(max = 240.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Fit)
                                         Spacer(Modifier.height(6.dp))
+                                    }
+                                }
+                                if (message.filePath.isNotEmpty()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
+                                        Icon(Icons.Filled.Description, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(message.fileName.ifEmpty { "附件" }, color = TextPrimary, fontSize = 13.sp)
                                     }
                                 }
                                 if (message.content.isNotEmpty()) Text(message.content, color = TextPrimary, fontSize = (16 * fontScale).sp)
@@ -714,16 +762,20 @@ fun ChatScreen(
                         }
                         Spacer(Modifier.height(4.dp))
                     }
-                    attachmentPath?.let { path ->
-                        val bitmap = remember(path) { android.graphics.BitmapFactory.decodeFile(path)?.asImageBitmap() }
-                        if (bitmap != null) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(bitmap, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
-                                Spacer(Modifier.width(8.dp))
-                                Text("图片", color = TextSecondary, fontSize = 12.sp)
+                    attachment?.let { att ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (att.isImage) {
+                                val bitmap = remember(att.path) { android.graphics.BitmapFactory.decodeFile(att.path)?.asImageBitmap() }
+                                if (bitmap != null) {
+                                    Image(bitmap, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                                }
+                            } else {
+                                Icon(Icons.Filled.Description, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(24.dp))
                             }
-                            Spacer(Modifier.height(6.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (att.isImage) "图片" else att.name, color = TextSecondary, fontSize = 12.sp, maxLines = 1)
                         }
+                        Spacer(Modifier.height(6.dp))
                     }
                     BasicTextField(
                         value = input,
@@ -791,7 +843,7 @@ fun ChatScreen(
                                 Icons.Filled.Add,
                                 contentDescription = "附件",
                                 tint = TextPrimary,
-                                modifier = Modifier.size(22.dp).clickable { imagePicker.launch("image/*") },
+                                modifier = Modifier.size(22.dp).clickable { showAttachDialog = true },
                             )
                             Spacer(Modifier.width(10.dp))
                             Icon(
@@ -849,6 +901,20 @@ fun ChatScreen(
                 }) { Text("保存并发送") }
             },
             dismissButton = { TextButton(onClick = { showKeyDialog = false }) { Text("取消") } },
+        )
+    }
+
+    if (showAttachDialog) {
+        AlertDialog(
+            onDismissRequest = { showAttachDialog = false },
+            title = { Text("添加附件") },
+            text = {
+                Column {
+                    TextButton(onClick = { showAttachDialog = false; imagePicker.launch("image/*") }) { Text("图片") }
+                    TextButton(onClick = { showAttachDialog = false; filePicker.launch(arrayOf("*/*")) }) { Text("文件（PDF/文档等）") }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showAttachDialog = false }) { Text("取消") } },
         )
     }
 

@@ -12,6 +12,9 @@ data class LocalMessage(
     var content: String,
     var thinking: String = "",
     var imagePath: String = "",
+    var filePath: String = "",
+    var fileName: String = "",
+    var fileMime: String = "",
     var liked: Int = 0,
 )
 
@@ -70,6 +73,9 @@ object LocalStore {
                             content = m.optString("content"),
                             thinking = m.optString("thinking"),
                             imagePath = m.optString("imagePath"),
+                            filePath = m.optString("filePath"),
+                            fileName = m.optString("fileName"),
+                            fileMime = m.optString("fileMime"),
                             liked = m.optInt("liked", 0),
                         )
                     )
@@ -101,6 +107,9 @@ object LocalStore {
                         .put("content", m.content)
                         .put("thinking", m.thinking)
                         .put("imagePath", m.imagePath)
+                        .put("filePath", m.filePath)
+                        .put("fileName", m.fileName)
+                        .put("fileMime", m.fileMime)
                         .put("liked", m.liked)
                 )
             }

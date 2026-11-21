@@ -380,7 +380,7 @@ object ApiClient {
     }
 
     /** 上传图片到 anthropic files，返回 file_id。 */
-    fun uploadImage(grant: String, bytes: ByteArray, filename: String, mime: String): String? {
+    fun uploadFile(grant: String, bytes: ByteArray, filename: String, mime: String): String? {
         return try {
             val boundary = "----dsnative" + System.currentTimeMillis()
             val conn = (URL("https://api.deepseek.com/anthropic/v1/files").openConnection() as HttpURLConnection).apply {
@@ -415,7 +415,7 @@ object ApiClient {
         grant: String,
         prompt: String,
         thinking: Boolean,
-        imageFileId: String? = null,
+        attachments: List<Pair<String, Boolean>> = emptyList(),
         searchEnabled: Boolean = false,
         onContent: (String) -> Unit,
         onDone: () -> Unit,
@@ -423,10 +423,17 @@ object ApiClient {
         onThinking: (String) -> Unit = {},
         onSearch: (Int, String) -> Unit = { _, _ -> },
     ) {
-        val content: Any = if (imageFileId != null) {
-            org.json.JSONArray()
-                .put(JSONObject().put("type", "image").put("source", JSONObject().put("type", "file").put("file_id", imageFileId)))
-                .put(JSONObject().put("type", "text").put("text", prompt))
+        val content: Any = if (attachments.isNotEmpty()) {
+            val arr = org.json.JSONArray()
+            attachments.forEach { (fileId, isImage) ->
+                arr.put(
+                    JSONObject()
+                        .put("type", if (isImage) "image" else "document")
+                        .put("source", JSONObject().put("type", "file").put("file_id", fileId))
+                )
+            }
+            arr.put(JSONObject().put("type", "text").put("text", prompt))
+            arr
         } else prompt
         val tools = org.json.JSONArray().put(JSONObject().put("type", "deepseek_read_url").put("name", "deepseek_read_url"))
         if (searchEnabled) tools.put(JSONObject().put("type", "deepseek_web_search").put("name", "deepseek_web_search"))
@@ -439,7 +446,7 @@ object ApiClient {
             .put("stream", true)
             .put("messages", org.json.JSONArray().put(JSONObject().put("role", "user").put("content", content)))
         val headers = mutableMapOf("x-dsh-auth-token" to grant, "anthropic-version" to "2023-06-01")
-        if (imageFileId != null) headers["anthropic-beta"] = "files-api-2025-04-14"
+        if (attachments.isNotEmpty()) headers["anthropic-beta"] = "files-api-2025-04-14"
         sseStream(
             url = "https://api.deepseek.com/anthropic/v1/messages",
             headers = headers,
