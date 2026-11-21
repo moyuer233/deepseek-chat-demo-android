@@ -232,7 +232,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
         {header(t('settingDialogAsideDataOptionLabel'), () => setPage('main'))}
         <div className={styles.body}>
           <div className={styles.card}>
-            <Row icon={<IconUploadOutline14 />} title={t('upload')} onClick={() => fileRef.current?.click()} />
+            <Row icon={<IconUploadOutline14 />} title={t('historyImport')} onClick={() => fileRef.current?.click()} />
             <Row
               icon={<IconLinkOutline16 />}
               title={t('nativeSettingsImportChats') + (chatImportBusy ? '…' : '')}
@@ -242,7 +242,7 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
                 }
               }}
             />
-            <Row icon={<IconDownloadOutline16 />} title={t('exportAllDownload')} onClick={() => void onExport()} />
+            <Row icon={<IconDownloadOutline16 />} title={t('exportAllLabel')} onClick={() => void onExport()} />
             <Row icon={<IconTrashOutline16 />} title={t('deleteAllSessions')} danger onClick={() => void onDelete()} />
           </div>
           {pendingPreflight ? (

@@ -34,8 +34,12 @@ export const createNativeExport = (name: string, mime = 'application/zip'): Nati
   const path = shell.beginExport(name)
   return {
     append: (chunk) => {
-      if (shell.appendExport(path, toBase64(chunk)) < 0) {
-        throw new Error(translate('errorExportWrite'))
+      // ZIP 生成器可能一次给出整段会话 JSON；按块切开发给原生，避免单次跨桥数据过大
+      for (let offset = 0; offset < chunk.byteLength; offset += CHUNK) {
+        const slice = chunk.subarray(offset, offset + CHUNK)
+        if (shell.appendExport(path, toBase64(slice)) < 0) {
+          throw new Error(translate('errorExportWrite'))
+        }
       }
     },
     finish: () => shell.finishExport(path, mime, name),
