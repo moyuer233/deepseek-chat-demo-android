@@ -18,10 +18,13 @@ android/build/
 *.keystore
 *.jks
 
-# 本地工具与临时文件
+# 本地工具、临时文件、笔记（都只在本机，不入库）
 .dsh-meow/
 .scratch/
 .samples/
+view/
+notes/
+*.local.md
 
 .android-skills-src/
 .taste-skill/
@@ -33,5 +36,7 @@ native-app/app/build/
 
 **/keystore.properties
 
-# 演示空壳（仅供本地预览，不入库）
+# 演示空壳与本地预览页（仅供本机查看，不入库）
 demo/
+*.preview.html
+预览*.html
