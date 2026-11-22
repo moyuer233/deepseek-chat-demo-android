@@ -36,6 +36,10 @@ native-app/app/build/
 
 **/keystore.properties
 
+# AI 项目规范文件（只在本机，不入库）
+AGENTS.md
+AGENT.md
+
 # 演示空壳与本地预览页（仅供本机查看，不入库）
 demo/
 *.preview.html
