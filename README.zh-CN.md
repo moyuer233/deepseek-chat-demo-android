@@ -46,4 +46,4 @@ cd native-app && ./gradlew assembleRelease
 
 ## 许可
 
-MIT，保留上游 LICENSE 与署名。DeepSeek 名称与图标归深度求索所有。
+MIT © moyuer233。网页内核复用自 MIT 许可的 [chat-demo](https://github.com/deepseek-ai/chat-demo)，其版权声明保留在 [NOTICE](NOTICE)。DeepSeek 名称与图标归深度求索所有，本项目为非官方项目。

@@ -46,4 +46,4 @@ cd native-app && ./gradlew assembleRelease
 
 ## Licence
 
-MIT, with the upstream LICENSE and attribution kept. The DeepSeek name and logo belong to DeepSeek.
+MIT © moyuer233. The web core is reused from the MIT-licensed [chat-demo](https://github.com/deepseek-ai/chat-demo); its copyright notice is preserved in [NOTICE](NOTICE). The DeepSeek name and logo belong to DeepSeek, and this project is unofficial.

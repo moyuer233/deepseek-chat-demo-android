@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 DeepSeek
+Copyright (c) 2026 moyuer233
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+---
+
+This project reuses the MIT-licensed web core of chat-demo
+(https://github.com/deepseek-ai/chat-demo). The upstream copyright notice is
+preserved in NOTICE. The DeepSeek name and logo belong to DeepSeek; this
+project is unofficial and not affiliated with or endorsed by DeepSeek.
