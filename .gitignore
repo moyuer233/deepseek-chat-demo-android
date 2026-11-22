@@ -32,3 +32,6 @@ native-app/build/
 native-app/app/build/
 
 **/keystore.properties
+
+# 演示空壳（仅供本地预览，不入库）
+demo/
