@@ -122,4 +122,10 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
 
 ## 📄 许可
 
-MIT © moyuer233。网页内核复用自 MIT 许可的 [chat-demo](https://github.com/deepseek-ai/chat-demo)，其版权声明保留在 [NOTICE](NOTICE)。DeepSeek 名称与图标归深度求索所有，本项目为非官方项目，与 DeepSeek 无隶属或背书关系。
+本项目采用 **GNU AGPL-3.0**（AGPL-3.0-or-later）© moyuer233。
+
+这意味着：你可以自由使用、修改、分发；但**分发时必须同时提供完整源码**（含构建脚本），而且**如果你把它改成网络服务供他人使用，也必须向使用者提供源码**——AGPL 第 13 条就是为了堵住「拿开源代码做闭源 SaaS」这条路。
+
+网页内核复用自 MIT 许可的 [chat-demo](https://github.com/deepseek-ai/chat-demo)，其原始版权声明按要求保留在 [NOTICE](NOTICE)。第三方组件与许可见同一文件。
+
+DeepSeek 名称与图标归深度求索所有，本项目为非官方项目，与 DeepSeek 无隶属或背书关系。

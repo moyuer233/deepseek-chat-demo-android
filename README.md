@@ -43,7 +43,7 @@ Every chat feature the official app has — DeepThink, web search, attachments, 
 | Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
 | History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
 | Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
-| Core | Closed source | **Open source**: chat-demo (MIT) web core, Kotlin + Compose shell |
+| Core | Closed source | **Open source** under AGPL-3.0: chat-demo (MIT) web core, Kotlin + Compose shell |
 
 ## 📱 Screens
 
@@ -127,4 +127,10 @@ This is a spare-time project with no commercial sponsorship. If it helped you, t
 
 ## 📄 Licence
 
-MIT © moyuer233. The web core is reused from [chat-demo](https://github.com/deepseek-ai/chat-demo) under MIT, with its notice kept in [NOTICE](NOTICE). The DeepSeek name and logo belong to DeepSeek; this is an unofficial project with no affiliation or endorsement.
+This project is licensed under the **GNU AGPL-3.0** (AGPL-3.0-or-later) © moyuer233.
+
+That means you may use, modify and redistribute it freely, but **any distribution must ship the complete corresponding source** (build scripts included), and **if you run a modified version as a network service, you must offer its source to those users** — section 13 of the AGPL exists precisely to close the "open source in, closed SaaS out" loophole.
+
+The web core is reused from the MIT-licensed [chat-demo](https://github.com/deepseek-ai/chat-demo), whose original notice is kept in [NOTICE](NOTICE) along with the third-party components and their licences.
+
+The DeepSeek name and logo belong to DeepSeek. This is an unofficial project with no affiliation or endorsement.

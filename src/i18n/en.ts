@@ -192,7 +192,8 @@ export const en = {
   aboutVersion: "Version",
   aboutSource: "Source code",
   aboutLicense: "License",
-  aboutDisclaimer: "Unofficial app built on DeepSeek chat-demo (MIT). Not affiliated with DeepSeek.",
+  aboutLicenseValue: "AGPL-3.0",
+  aboutDisclaimer: "Unofficial app. Web core reused from DeepSeek chat-demo (MIT); this project as a whole is AGPL-3.0. Not affiliated with DeepSeek.",
   // ===== 账户页 =====
   apiKeyLabel: "API Key",
   apiKeySetTail: "Set (ends {tail})",

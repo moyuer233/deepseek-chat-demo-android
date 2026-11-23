@@ -2,8 +2,8 @@ NOTICE
 ======
 
 DeepSeek Chat Demo Android
-Copyright (c) 2026 moyuer233
-Licensed under the MIT License (see LICENSE).
+Copyright (C) 2026 moyuer233
+Licensed under the GNU Affero General Public License v3.0 (see LICENSE).
 
 This project is an independent work, not a fork. It reuses the web core of
 the following MIT-licensed upstream project, and its copyright notice is
@@ -40,10 +40,22 @@ THE SOFTWARE.
 Third-party components
 ----------------------
 
-- Material Symbols (Apache-2.0) — outline icons in native UI.
-- Noto Sans SC (SIL Open Font License 1.1) — CJK typeface used in the promo
-  video project (not shipped inside the APK).
+Bundled into the APK:
+
+- AndroidX / Jetpack Compose / Material 3 (Apache-2.0) — native UI toolkit.
+- Kotlin standard library (Apache-2.0).
+- React, React DOM, zustand, clsx, fflate, KaTeX, Mermaid, Prism,
+  mdast-util-*, micromark-* (MIT) — web chat client.
+- idb (ISC) — IndexedDB wrapper.
 - jsQR (Apache-2.0) — QR decoding for the top-up scan assist.
+- Simple Icons DeepSeek glyph (CC0-1.0) — brand mark in the web client.
+
+Used at build time only (not shipped in the APK):
+
+- TypeScript (Apache-2.0), Rspack (MIT), SWC helpers (Apache-2.0),
+  oxlint (MIT), Gradle and the Android Gradle Plugin (Apache-2.0).
+
+Material Symbols (Apache-2.0) is the outline icon set used in the native UI.
 
 The DeepSeek name and logo belong to DeepSeek. This project is unofficial and
 is not affiliated with, endorsed by, or sponsored by DeepSeek.

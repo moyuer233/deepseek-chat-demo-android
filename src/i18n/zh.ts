@@ -192,7 +192,8 @@ export const zh = {
   aboutVersion: "版本",
   aboutSource: "开源地址",
   aboutLicense: "许可",
-  aboutDisclaimer: "非官方应用，基于 DeepSeek 官方 chat-demo（MIT）二次开发，与 DeepSeek 无隶属关系。",
+  aboutLicenseValue: "AGPL-3.0",
+  aboutDisclaimer: "非官方应用，网页内核复用 DeepSeek 官方 chat-demo（MIT），本项目整体以 AGPL-3.0 开源，与 DeepSeek 无隶属关系。",
   // ===== 账户页 =====
   apiKeyLabel: "API Key",
   apiKeySetTail: "已设置（尾号 {tail}）",

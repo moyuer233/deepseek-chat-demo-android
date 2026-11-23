@@ -421,6 +421,16 @@ export const NativeSettings = ({ onClose }: { onClose: () => void }) => {
               </svg>
             )}
             title={t('aboutSource')} onClick={() => nativeShell()?.openExternal('https://github.com/moyuer233/deepseek-chat-demo-android')} />
+          <Row
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6M9 13h6M9 17h4" />
+              </svg>
+            )}
+            title={t('aboutLicense')}
+            value={t('aboutLicenseValue')}
+            onClick={() => nativeShell()?.openExternal('https://github.com/moyuer233/deepseek-chat-demo-android/blob/main/LICENSE')} />
         </div>
         <div className={styles.about}>{t('aboutDisclaimer')}</div>
       </div>
