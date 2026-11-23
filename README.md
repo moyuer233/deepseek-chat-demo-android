@@ -43,7 +43,7 @@ Every chat feature the official app has — DeepThink, web search, attachments, 
 | Quota | Free tier; wait for it to reset once used up | **Your own API quota**; not routed through the free-tier limiter |
 | Context | Limited by the model | Live usage in the status line; compacts automatically near the limit so you can keep chatting |
 | History | Stays in your official account | **Imported onto the device** as a whole, with a diff preview first, and exportable again any time |
-| Free | Official platform | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
+| Top-up | Free | Opens the top-up page on the official platform, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
 
 ## 📱 Screens
 
