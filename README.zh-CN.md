@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/icon.png" width="88" alt="DeepSeek Chat Demo Android" />
+  <img src="docs/assets/banner.png" alt="DeepSeek Chat Demo Android" />
 </p>
 
 <h1 align="center">DeepSeek Chat Demo Android</h1>
@@ -107,6 +107,28 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
 - 聊天请求直连 `api.deepseek.com`，不经过本项目的中转服务器；额度与计费归你的账号。
 - 会话与导入的历史存在手机本地（IndexedDB）；登录在官方授权页完成，App 不接触密码，授权 token 由 Android Keystore 加密保存。
 - 「扫码辅助」是可选的无障碍服务，默认关闭，只在充值拉起微信/支付宝后的 20 秒内动作，不读取、不存储聊天或支付信息。
+
+## Star 趋势
+
+<a href="https://star-history.com/#moyuer233/deepseek-chat-demo-android&Date">
+  <img src="https://api.star-history.com/svg?repos=moyuer233/deepseek-chat-demo-android&type=Date" alt="Star History Chart" width="640" />
+</a>
+
+## 赞助渠道
+
+这个项目是业余时间做的，不接受商业赞助，只留一个打赏渠道。如果它帮到了你，可以在这里支持我：
+
+<a href="https://afdian.com/a/moyuer233">
+  <img src="https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E6%89%93%E8%B5%8F-946CE6?style=flat-square&labelColor=161b22" alt="爱发电" />
+</a>
+
+## 参与贡献
+
+- **问题反馈**：[Issues](https://github.com/moyuer233/deepseek-chat-demo-android/issues) 里说明复现步骤、机型与 Android 版本、App 版本号（设置 → 关于）。
+- **改代码**：先开 Issue 说清要做什么，再提 PR；提交前跑 `pnpm type && pnpm lint && pnpm build`。
+- **改文案**：界面文案的唯一来源是 `copy/文案.mjs`，改完执行 `node scripts/gen-copy.mjs`，不要直接改生成的 `src/i18n/*.ts` 与 `NativeCopy.kt`。
+- **提交信息**：一句话说清改了什么，不加 emoji、不写"优化一下"这类空话。
+- **不要**：提交构建产物、keystore、`.scratch/` 与本机路径。
 
 ## 许可
 

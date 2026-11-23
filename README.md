@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/icon.png" width="88" alt="DeepSeek Chat Demo Android" />
+  <img src="docs/assets/banner.png" alt="DeepSeek Chat Demo Android" />
 </p>
 
 <h1 align="center">DeepSeek Chat Demo Android</h1>
@@ -105,6 +105,28 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 - Chat requests go straight to `api.deepseek.com`; nothing is relayed through a server owned by this project. Usage is billed to your own account.
 - Chats and imported history stay in the device's IndexedDB; sign-in happens on the official page, the app never sees your password, and the grant token is encrypted with Android Keystore.
 - Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay, and it does not read or store chats or payment details.
+
+## Star history
+
+<a href="https://star-history.com/#moyuer233/deepseek-chat-demo-android&Date">
+  <img src="https://api.star-history.com/svg?repos=moyuer233/deepseek-chat-demo-android&type=Date" alt="Star History Chart" width="640" />
+</a>
+
+## Funding
+
+This is a spare-time project with no commercial sponsorship. If it helped you, there is one tip jar:
+
+<a href="https://afdian.com/a/moyuer233">
+  <img src="https://img.shields.io/badge/Afdian-tip-946CE6?style=flat-square&labelColor=161b22" alt="Afdian" />
+</a>
+
+## Contributing
+
+- **Bugs**: open an [issue](https://github.com/moyuer233/deepseek-chat-demo-android/issues) with steps to reproduce, device and Android version, and the app version (Settings → About).
+- **Code**: open an issue describing the change first, then send a PR; run `pnpm type && pnpm lint && pnpm build` before pushing.
+- **Copy**: all UI copy lives in `copy/文案.mjs`; run `node scripts/gen-copy.mjs` after editing it, and do not hand-edit the generated `src/i18n/*.ts` or `NativeCopy.kt`.
+- **Commit messages**: one line saying what changed; no emoji, no filler like "minor improvements".
+- **Please don't**: commit build output, keystores, `.scratch/`, or machine-specific paths.
 
 ## Licence
 
