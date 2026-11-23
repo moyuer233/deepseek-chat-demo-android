@@ -77,9 +77,12 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 
 ### 🗂️ Import your history
 
-1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and grab your chats from the official export entry.
-2. In the app: Settings → Data → Import chats from chat.deepseek.com — one tap fetches them.
-3. Review the added / updated / local-only diff and import.
+Two ways, pick either:
+
+- **One tap** (recommended): Settings → Data → Import chats from chat.deepseek.com. Sign in and it exports and downloads by itself.
+- **Manual**: export your chats on [chat.deepseek.com](https://chat.deepseek.com) in a browser, then pick that ZIP in Settings → Data → Import chat history.
+
+Either way you get an added / updated / local-only diff first, and nothing is written until you confirm.
 
 ## 📁 Layout
 
