@@ -93,15 +93,15 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 
 ## ⚠️ Known limitations
 
-- 🐢 Long chats render the latest 25 messages and load earlier ones on demand; virtual scrolling is not implemented yet.
-- 🧪 There is no automated test suite; regressions rely on manual checks and code review.
-- 💳 The top-up page only returns a UnionPay aggregate QR; the WeChat/Alipay channel is inferred from the selected button and the QR payload.
+- Long chats render the latest 25 messages and load earlier ones on demand; virtual scrolling is not implemented yet.
+- There is no automated test suite; regressions rely on manual checks and code review.
+- The top-up page only returns a UnionPay aggregate QR; the WeChat/Alipay channel is inferred from the selected button and the QR payload.
 
 ## 📝 Notes
 
-- 🔒 Chat requests go straight to `api.deepseek.com`; nothing is relayed through a server owned by this project. Usage is billed to your own account.
-- 📱 Chats and imported history stay in the device's IndexedDB; sign-in happens on the official page, the app never sees your password, and the grant token is encrypted with Android Keystore.
-- 👁️ Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay, and it does not read or store chats or payment details.
+- Chat requests go straight to `api.deepseek.com`; nothing is relayed through a server owned by this project. Usage is billed to your own account.
+- Chats and imported history stay in the device's IndexedDB; sign-in happens on the official page, the app never sees your password, and the grant token is encrypted with Android Keystore.
+- Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay, and it does not read or store chats or payment details.
 
 ## ⭐ Star history
 
@@ -119,11 +119,11 @@ This is a spare-time project with no commercial sponsorship. If it helped you, t
 
 ## 🤝 Contributing
 
-- 🐛 **Bugs**: open an [issue](https://github.com/moyuer233/deepseek-chat-demo-android/issues) with steps to reproduce, device and Android version, and the app version (Settings → About).
-- 💻 **Code**: open an issue describing the change first, then send a PR; run `pnpm type && pnpm lint && pnpm build` before pushing.
-- ✍️ **Copy**: all UI copy lives in `copy/文案.mjs`; run `node scripts/gen-copy.mjs` after editing it, and do not hand-edit the generated `src/i18n/*.ts` or `NativeCopy.kt`.
-- 📝 **Commit messages**: one line saying what changed; no emoji, no filler like "minor improvements".
-- 🚫 **Please don't**: commit build output, keystores, `.scratch/`, or machine-specific paths.
+- **Bugs**: open an [issue](https://github.com/moyuer233/deepseek-chat-demo-android/issues) with steps to reproduce, device and Android version, and the app version (Settings → About).
+- **Code**: open an issue describing the change first, then send a PR; run `pnpm type && pnpm lint && pnpm build` before pushing.
+- **Copy**: all UI copy lives in `copy/文案.mjs`; run `node scripts/gen-copy.mjs` after editing it, and do not hand-edit the generated `src/i18n/*.ts` or `NativeCopy.kt`.
+- **Commit messages**: one line saying what changed; no emoji, no filler like "minor improvements".
+- **Please don't**: commit build output, keystores, `.scratch/`, or machine-specific paths.
 
 ## 📄 Licence
 
