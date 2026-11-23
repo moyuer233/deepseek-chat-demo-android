@@ -35,19 +35,19 @@
 DeepSeek Chat Demo Android is an open-source, unofficial Android client: chat with **your own API key or DeepSeek Platform account grant**, so the quota and the bill stay on your account and the free tier's throttling does not apply. It also imports your whole chat.deepseek.com history onto the device and exports it again whenever you want. The web core is chat-demo (MIT); the native shell is Kotlin + Compose.
 
 
-## How it differs from the official app
+## 🆚 How it differs from the official app
 
 Every chat feature the official app has — DeepThink, web search, attachments, read-aloud, voice input, message branches, session management — is here too, so it is not listed again. What follows is only what is different.
 
 | | Official app | This project |
 | --- | --- | --- |
-| Quota | Free tier, queue for recovery once used up | **Your own API quota**; not routed through the free-tier limiter |
-| Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
-| History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
-| Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
-| Core | Closed source | **Open source**: chat-demo (MIT) web core, Kotlin + Compose shell |
+| 💰 Quota | Free tier, queue for recovery once used up | **Your own API quota**; not routed through the free-tier limiter |
+| 🧠 Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
+| 🗂️ History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
+| 💳 Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
+| 🔓 Core | Closed source | **Open source**: chat-demo (MIT) web core, Kotlin + Compose shell |
 
-## Screens
+## 📱 Screens
 
 <table>
   <tr>
@@ -60,13 +60,13 @@ Every chat feature the official app has — DeepThink, web search, attachments, 
   </tr>
 </table>
 
-## Quick start
+## 🚀 Quick start
 
-### Install
+### 📦 Install
 
 Download the APK from [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) — current **1.1.3**, versionCode 9, about 2.9 MB, self-signed, Android 7.0+. Then either paste your own API key or authorize with a DeepSeek Platform account (no key needed).
 
-### Build from source
+### 🛠️ Build from source
 
 Node.js, pnpm, JDK 21 and Android SDK 36 are required:
 
@@ -77,13 +77,13 @@ cp -r dist/. native-app/app/src/main/assets/web/
 cd native-app && ./gradlew assembleRelease   # signing config in native-app/keystore.properties
 ```
 
-### Import your history
+### 🗂️ Import your history
 
 1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and export your chats to a ZIP.
 2. In the app: Settings → Data → Import chat history, pick the ZIP.
 3. Review the added / updated / local-only diff and import.
 
-## Layout
+## 📁 Layout
 
 | Path | What it is |
 | --- | --- |
@@ -93,25 +93,25 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 | `site/` | the static website published on GitHub Pages |
 | `docs/` | screenshots and research notes |
 
-## Known limitations
+## ⚠️ Known limitations
 
-- Long chats render the latest 25 messages and load earlier ones on demand; virtual scrolling is not implemented yet.
-- There is no automated test suite; regressions rely on manual checks and code review.
-- The top-up page only returns a UnionPay aggregate QR; the WeChat/Alipay channel is inferred from the selected button and the QR payload.
+- 🐢 Long chats render the latest 25 messages and load earlier ones on demand; virtual scrolling is not implemented yet.
+- 🧪 There is no automated test suite; regressions rely on manual checks and code review.
+- 💳 The top-up page only returns a UnionPay aggregate QR; the WeChat/Alipay channel is inferred from the selected button and the QR payload.
 
-## Notes
+## 📝 Notes
 
-- Chat requests go straight to `api.deepseek.com`; nothing is relayed through a server owned by this project. Usage is billed to your own account.
-- Chats and imported history stay in the device's IndexedDB; sign-in happens on the official page, the app never sees your password, and the grant token is encrypted with Android Keystore.
-- Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay, and it does not read or store chats or payment details.
+- 🔒 Chat requests go straight to `api.deepseek.com`; nothing is relayed through a server owned by this project. Usage is billed to your own account.
+- 📱 Chats and imported history stay in the device's IndexedDB; sign-in happens on the official page, the app never sees your password, and the grant token is encrypted with Android Keystore.
+- 👁️ Scan assist is an optional accessibility service, off by default, active only for 20 seconds after the top-up flow opens WeChat/Alipay, and it does not read or store chats or payment details.
 
-## Star history
+## ⭐ Star history
 
 <a href="https://star-history.com/#moyuer233/deepseek-chat-demo-android&Date">
   <img src="https://api.star-history.com/svg?repos=moyuer233/deepseek-chat-demo-android&type=Date" alt="Star History Chart" width="640" />
 </a>
 
-## Funding
+## ❤️ Funding
 
 This is a spare-time project with no commercial sponsorship. If it helped you, there is one tip jar:
 
@@ -119,14 +119,14 @@ This is a spare-time project with no commercial sponsorship. If it helped you, t
   <img src="https://img.shields.io/badge/Afdian-tip-946CE6?style=flat-square&labelColor=161b22" alt="Afdian" />
 </a>
 
-## Contributing
+## 🤝 Contributing
 
-- **Bugs**: open an [issue](https://github.com/moyuer233/deepseek-chat-demo-android/issues) with steps to reproduce, device and Android version, and the app version (Settings → About).
-- **Code**: open an issue describing the change first, then send a PR; run `pnpm type && pnpm lint && pnpm build` before pushing.
-- **Copy**: all UI copy lives in `copy/文案.mjs`; run `node scripts/gen-copy.mjs` after editing it, and do not hand-edit the generated `src/i18n/*.ts` or `NativeCopy.kt`.
-- **Commit messages**: one line saying what changed; no emoji, no filler like "minor improvements".
-- **Please don't**: commit build output, keystores, `.scratch/`, or machine-specific paths.
+- 🐛 **Bugs**: open an [issue](https://github.com/moyuer233/deepseek-chat-demo-android/issues) with steps to reproduce, device and Android version, and the app version (Settings → About).
+- 💻 **Code**: open an issue describing the change first, then send a PR; run `pnpm type && pnpm lint && pnpm build` before pushing.
+- ✍️ **Copy**: all UI copy lives in `copy/文案.mjs`; run `node scripts/gen-copy.mjs` after editing it, and do not hand-edit the generated `src/i18n/*.ts` or `NativeCopy.kt`.
+- 📝 **Commit messages**: one line saying what changed; no emoji, no filler like "minor improvements".
+- 🚫 **Please don't**: commit build output, keystores, `.scratch/`, or machine-specific paths.
 
-## Licence
+## 📄 Licence
 
 MIT © moyuer233. The web core is reused from [chat-demo](https://github.com/deepseek-ai/chat-demo) under MIT, with its notice kept in [NOTICE](NOTICE). The DeepSeek name and logo belong to DeepSeek; this is an unofficial project with no affiliation or endorsement.

@@ -35,19 +35,19 @@
 DeepSeek Chat Demo Android 是一个开源的非官方安卓客户端：用**你自己的 API Key 或 DeepSeek 开放平台账号授权**聊天，额度与账单都在你自己账号里，因此不受官方免费版限流影响；同时把 chat.deepseek.com 的历史会话整包导入本机，随时可再导出带走。网页内核复用 chat-demo（MIT），原生外壳用 Kotlin + Compose 编写。
 
 
-## 和官方 App 的区别
+## 🆚 和官方 App 的区别
 
 官方 App 里有的聊天功能（深度思考、智能搜索、附件、朗读、语音、消息分支、会话管理……）这里都有，不再逐条列。下面只写不一样的地方。
 
 | | 官方 App | 本项目 |
 | --- | --- | --- |
-| 额度来源 | 官方免费额度，用完排队等恢复 | **你自己的 API 额度**，不走免费版限流入口 |
-| 上下文 | 受套餐限制 | **1M**，状态行实时显示占用；接近上限只在本机压摘要，**原文不删** |
-| 历史数据 | 留在官方账号里 | **整包导入本机**，导入前给差异预览，随时可再导出 ZIP |
-| 付费 | 官方内购 | 打开官方充值页，识别支付码后按你选的微信/支付宝拉起对应 App（可选扫码辅助） |
-| 内核 | 官方闭源 | **开源**：网页内核复用 chat-demo（MIT），原生外壳 Kotlin + Compose |
+| 💰 额度来源 | 官方免费额度，用完排队等恢复 | **你自己的 API 额度**，不走免费版限流入口 |
+| 🧠 上下文 | 受套餐限制 | **1M**，状态行实时显示占用；接近上限只在本机压摘要，**原文不删** |
+| 🗂️ 历史数据 | 留在官方账号里 | **整包导入本机**，导入前给差异预览，随时可再导出 ZIP |
+| 💳 付费 | 官方内购 | 打开官方充值页，识别支付码后按你选的微信/支付宝拉起对应 App（可选扫码辅助） |
+| 🔓 内核 | 官方闭源 | **开源**：网页内核复用 chat-demo（MIT），原生外壳 Kotlin + Compose |
 
-## 界面
+## 📱 界面
 
 <table>
   <tr>
@@ -60,15 +60,15 @@ DeepSeek Chat Demo Android 是一个开源的非官方安卓客户端：用**你
   </tr>
 </table>
 
-## 快速开始
+## 🚀 快速开始
 
-### 直接安装
+### 📦 直接安装
 
 从 [Releases](https://github.com/moyuer233/deepseek-chat-demo-android/releases) 下载 APK（当前 **1.1.3**，versionCode 9，约 2.9 MB），Android 7.0 及以上，自签名。
 
 装好后二选一：填自己的 API Key，或用 DeepSeek 开放平台账号授权（免 Key）。
 
-### 从源码构建
+### 🛠️ 从源码构建
 
 需要 Node.js、pnpm、JDK 21、Android SDK 36：
 
@@ -79,13 +79,13 @@ cp -r dist/. native-app/app/src/main/assets/web/
 cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keystore.properties
 ```
 
-### 导入历史会话
+### 🗂️ 导入历史会话
 
 1. 在浏览器打开 [chat.deepseek.com](https://chat.deepseek.com)，从官方导出入口拿到会话 ZIP。
 2. App 里进入「设置 → 数据管理 → 导入历史对话」，选择该 ZIP。
 3. 确认「新增 / 有更新 / 本地独有」差异后导入。
 
-## 项目结构
+## 📁 项目结构
 
 | 路径 | 说明 |
 | --- | --- |
@@ -95,25 +95,25 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
 | `site/` | 官网静态页（GitHub Pages 发布） |
 | `docs/` | 截图与调研记录 |
 
-## 已知限制
+## ⚠️ 已知限制
 
-- 长会话目前只渲染最近 25 条，更早的消息按需展开；虚拟滚动尚未实现。
-- 没有自动化测试，回归主要靠手动与代码审查。
-- 充值页只返回银联聚合码，微信/支付宝的渠道靠页面选择与二维码内容判断。
+- 🐢 长会话目前只渲染最近 25 条，更早的消息按需展开；虚拟滚动尚未实现。
+- 🧪 没有自动化测试，回归主要靠手动与代码审查。
+- 💳 充值页只返回银联聚合码，微信/支付宝的渠道靠页面选择与二维码内容判断。
 
-## 说明
+## 📝 说明
 
-- 聊天请求直连 `api.deepseek.com`，不经过本项目的中转服务器；额度与计费归你的账号。
-- 会话与导入的历史存在手机本地（IndexedDB）；登录在官方授权页完成，App 不接触密码，授权 token 由 Android Keystore 加密保存。
-- 「扫码辅助」是可选的无障碍服务，默认关闭，只在充值拉起微信/支付宝后的 20 秒内动作，不读取、不存储聊天或支付信息。
+- 🔒 聊天请求直连 `api.deepseek.com`，不经过本项目的中转服务器；额度与计费归你的账号。
+- 📱 会话与导入的历史存在手机本地（IndexedDB）；登录在官方授权页完成，App 不接触密码，授权 token 由 Android Keystore 加密保存。
+- 👁️ 「扫码辅助」是可选的无障碍服务，默认关闭，只在充值拉起微信/支付宝后的 20 秒内动作，不读取、不存储聊天或支付信息。
 
-## Star 趋势
+## ⭐ Star 趋势
 
 <a href="https://star-history.com/#moyuer233/deepseek-chat-demo-android&Date">
   <img src="https://api.star-history.com/svg?repos=moyuer233/deepseek-chat-demo-android&type=Date" alt="Star History Chart" width="640" />
 </a>
 
-## 赞助渠道
+## ❤️ 赞助渠道
 
 这个项目是业余时间做的，不接受商业赞助，只留一个打赏渠道。如果它帮到了你，可以在这里支持我：
 
@@ -121,14 +121,14 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
   <img src="https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E6%89%93%E8%B5%8F-946CE6?style=flat-square&labelColor=161b22" alt="爱发电" />
 </a>
 
-## 参与贡献
+## 🤝 参与贡献
 
-- **问题反馈**：[Issues](https://github.com/moyuer233/deepseek-chat-demo-android/issues) 里说明复现步骤、机型与 Android 版本、App 版本号（设置 → 关于）。
-- **改代码**：先开 Issue 说清要做什么，再提 PR；提交前跑 `pnpm type && pnpm lint && pnpm build`。
-- **改文案**：界面文案的唯一来源是 `copy/文案.mjs`，改完执行 `node scripts/gen-copy.mjs`，不要直接改生成的 `src/i18n/*.ts` 与 `NativeCopy.kt`。
-- **提交信息**：一句话说清改了什么，不加 emoji、不写"优化一下"这类空话。
-- **不要**：提交构建产物、keystore、`.scratch/` 与本机路径。
+- 🐛 **问题反馈**：[Issues](https://github.com/moyuer233/deepseek-chat-demo-android/issues) 里说明复现步骤、机型与 Android 版本、App 版本号（设置 → 关于）。
+- 💻 **改代码**：先开 Issue 说清要做什么，再提 PR；提交前跑 `pnpm type && pnpm lint && pnpm build`。
+- ✍️ **改文案**：界面文案的唯一来源是 `copy/文案.mjs`，改完执行 `node scripts/gen-copy.mjs`，不要直接改生成的 `src/i18n/*.ts` 与 `NativeCopy.kt`。
+- 📝 **提交信息**：一句话说清改了什么，不加 emoji、不写"优化一下"这类空话。
+- 🚫 **不要**：提交构建产物、keystore、`.scratch/` 与本机路径。
 
-## 许可
+## 📄 许可
 
 MIT © moyuer233。网页内核复用自 MIT 许可的 [chat-demo](https://github.com/deepseek-ai/chat-demo)，其版权声明保留在 [NOTICE](NOTICE)。DeepSeek 名称与图标归深度求索所有，本项目为非官方项目，与 DeepSeek 无隶属或背书关系。
