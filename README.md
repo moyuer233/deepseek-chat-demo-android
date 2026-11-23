@@ -39,11 +39,11 @@ Every chat feature the official app has — DeepThink, web search, attachments, 
 
 | | Official app | This project |
 | --- | --- | --- |
-| 💰 Quota | Free tier, queue for recovery once used up | **Your own API quota**; not routed through the free-tier limiter |
-| 🧠 Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
-| 🗂️ History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
-| 💳 Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
-| 🔓 Core | Closed source | **Open source**: chat-demo (MIT) web core, Kotlin + Compose shell |
+| Quota | Free tier, queue for recovery once used up | **Your own API quota**; not routed through the free-tier limiter |
+| Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
+| History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
+| Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
+| Core | Closed source | **Open source**: chat-demo (MIT) web core, Kotlin + Compose shell |
 
 ## 📱 Screens
 
