@@ -2,8 +2,6 @@
   <img src="docs/assets/banner.png" alt="DeepSeek Chat Demo Android" />
 </p>
 
-<h1 align="center">DeepSeek Chat Demo Android</h1>
-
 <div align="center">
 
 <a href="README.md">English</a> ｜ <b>简体中文</b>
