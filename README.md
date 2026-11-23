@@ -2,6 +2,8 @@
   <img src="docs/assets/banner.png" alt="DeepSeek Chat Demo Android" />
 </p>
 
+<h1 align="center">DeepSeek Chat Demo Android</h1>
+
 <div align="center">
 
 <b>English</b> ｜ <a href="README.zh-CN.md">简体中文</a>
@@ -32,18 +34,16 @@
 
 DeepSeek Chat Demo Android is an open-source, unofficial Android client: chat with **your own API key or DeepSeek Platform account grant**, so the quota and the bill stay on your account and the free tier's throttling does not apply. It also imports your whole chat.deepseek.com history onto the device and exports it again whenever you want. The web core is chat-demo (MIT); the native shell is Kotlin + Compose.
 
-
 ## 🆚 How it differs from the official app
 
 Every chat feature the official app has — DeepThink, web search, attachments, read-aloud, voice input, message branches, session management — is here too, so it is not listed again. What follows is only what is different.
 
 | | Official app | This project |
 | --- | --- | --- |
-| Quota | Free tier, queue for recovery once used up | **Your own API quota**; not routed through the free-tier limiter |
-| Context | Limited by plan | **1M**, with live usage in the status line; near the limit only older turns are compacted on-device, **originals never deleted** |
-| History | Stays in your official account | **Imported onto the device**, with a diff preview first, and exportable again as a ZIP |
-| Payment | In-app purchase | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
-| Core | Closed source | **Open source** under AGPL-3.0: chat-demo (MIT) web core, Kotlin + Compose shell |
+| Quota | Free tier; wait for it to reset once used up | **Your own API quota**; not routed through the free-tier limiter |
+| Context | Limited by the model | Live usage in the status line; compacts automatically near the limit so you can keep chatting |
+| History | Stays in your official account | **Imported onto the device** as a whole, with a diff preview first, and exportable again any time |
+| Free | Official platform | Opens the official top-up page, reads the payment QR, then launches WeChat or Alipay (optional scan assist) |
 
 ## 📱 Screens
 
@@ -77,8 +77,8 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 
 ### 🗂️ Import your history
 
-1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and export your chats to a ZIP.
-2. In the app: Settings → Data → Import chat history, pick the ZIP.
+1. Open [chat.deepseek.com](https://chat.deepseek.com) in a browser and grab your chats from the official export entry.
+2. In the app: Settings → Data → Import chats from chat.deepseek.com — one tap fetches them.
 3. Review the added / updated / local-only diff and import.
 
 ## 📁 Layout
@@ -90,12 +90,6 @@ cd native-app && ./gradlew assembleRelease   # signing config in native-app/keys
 | `copy/文案.mjs` | single source of UI copy for web and native; `node scripts/gen-copy.mjs` generates the rest |
 | `site/` | the static website published on GitHub Pages |
 | `docs/` | screenshots and research notes |
-
-## ⚠️ Known limitations
-
-- Long chats render the latest 25 messages and load earlier ones on demand; virtual scrolling is not implemented yet.
-- There is no automated test suite; regressions rely on manual checks and code review.
-- The top-up page only returns a UnionPay aggregate QR; the WeChat/Alipay channel is inferred from the selected button and the QR payload.
 
 ## 📝 Notes
 
