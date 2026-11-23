@@ -49,12 +49,12 @@ Every chat feature the official app has — DeepThink, web search, attachments, 
 
 <table>
   <tr>
-    <td align="center"><img src="docs/assets/shot-chat.png" width="220" alt="Chat" /><br />Chat: context usage in the status line</td>
-    <td align="center"><img src="docs/assets/shot-sider.png" width="220" alt="Sidebar" /><br />Sidebar: search and time-grouped chats</td>
+    <td align="center"><img src="docs/assets/shot-chat-en.png" width="220" alt="Chat" /><br />Chat: context usage in the status line</td>
+    <td align="center"><img src="docs/assets/shot-sider-en.png" width="220" alt="Sidebar" /><br />Sidebar: search and time-grouped chats</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/assets/shot-settings.png" width="220" alt="Settings" /><br />Settings: account, app, voice, about</td>
-    <td align="center"><img src="docs/assets/shot-account.png" width="220" alt="Account" /><br />Account: balance, top-up, API key</td>
+    <td align="center"><img src="docs/assets/shot-settings-en.png" width="220" alt="Settings" /><br />Settings: account, app, voice, about</td>
+    <td align="center"><img src="docs/assets/shot-account-en.png" width="220" alt="Account" /><br />Account: balance, top-up, API key</td>
   </tr>
 </table>
 
