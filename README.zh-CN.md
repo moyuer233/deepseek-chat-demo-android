@@ -1,4 +1,8 @@
-![DeepSeek Chat Demo Android](docs/assets/icon.png)
+<p align="center">
+  <img src="docs/assets/icon.png" width="88" alt="DeepSeek Chat Demo Android" />
+</p>
+
+<h1 align="center">DeepSeek Chat Demo Android</h1>
 
 <div align="center">
 
@@ -12,6 +16,10 @@
 <a href="https://github.com/moyuer233/deepseek-chat-demo-android/blob/main/LICENSE"><img src="https://img.shields.io/github/license/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&color=3DA639" alt="license" /></a>
 <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases"><img src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&labelColor=161b22" alt="android" /></a>
 <a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases"><img src="https://img.shields.io/badge/APK-2.9MB-2088FF?style=flat-square&labelColor=161b22" alt="apk" /></a>
+<a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases"><img src="https://img.shields.io/github/downloads/moyuer233/deepseek-chat-demo-android/total?style=flat-square&labelColor=161b22&color=3DA639&label=%E4%B8%8B%E8%BD%BD" alt="downloads" /></a>
+<a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases/latest"><img src="https://img.shields.io/github/downloads/moyuer233/deepseek-chat-demo-android/latest/total?style=flat-square&labelColor=161b22&color=3DA639&label=latest" alt="latest downloads" /></a>
+<a href="https://github.com/moyuer233/deepseek-chat-demo-android/releases"><img src="https://img.shields.io/github/release-date/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&color=2088FF" alt="release date" /></a>
+<a href="https://github.com/moyuer233/deepseek-chat-demo-android/commits/main"><img src="https://img.shields.io/github/last-commit/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&color=2088FF" alt="last commit" /></a>
 <a href="https://github.com/moyuer233/deepseek-chat-demo-android/stargazers"><img src="https://img.shields.io/github/stars/moyuer233/deepseek-chat-demo-android?style=flat-square&labelColor=161b22&color=F5B301" alt="stars" /></a>
 </div>
 
@@ -28,17 +36,17 @@ DeepSeek Chat Demo Android 是一个开源的非官方安卓客户端：用**你
 
 <img src="docs/assets/shot-chat.png" width="260" alt="聊天页" />
 
-## 主要功能
+## 和官方 App 的区别
 
-1. 💬 **用自己的 API 聊天**：直连 `api.deepseek.com`，填 API Key 或用 DeepSeek 开放平台账号授权（免 Key），请求不经过任何中转。
-2. 🧠 **1M 上下文，看得见**：输入框下方实时显示模型、上下文占用与累计 tokens；接近上限时只在本机把旧对话压成摘要，**本机原文一条不删**。
-3. 🗂️ **历史整包导入**：在 chat.deepseek.com 导出会话 ZIP，导入前给出「新增 / 有更新 / 本地独有」差异预览，可选合并、仅新增或覆盖替换；导入后可再导出 `deepseek_data-*.zip`。
-4. 🔍 **深度思考与智能搜索**：思考过程可展开，与回答分开渲染；联网结果作为引用出现在回答里。
-5. 🖼️ **附件与语音**：拍照、相册、文件三入口，PDF 能读、图片能描述；朗读回复，按住说话松手转文字。
-6. 🌿 **消息分支**：重新生成、编辑重发都会留分支，左右切换不丢旧答案。
-7. 💳 **账户与充值**：账户页看余额与赠送额度；内置充值页识别支付码，按你选的微信/支付宝拉起对应 App，可选「扫码辅助」在 20 秒内自动进扫一扫相册。
-8. 📱 **原生外壳**：相机、相册、文件、麦克风走系统能力；返回键逐级后退、右滑开侧栏；Release 开 R8，APK 约 2.9 MB。
-9. 🌏 **中英双语**：界面文案中文为基准，英文按中文原意翻译。
+官方 App 里有的聊天功能（深度思考、智能搜索、附件、朗读、语音、消息分支、会话管理……）这里都有，不再逐条列。下面只写不一样的地方。
+
+| | 官方 App | 本项目 |
+| --- | --- | --- |
+| 额度来源 | 官方免费额度，用完排队等恢复 | **你自己的 API 额度**，不走免费版限流入口 |
+| 上下文 | 受套餐限制 | **1M**，状态行实时显示占用；接近上限只在本机压摘要，**原文不删** |
+| 历史数据 | 留在官方账号里 | **整包导入本机**，导入前给差异预览，随时可再导出 ZIP |
+| 付费 | 官方内购 | 打开官方充值页，识别支付码后按你选的微信/支付宝拉起对应 App（可选扫码辅助） |
+| 内核 | 官方闭源 | **开源**：网页内核复用 chat-demo（MIT），原生外壳 Kotlin + Compose |
 
 ## 界面
 
@@ -78,18 +86,6 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
 2. App 里进入「设置 → 数据管理 → 导入历史对话」，选择该 ZIP。
 3. 确认「新增 / 有更新 / 本地独有」差异后导入。
 
-## 支持的能力
-
-| 类别 | 内容 |
-| --- | --- |
-| 模型 | `deepseek-flash`、`deepseek-v4-pro`（均 1M 上下文） |
-| 聊天 | 流式回复、停止、重新生成、编辑重发、继续生成、分支切换、复制、赞踩、朗读 |
-| 附件 | 拍照、相册、文件；图片描述、PDF 阅读；附件随归档一起导出 |
-| 语音 | 按住说话（上滑取消）、账号音色朗读 |
-| 数据 | 导入/导出 `deepseek_data-*.zip`、差异预览、上下文压缩、用量统计 |
-| 账户 | 余额与赠送额度、充值（微信/支付宝）、API Key 管理、可选扫码辅助 |
-| 平台 | Android 7.0+（minSdk 24），targetSdk 36 |
-
 ## 项目结构
 
 | 路径 | 说明 |
@@ -102,8 +98,8 @@ cd native-app && ./gradlew assembleRelease   # 签名配置在 native-app/keysto
 
 ## 已知限制
 
-- 长会话目前只渲染最近 25 条，更早的消息按需展开；虚拟滚动尚未实现（计划见项目内规范）。
-- 没有自动化测试，回归主要靠手动与 OCR 审查。
+- 长会话目前只渲染最近 25 条，更早的消息按需展开；虚拟滚动尚未实现。
+- 没有自动化测试，回归主要靠手动与代码审查。
 - 充值页只返回银联聚合码，微信/支付宝的渠道靠页面选择与二维码内容判断。
 
 ## 说明
