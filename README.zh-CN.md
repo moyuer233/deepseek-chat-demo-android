@@ -34,7 +34,6 @@
 
 DeepSeek Chat Demo Android 是一个开源的非官方安卓客户端：用**你自己的 API Key 或 DeepSeek 开放平台账号授权**聊天，额度与账单都在你自己账号里，因此不受官方免费版限流影响；同时把 chat.deepseek.com 的历史会话整包导入本机，随时可再导出带走。网页内核复用 chat-demo（MIT），原生外壳用 Kotlin + Compose 编写。
 
-<img src="docs/assets/shot-chat.png" width="260" alt="聊天页" />
 
 ## 和官方 App 的区别
 
