@@ -34,7 +34,6 @@
 
 DeepSeek Chat Demo Android is an open-source, unofficial Android client: chat with **your own API key or DeepSeek Platform account grant**, so the quota and the bill stay on your account and the free tier's throttling does not apply. It also imports your whole chat.deepseek.com history onto the device and exports it again whenever you want. The web core is chat-demo (MIT); the native shell is Kotlin + Compose.
 
-<img src="docs/assets/shot-chat.png" width="260" alt="Chat screen" />
 
 ## How it differs from the official app
 
